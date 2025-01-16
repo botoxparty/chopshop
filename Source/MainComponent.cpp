@@ -109,12 +109,32 @@ void MainComponent::handleFileSelection(const juce::File& file)
     if (!file.existsAsFile())
         return;
 
-    if (auto clip = EngineHelpers::loadAudioFileAsClip(edit, file))
+    // Load clip into first track
+    auto clip1 = EngineHelpers::loadAudioFileAsClip(edit, file);
+    if (clip1)
     {
-        // Disable auto tempo and pitch, we'll handle these manually
-        clip->setAutoTempo(false);
-        clip->setAutoPitch(false);
-        clip->setTimeStretchMode(te::TimeStretcher::defaultMode);
+        // Disable auto tempo and pitch for first clip
+        clip1->setAutoTempo(false);
+        clip1->setAutoPitch(false);
+        clip1->setTimeStretchMode(te::TimeStretcher::defaultMode);
+
+        // Create second track and load the same file
+        if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
+        {
+            EngineHelpers::removeAllClips(*track2);
+            
+            // Add clip to second track
+            if (auto clip2 = track2->insertWaveClip(file.getFileNameWithoutExtension(), file,
+                { { tracktion::TimePosition::fromSeconds(1.0), // Start at 1 second
+                    tracktion::TimeDuration::fromSeconds(clip1->getSourceLength().inSeconds()) }, {} }, 
+                false))
+            {
+                // Configure second clip
+                clip2->setAutoTempo(false);
+                clip2->setAutoPitch(false);
+                clip2->setTimeStretchMode(te::TimeStretcher::defaultMode);
+            }
+        }
 
         // Set initial tempo
         tempoSlider.setValue(120.0, juce::dontSendNotification);
@@ -126,18 +146,27 @@ void MainComponent::handleFileSelection(const juce::File& file)
 
 void MainComponent::updateTempo()
 {
-    if (auto clip = getClip())
+    const double baseTempo = 120.0; // Assume a base tempo
+    const double ratio = tempoSlider.getValue() / baseTempo;
+
+    // Update first clip
+    if (auto clip1 = getClip(0))
     {
-        const double baseTempo = 120.0; // Assume a base tempo
-        const double ratio = tempoSlider.getValue() / baseTempo;
-        clip->setSpeedRatio(ratio);
-        clip->setLength(tracktion::TimeDuration::fromSeconds(120) / clip->getSpeedRatio(), true);
+        clip1->setSpeedRatio(ratio);
+        clip1->setLength(tracktion::TimeDuration::fromSeconds(120) / clip1->getSpeedRatio(), true);
+    }
+
+    // Update second clip
+    if (auto clip2 = getClip(1))
+    {
+        clip2->setSpeedRatio(ratio);
+        clip2->setLength(tracktion::TimeDuration::fromSeconds(120) / clip2->getSpeedRatio(), true);
     }
 }
 
-te::WaveAudioClip::Ptr MainComponent::getClip()
+te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
 {
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, trackIndex))
         if (auto clip = dynamic_cast<te::WaveAudioClip*>(track->getClips()[0]))
             return *clip;
 

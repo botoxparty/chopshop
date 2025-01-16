@@ -22,7 +22,7 @@ public:
     void stop();
     void loadAudioFile();
     void updateTempo();
-    tracktion_engine::WaveAudioClip::Ptr getClip();
+    tracktion_engine::WaveAudioClip::Ptr getClip(int trackIndex);
 
 private:
     //==============================================================================
