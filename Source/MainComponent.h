@@ -46,5 +46,9 @@ private:
 
     void handleFileSelection(const juce::File& file);
 
+    juce::Slider crossfaderSlider;
+    void updateCrossfader();
+    void setTrackVolume(int trackIndex, float volume);
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

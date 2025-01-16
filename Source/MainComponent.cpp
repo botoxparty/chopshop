@@ -10,6 +10,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(playButton);
     addAndMakeVisible(stopButton);
     addAndMakeVisible(tempoSlider);
+    addAndMakeVisible(crossfaderSlider);
     setSize (600, 400);
     
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
@@ -21,6 +22,11 @@ MainComponent::MainComponent()
 
     tempoSlider.setRange(30.0, 220.0, 0.1);
     tempoSlider.onDragEnd = [this] { updateTempo(); };
+
+    // Setup crossfader
+    crossfaderSlider.setRange(0.0, 1.0, 0.01);
+    crossfaderSlider.setValue(0.0, juce::dontSendNotification);
+    crossfaderSlider.onValueChange = [this] { updateCrossfader(); };
 }
 
 MainComponent::~MainComponent()
@@ -48,6 +54,7 @@ void MainComponent::resized()
     playButton.setBounds(10, 70, 100, 20);
     stopButton.setBounds(10, 100, 100, 20);
     tempoSlider.setBounds(10, 130, 100, 20);
+    crossfaderSlider.setBounds(10, 160, 200, 20);
 }
 
 void MainComponent::play()
@@ -125,7 +132,7 @@ void MainComponent::handleFileSelection(const juce::File& file)
             
             // Add clip to second track
             if (auto clip2 = track2->insertWaveClip(file.getFileNameWithoutExtension(), file,
-                { { tracktion::TimePosition::fromSeconds(1.0), // Start at 1 second
+                { { tracktion::TimePosition::fromSeconds(1.0),
                     tracktion::TimeDuration::fromSeconds(clip1->getSourceLength().inSeconds()) }, {} }, 
                 false))
             {
@@ -133,12 +140,19 @@ void MainComponent::handleFileSelection(const juce::File& file)
                 clip2->setAutoTempo(false);
                 clip2->setAutoPitch(false);
                 clip2->setTimeStretchMode(te::TimeStretcher::defaultMode);
+                clip2->setGainDB(0.0f);
             }
+
+            // Mute the second track by default
         }
 
         // Set initial tempo
         tempoSlider.setValue(120.0, juce::dontSendNotification);
         updateTempo();
+
+        // Reset crossfader to first track
+        crossfaderSlider.setValue(0.0, juce::dontSendNotification);
+        updateCrossfader();
 
         play();
     }
@@ -171,5 +185,23 @@ te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
             return *clip;
 
     return {};
+}
+
+void MainComponent::updateCrossfader()
+{
+    const float position = crossfaderSlider.getValue();
+    // Convert linear position (0.0 to 1.0) to decibels (-20dB to 0dB)
+    // Track 1 volume goes from 0dB to -20dB
+    setTrackVolume(0, position <= 0.0f ? 0.0f : -20.0f * position);
+    // Track 2 volume goes from -20dB to 0dB
+    setTrackVolume(1, position >= 1.0f ? 0.0f : -20.0f * (1.0f - position));
+}
+
+void MainComponent::setTrackVolume(int trackIndex, float gainDB)
+{
+    if (auto clip = getClip(trackIndex))
+    {
+        clip->setGainDB(gainDB);
+    }
 }
 

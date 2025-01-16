@@ -2,6 +2,8 @@
   "files.associations": {
     "complex": "cpp",
     "string_view": "cpp",
-    "*.mm": "cpp"
+    "*.mm": "cpp",
+    "__tree": "cpp",
+    "set": "cpp"
   }
 }
