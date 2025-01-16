@@ -174,6 +174,11 @@ void MainComponent::handleFileSelection(const juce::File& file)
             }
         }
 
+        // Reset crossfader to first track
+        crossfaderSlider.setValue(0.0, juce::dontSendNotification);
+        updateCrossfader();
+
+
         play();
     }
 }
