@@ -165,14 +165,14 @@ void MainComponent::updateTempo()
     if (auto clip1 = getClip(0))
     {
         clip1->setSpeedRatio(ratio);
-        clip1->setLength(tracktion::TimeDuration::fromSeconds(120) / clip1->getSpeedRatio(), true);
+        clip1->setLength(tracktion::TimeDuration::fromSeconds(clip1->getSourceLength().inSeconds()) / clip1->getSpeedRatio(), true);
     }
 
     // Update second clip
     if (auto clip2 = getClip(1))
     {
         clip2->setSpeedRatio(ratio);
-        clip2->setLength(tracktion::TimeDuration::fromSeconds(120) / clip2->getSpeedRatio(), true);
+        clip2->setLength(tracktion::TimeDuration::fromSeconds(clip2->getSourceLength().inSeconds()) / clip2->getSpeedRatio(), true);
     }
 }
 
