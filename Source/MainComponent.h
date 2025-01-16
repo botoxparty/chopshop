@@ -21,12 +21,15 @@ public:
     void play();
     void stop();
     void loadAudioFile();
+    void updateTempo();
+    tracktion_engine::WaveAudioClip::Ptr getClip();
 
 private:
     //==============================================================================
     
     tracktion_engine::Engine engine { ProjectInfo::projectName };
     tracktion_engine::Edit edit { engine, tracktion_engine::Edit::forEditing };
+    juce::Slider tempoSlider;
 
     enum class PlayState {
         Stopped,

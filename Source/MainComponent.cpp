@@ -9,6 +9,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(saveButton);
     addAndMakeVisible(playButton);
     addAndMakeVisible(stopButton);
+    addAndMakeVisible(tempoSlider);
     setSize (600, 400);
     
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
@@ -17,6 +18,9 @@ MainComponent::MainComponent()
     playButton.onClick = [this] { play(); };
     stopButton.onClick = [this] { stop(); };
     openButton.onClick = [this] { loadAudioFile(); };
+
+    tempoSlider.setRange(30.0, 220.0, 0.1);
+    tempoSlider.onDragEnd = [this] { updateTempo(); };
 }
 
 MainComponent::~MainComponent()
@@ -43,6 +47,7 @@ void MainComponent::resized()
     saveButton.setBounds(10, 40, 100, 20);
     playButton.setBounds(10, 70, 100, 20);
     stopButton.setBounds(10, 100, 100, 20);
+    tempoSlider.setBounds(10, 130, 100, 20);
 }
 
 void MainComponent::play()
@@ -106,7 +111,36 @@ void MainComponent::handleFileSelection(const juce::File& file)
 
     if (auto clip = EngineHelpers::loadAudioFileAsClip(edit, file))
     {
-        edit.getTransport().play(false);
+        // Disable auto tempo and pitch, we'll handle these manually
+        clip->setAutoTempo(false);
+        clip->setAutoPitch(false);
+        clip->setTimeStretchMode(te::TimeStretcher::defaultMode);
+
+        // Set initial tempo
+        tempoSlider.setValue(120.0, juce::dontSendNotification);
+        updateTempo();
+
+        play();
     }
+}
+
+void MainComponent::updateTempo()
+{
+    if (auto clip = getClip())
+    {
+        const double baseTempo = 120.0; // Assume a base tempo
+        const double ratio = tempoSlider.getValue() / baseTempo;
+        clip->setSpeedRatio(ratio);
+        clip->setLength(tracktion::TimeDuration::fromSeconds(120) / clip->getSpeedRatio(), true);
+    }
+}
+
+te::WaveAudioClip::Ptr MainComponent::getClip()
+{
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+        if (auto clip = dynamic_cast<te::WaveAudioClip*>(track->getClips()[0]))
+            return *clip;
+
+    return {};
 }
 
