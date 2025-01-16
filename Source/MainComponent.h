@@ -20,6 +20,7 @@ public:
 
     void play();
     void stop();
+    void loadAudioFile();
 
 private:
     //==============================================================================
@@ -39,6 +40,8 @@ private:
     juce::TextButton saveButton { "Save" };
     juce::TextButton playButton { "Play" };
     juce::TextButton stopButton { "Stop" };
+
+    void handleFileSelection(const juce::File& file);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "complex": "cpp",
+    "string_view": "cpp",
+    "*.mm": "cpp"
+  }
+}

@@ -1,4 +1,6 @@
 #include "MainComponent.h"
+#include "Utilities.h"
+
 
 //==============================================================================
 MainComponent::MainComponent()
@@ -14,6 +16,7 @@ MainComponent::MainComponent()
 
     playButton.onClick = [this] { play(); };
     stopButton.onClick = [this] { stop(); };
+    openButton.onClick = [this] { loadAudioFile(); };
 }
 
 MainComponent::~MainComponent()
@@ -48,6 +51,8 @@ void MainComponent::play()
         return;
     }
 
+    edit.getTransport().play(false);
+
     if(playState == PlayState::Stopped) 
     {
         playState = PlayState::Playing;
@@ -70,6 +75,8 @@ void MainComponent::stop()
         return;
     }
 
+    edit.getTransport().stop(true, false);
+
     if(playState == PlayState::Playing) {
         playState = PlayState::Stopped;
         // TODO: Implement stop functionality
@@ -83,3 +90,23 @@ void MainComponent::stop()
         playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     }
 }
+
+void MainComponent::loadAudioFile()
+{
+    EngineHelpers::browseForAudioFile(engine, [this](const juce::File& file)
+    {
+        handleFileSelection(file);
+    });
+}
+
+void MainComponent::handleFileSelection(const juce::File& file)
+{
+    if (!file.existsAsFile())
+        return;
+
+    if (auto clip = EngineHelpers::loadAudioFileAsClip(edit, file))
+    {
+        edit.getTransport().play(false);
+    }
+}
+
