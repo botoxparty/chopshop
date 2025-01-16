@@ -1,6 +1,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "Utilities.h"
+
 
 //==============================================================================
 /*
@@ -51,6 +53,8 @@ private:
     juce::Slider crossfaderSlider;
     void updateCrossfader();
     void setTrackVolume(int trackIndex, float volume);
+
+    std::unique_ptr<Thumbnail> thumbnail;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

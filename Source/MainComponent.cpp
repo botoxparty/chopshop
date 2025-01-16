@@ -1,5 +1,4 @@
 #include "MainComponent.h"
-#include "Utilities.h"
 
 
 //==============================================================================
@@ -11,7 +10,13 @@ MainComponent::MainComponent()
     addAndMakeVisible(stopButton);
     addAndMakeVisible(tempoSlider);
     addAndMakeVisible(crossfaderSlider);
-    setSize (600, 400);
+
+    // Create and set up thumbnail
+    thumbnail = std::make_unique<Thumbnail>(edit.getTransport());
+    addAndMakeVisible(*thumbnail);
+    thumbnail->start();
+
+    setSize(600, 400);
     
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
@@ -41,20 +46,25 @@ void MainComponent::paint (juce::Graphics& g)
 
     g.setFont (juce::FontOptions (16.0f));
     g.setColour (juce::Colours::white);
-    g.drawText ("Hello World!", getLocalBounds(), juce::Justification::centred, true);
+    // g.drawText ("Hello World!", getLocalBounds(), juce::Justification::centred, true);
 }
 
 void MainComponent::resized()
 {
-    // This is called when the MainComponent is resized.
-    // If you add any child components, this is where you should
-    // update their positions.
-    openButton.setBounds(10, 10, 100, 20);
-    saveButton.setBounds(10, 40, 100, 20);
-    playButton.setBounds(10, 70, 100, 20);
-    stopButton.setBounds(10, 100, 100, 20);
-    tempoSlider.setBounds(10, 130, 200, 20);
-    crossfaderSlider.setBounds(10, 160, 200, 20);
+    auto bounds = getLocalBounds();
+    auto controlsArea = bounds.removeFromLeft(220);  // Space for controls
+
+    // Layout controls
+    openButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
+    saveButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
+    playButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
+    stopButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
+    tempoSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
+    crossfaderSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
+
+    // Position thumbnail in remaining space
+    bounds.reduce(10, 10);  // Add some padding
+    thumbnail->setBounds(bounds);
 }
 
 void MainComponent::play()
@@ -152,6 +162,9 @@ void MainComponent::handleFileSelection(const juce::File& file)
         // Reset crossfader to first track
         crossfaderSlider.setValue(0.0, juce::dontSendNotification);
         updateCrossfader();
+
+        // Update thumbnail with new audio file
+        thumbnail->setFile(te::AudioFile(engine, file));
 
         play();
     }
