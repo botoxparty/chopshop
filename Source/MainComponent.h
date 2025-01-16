@@ -31,6 +31,8 @@ private:
     tracktion_engine::Edit edit { engine, tracktion_engine::Edit::forEditing };
     juce::Slider tempoSlider;
 
+    double baseTempo = 120.0;
+
     enum class PlayState {
         Stopped,
         Playing,

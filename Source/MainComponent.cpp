@@ -53,7 +53,7 @@ void MainComponent::resized()
     saveButton.setBounds(10, 40, 100, 20);
     playButton.setBounds(10, 70, 100, 20);
     stopButton.setBounds(10, 100, 100, 20);
-    tempoSlider.setBounds(10, 130, 100, 20);
+    tempoSlider.setBounds(10, 130, 200, 20);
     crossfaderSlider.setBounds(10, 160, 200, 20);
 }
 
@@ -142,12 +142,11 @@ void MainComponent::handleFileSelection(const juce::File& file)
                 clip2->setTimeStretchMode(te::TimeStretcher::defaultMode);
                 clip2->setGainDB(0.0f);
             }
-
-            // Mute the second track by default
         }
 
+        baseTempo = 104.0;
         // Set initial tempo
-        tempoSlider.setValue(120.0, juce::dontSendNotification);
+        tempoSlider.setValue(baseTempo, juce::dontSendNotification);
         updateTempo();
 
         // Reset crossfader to first track
@@ -160,7 +159,6 @@ void MainComponent::handleFileSelection(const juce::File& file)
 
 void MainComponent::updateTempo()
 {
-    const double baseTempo = 120.0; // Assume a base tempo
     const double ratio = tempoSlider.getValue() / baseTempo;
 
     // Update first clip
