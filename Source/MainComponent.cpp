@@ -16,6 +16,9 @@ MainComponent::MainComponent()
     addAndMakeVisible(*thumbnail);
     thumbnail->start();
 
+    // Set initial position
+    edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
+
     setSize(600, 400);
     
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
@@ -69,48 +72,30 @@ void MainComponent::resized()
 
 void MainComponent::play()
 {
-    if(playState == PlayState::Playing) {
+    if(playState == PlayState::Playing) 
         return;
-    }
 
+    // Start transport playback
     edit.getTransport().play(false);
+    playState = PlayState::Playing;
+    jassert(edit.getTransport().isPlaying());
 
-    if(playState == PlayState::Stopped) 
-    {
-        playState = PlayState::Playing;
-        // TODO: Implement play functionality 
-        stopButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-        playButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-    }
-    else if(playState == PlayState::Paused)
-    {
-        playState = PlayState::Playing;
-        // TODO: Implement play functionality 
-        stopButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-        playButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-    }
+    stopButton.setToggleState(false, juce::NotificationType::dontSendNotification);
+    playButton.setToggleState(true, juce::NotificationType::dontSendNotification);
 }
 
 void MainComponent::stop()
 {
-    if(playState == PlayState::Stopped) {
+    if(playState == PlayState::Stopped)
         return;
-    }
 
+    // Stop transport and reset position
     edit.getTransport().stop(true, false);
-
-    if(playState == PlayState::Playing) {
-        playState = PlayState::Stopped;
-        // TODO: Implement stop functionality
-        stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-        playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-    }
-    else if(playState == PlayState::Paused) {
-        playState = PlayState::Stopped;
-        // TODO: Implement stop functionality
-        stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-        playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-    }
+    edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
+    
+    playState = PlayState::Stopped;
+    stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
+    playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
 }
 
 void MainComponent::loadAudioFile()
@@ -134,6 +119,9 @@ void MainComponent::handleFileSelection(const juce::File& file)
         clip1->setAutoTempo(false);
         clip1->setAutoPitch(false);
         clip1->setTimeStretchMode(te::TimeStretcher::defaultMode);
+
+        // Update thumbnail with the actual playback file
+        thumbnail->setFile(EngineHelpers::loopAroundClip(*clip1)->getPlaybackFile());
 
         // Create second track and load the same file
         if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
@@ -162,9 +150,6 @@ void MainComponent::handleFileSelection(const juce::File& file)
         // Reset crossfader to first track
         crossfaderSlider.setValue(0.0, juce::dontSendNotification);
         updateCrossfader();
-
-        // Update thumbnail with new audio file
-        thumbnail->setFile(te::AudioFile(engine, file));
 
         play();
     }
