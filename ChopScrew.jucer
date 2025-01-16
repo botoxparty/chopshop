@@ -13,6 +13,7 @@
     </GROUP>
   </MAINGROUP>
   <MODULES>
+    <MODULE id="ea_soundtouch" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
@@ -54,6 +55,7 @@
         <MODULEPATH id="juce_osc" path="../tracktion_engine/modules/juce/modules"/>
         <MODULEPATH id="tracktion_graph" path="../tracktion_engine/modules"/>
         <MODULEPATH id="tracktion_core" path="../tracktion_engine/modules"/>
+        <MODULEPATH id="ea_soundtouch" path="../../Downloads/JUCE_SoundTouch-main"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>

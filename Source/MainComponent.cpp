@@ -115,6 +115,38 @@ void MainComponent::handleFileSelection(const juce::File& file)
     auto clip1 = EngineHelpers::loadAudioFileAsClip(edit, file);
     if (clip1)
     {
+        // Create SoundTouch BPM detector
+        soundtouch::BPMDetect bpmDetector(2, 48000);  // Assuming stereo, 48kHz
+        
+        // Load audio file and get samples
+        juce::AudioFormatManager formatManager;
+        formatManager.registerBasicFormats();
+        
+        std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
+        if (reader)
+        {
+            // Read audio data
+            const int numSamples = static_cast<int>(reader->lengthInSamples);
+            juce::AudioBuffer<float> buffer(reader->numChannels, numSamples);
+            reader->read(&buffer, 0, numSamples, 0, true, true);
+
+            // Process samples through BPM detector
+            bpmDetector.inputSamples(buffer.getReadPointer(0), numSamples);
+            
+            // Get detected BPM
+            float detectedBPM = bpmDetector.getBpm();
+            DBG("Detected BPM: " << detectedBPM);
+            if (detectedBPM > 0)
+            {
+                baseTempo = detectedBPM;
+                tempoSlider.setValue(baseTempo, juce::dontSendNotification);
+            }
+            else
+            {
+                baseTempo = 120.0; // fallback value
+            }
+        }
+
         // Disable auto tempo and pitch for first clip
         clip1->setAutoTempo(false);
         clip1->setAutoPitch(false);
@@ -141,15 +173,6 @@ void MainComponent::handleFileSelection(const juce::File& file)
                 clip2->setGainDB(0.0f);
             }
         }
-
-        baseTempo = 104.0;
-        // Set initial tempo
-        tempoSlider.setValue(baseTempo, juce::dontSendNotification);
-        updateTempo();
-
-        // Reset crossfader to first track
-        crossfaderSlider.setValue(0.0, juce::dontSendNotification);
-        updateCrossfader();
 
         play();
     }

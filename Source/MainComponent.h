@@ -3,6 +3,8 @@
 #include <JuceHeader.h>
 #include "Utilities.h"
 
+// Add this line to enable console output
+#define JUCE_DEBUG 1
 
 //==============================================================================
 /*
