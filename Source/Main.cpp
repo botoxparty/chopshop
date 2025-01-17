@@ -8,6 +8,7 @@
 
 #include <JuceHeader.h>
 #include "MainComponent.h"
+#include "CustomLookAndFeel.h"
 
 //==============================================================================
 class ChopScrewApplication  : public juce::JUCEApplication
@@ -60,11 +61,15 @@ public:
     public:
         MainWindow (juce::String name)
             : DocumentWindow (name,
-                              juce::Desktop::getInstance().getDefaultLookAndFeel()
-                                                          .findColour (juce::ResizableWindow::backgroundColourId),
+                              juce::Colours::black,
                               DocumentWindow::allButtons)
         {
             setUsingNativeTitleBar (true);
+            
+            // Apply custom look and feel
+            customLookAndFeel = std::make_unique<CustomLookAndFeel>();
+            setLookAndFeel(customLookAndFeel.get());
+            
             setContentOwned (new MainComponent(), true);
 
            #if JUCE_IOS || JUCE_ANDROID
@@ -75,6 +80,11 @@ public:
            #endif
 
             setVisible (true);
+        }
+
+        ~MainWindow() override
+        {
+            setLookAndFeel(nullptr);
         }
 
         void closeButtonPressed() override
@@ -93,6 +103,7 @@ public:
         */
 
     private:
+        std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 

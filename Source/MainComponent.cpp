@@ -14,6 +14,12 @@ MainComponent::MainComponent()
     addAndMakeVisible(tempoSlider);
     addAndMakeVisible(crossfaderSlider);
     addAndMakeVisible(recordButton);
+    addAndMakeVisible(tempo70Button);
+    addAndMakeVisible(tempo75Button);
+    addAndMakeVisible(tempo80Button);
+    addAndMakeVisible(tempo85Button);
+    addAndMakeVisible(tempo100Button);
+    addAndMakeVisible(chopButton);
 
     // Create and set up thumbnail
     thumbnail = std::make_unique<Thumbnail>(edit.getTransport());
@@ -23,7 +29,7 @@ MainComponent::MainComponent()
     // Set initial position
     edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
 
-    setSize(600, 400);
+    setSize(800, 600);
     
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
@@ -34,6 +40,9 @@ MainComponent::MainComponent()
 
     tempoSlider.setRange(30.0, 220.0, 0.1);
     tempoSlider.onDragEnd = [this] { updateTempo(); };
+    
+    // Add and configure tempo label
+    addAndMakeVisible(tempoLabel);
 
     // Setup crossfader
     crossfaderSlider.setRange(0.0, 1.0, 0.01);
@@ -102,6 +111,19 @@ MainComponent::MainComponent()
         track->pluginList.insertPlugin(reverbPlugin, 0, nullptr);
     }
 
+    // Configure tempo preset buttons (add after other button configurations)
+    tempo70Button.setButtonText("70%");
+    tempo75Button.setButtonText("75%");
+    tempo80Button.setButtonText("80%");
+    tempo85Button.setButtonText("85%");
+    tempo100Button.setButtonText("100%");
+
+    tempo70Button.onClick = [this] { setTempoPercentage(0.70); };
+    tempo75Button.onClick = [this] { setTempoPercentage(0.75); };
+    tempo80Button.onClick = [this] { setTempoPercentage(0.80); };
+    tempo85Button.onClick = [this] { setTempoPercentage(0.85); };
+    tempo100Button.onClick = [this] { setTempoPercentage(1.00); };
+
     // setup effects
     
     recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
@@ -117,6 +139,12 @@ MainComponent::MainComponent()
     trackOffsetLabel.setJustificationType(juce::Justification::centred);
     updateTrackOffsetLabel(trackOffset);
     addAndMakeVisible(trackOffsetLabel);
+
+    chopButton.onClick = [this] { /* Chop functionality will go here */ };
+    chopButton.setButtonText(chopButton.getButtonText()); // Trigger text update
+    getLookAndFeel().setDefaultSansSerifTypefaceName("Arial");
+    chopButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+    chopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
 }
 
 MainComponent::~MainComponent()
@@ -156,17 +184,32 @@ void MainComponent::resized()
     juce::FlexBox column1;
     column1.flexDirection = juce::FlexBox::Direction::column;
     column1.items.add(juce::FlexItem(openButton).withHeight(30).withMargin(5));
-    column1.items.add(juce::FlexItem(playButton).withHeight(30).withMargin(5));
-    column1.items.add(juce::FlexItem(stopButton).withHeight(30).withMargin(5));
-    column1.items.add(juce::FlexItem(recordButton).withHeight(30).withMargin(5));
+
+
+    // Create a row for tempo buttons
+    auto tempoButtonBox = juce::FlexBox();
+    tempoButtonBox.flexDirection = juce::FlexBox::Direction::row;
+    tempoButtonBox.items.add(juce::FlexItem(tempo70Button).withFlex(1.0f).withMargin(2));
+    tempoButtonBox.items.add(juce::FlexItem(tempo75Button).withFlex(1.0f).withMargin(2));
+    tempoButtonBox.items.add(juce::FlexItem(tempo80Button).withFlex(1.0f).withMargin(2));
+    tempoButtonBox.items.add(juce::FlexItem(tempo85Button).withFlex(1.0f).withMargin(2));
+    tempoButtonBox.items.add(juce::FlexItem(tempo100Button).withFlex(1.0f).withMargin(2));
+
 
     // Column 2 (Tempo and crossfader)
     juce::FlexBox column2;
     column2.flexDirection = juce::FlexBox::Direction::column;
-    column2.items.add(juce::FlexItem(trackOffsetLabel).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(saveButton).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(tempoLabel).withHeight(20).withMargin(2).withFlex(0).withMargin(5));
+    column2.items.add(juce::FlexItem(tempoButtonBox).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(tempoSlider).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(trackOffsetLabel).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(crossfaderSlider).withHeight(30).withMargin(5));
+
+    // Add chop button before play button
+    column2.items.add(juce::FlexItem(chopButton).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(playButton).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(stopButton).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(recordButton).withHeight(30).withMargin(5));
 
     // Column 3 (Effects)
     juce::FlexBox column3;
@@ -396,4 +439,9 @@ void MainComponent::stopRecording()
 void MainComponent::updateTrackOffsetLabel(double offset)
 {
     trackOffsetLabel.setText("Beat Duration: " + juce::String(offset, 1) + " ms", juce::dontSendNotification);
+}
+
+void MainComponent::setTempoPercentage(double percentage)
+{
+    tempoSlider.setValue(baseTempo * percentage, juce::sendNotification);
 }

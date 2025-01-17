@@ -82,6 +82,7 @@ private:
     juce::TextButton saveButton { "Save" };
     juce::TextButton playButton { "Play" };
     juce::TextButton stopButton { "Stop" };
+    juce::TextButton chopButton { "Chop" };
 
     void handleFileSelection(const juce::File& file);
 
@@ -107,6 +108,16 @@ private:
     juce::Label trackOffsetLabel;
 
     void updateTrackOffsetLabel(double offset);
+
+    juce::Label tempoLabel { "Tempo Label", "BPM" };
+
+    juce::TextButton tempo70Button  { "70%" };
+    juce::TextButton tempo75Button  { "75%" };
+    juce::TextButton tempo80Button  { "80%" };
+    juce::TextButton tempo85Button  { "85%" };
+    juce::TextButton tempo100Button { "100%" };
+
+    void setTempoPercentage(double percentage);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
