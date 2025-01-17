@@ -126,6 +126,8 @@ MainComponent::MainComponent()
     flangerComponent = std::make_unique<FlangerComponent>(edit);
     addAndMakeVisible(*flangerComponent);
     resized();
+
+    updateButtonStates();
 }
 
 MainComponent::~MainComponent()
@@ -238,6 +240,7 @@ void MainComponent::play()
     const bool isPlaying = edit.getTransport().isPlaying();
     stopButton.setToggleState(!isPlaying, juce::NotificationType::dontSendNotification);
     playButton.setToggleState(isPlaying, juce::NotificationType::dontSendNotification);
+    playButton.setButtonText(isPlaying ? "Pause" : "Play");
     playState = isPlaying ? PlayState::Playing : PlayState::Stopped;
 }
 
@@ -252,6 +255,8 @@ void MainComponent::stop()
     playState = PlayState::Stopped;
     stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
+
+    updateButtonStates();
 }
 
 void MainComponent::loadAudioFile()
@@ -340,6 +345,8 @@ void MainComponent::handleFileSelection(const juce::File &file)
         crossfaderSlider.setValue(0.0, juce::dontSendNotification);
         updateCrossfader();
     }
+
+    updateButtonStates();
 }
 
 void MainComponent::updateTempo()

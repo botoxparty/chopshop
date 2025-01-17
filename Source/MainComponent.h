@@ -146,5 +146,20 @@ private:
 
     std::unique_ptr<FlangerComponent> flangerComponent;
 
+    bool isTrackLoaded()
+    {
+        if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+            return !track->getClips().isEmpty();
+        return false;
+    }
+
+    void updateButtonStates()
+    {
+        bool trackLoaded = isTrackLoaded();
+        playButton.setEnabled(trackLoaded);
+        stopButton.setEnabled(trackLoaded);
+        recordButton.setEnabled(trackLoaded);
+    }
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
