@@ -118,8 +118,6 @@ private:
 
     void updateTrackOffsetLabel(double offset);
 
-    juce::Label tempoLabel { "Tempo Label", "BPM" };
-
     juce::TextButton tempo70Button  { "70%" };
     juce::TextButton tempo75Button  { "75%" };
     juce::TextButton tempo80Button  { "80%" };

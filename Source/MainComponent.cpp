@@ -54,10 +54,8 @@ MainComponent::MainComponent()
     { loadAudioFile(); };
 
     tempoSlider.setRange(30.0, 220.0, 0.1);
+    tempoSlider.setTextValueSuffix(" BPM");
     tempoSlider.onValueChange = [this] { updateTempo(); };
-
-    // Add and configure tempo label
-    addAndMakeVisible(tempoLabel);
 
     // Setup crossfader
     crossfaderSlider.setName("Crossfader");
@@ -190,7 +188,6 @@ void MainComponent::resized()
     // Column 2 (Tempo and crossfader)
     juce::FlexBox column2;
     column2.flexDirection = juce::FlexBox::Direction::column;
-    column2.items.add(juce::FlexItem(tempoLabel).withHeight(20).withMargin(5));
 
     // Tempo buttons row
     juce::FlexBox tempoButtonBox;
@@ -210,7 +207,7 @@ void MainComponent::resized()
     // Column 3 (Effects)
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
-    column3.items.add(juce::FlexItem(*reverbComponent).withHeight(60).withMargin(5));
+    column3.items.add(juce::FlexItem(*reverbComponent).withHeight(100).withMargin(5));
 
     // Add columns to main box
     mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));
@@ -352,10 +349,13 @@ void MainComponent::updateTempo()
     {
         clip2->setSpeedRatio(ratio);
         clip2->setLength(tracktion::TimeDuration::fromSeconds(clip2->getSourceLength().inSeconds()) / clip2->getSpeedRatio(), true);
+        
+        // Update clip position based on new track offset
+        trackOffset = (60.0 / tempoSlider.getValue()) * 1000.0; // Convert to milliseconds
+        clip2->setStart(tracktion::TimePosition::fromSeconds(trackOffset / 1000.0), false, true);
     }
 
     // Update beat duration based on new tempo
-    trackOffset = (60.0 / tempoSlider.getValue()) * 1000.0; // Convert to milliseconds
     updateTrackOffsetLabel(trackOffset);
 }
 
