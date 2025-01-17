@@ -111,7 +111,8 @@ private:
     tracktion_engine::Edit edit { engine, tracktion_engine::Edit::forEditing };
     juce::Slider tempoSlider;
     std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
-
+    juce::TextButton audioSettingsButton { "Audio Settings" };
+    
     double baseTempo = 120.0;
     double trackOffset = 0.0;
 

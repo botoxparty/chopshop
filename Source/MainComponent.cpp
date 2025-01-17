@@ -28,6 +28,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(tempo85Button);
     addAndMakeVisible(tempo100Button);
     addAndMakeVisible(chopButton);
+    addAndMakeVisible(audioSettingsButton);
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
     // // setLookAndFeel(customLookAndFeel.get());
@@ -153,6 +154,12 @@ MainComponent::MainComponent()
     chopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
 
     addAndMakeVisible(currentTrackLabel);
+
+    // Add the button callback
+    audioSettingsButton.onClick = [this]
+    {
+        EngineHelpers::showAudioDeviceSettings(engine);
+    };
 }
 
 MainComponent::~MainComponent()
@@ -217,6 +224,7 @@ void MainComponent::resized()
     juce::FlexBox column1;
     column1.flexDirection = juce::FlexBox::Direction::column;
     column1.items.add(juce::FlexItem(openButton).withHeight(30).withMargin(5));
+    column1.items.add(juce::FlexItem(audioSettingsButton).withHeight(30).withMargin(5));
 
     // Column 2 (Tempo and crossfader)
     juce::FlexBox column2;
