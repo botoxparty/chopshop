@@ -1,8 +1,7 @@
 #include "ReverbComponent.h"
-#include "Parameters.h"
-#include <tracktion_engine/tracktion_engine.h>
 
 ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
+    : BaseEffectComponent(edit)
 {
     // Configure labels
     roomSizeLabel.setText("Room Size", juce::dontSendNotification);
@@ -11,7 +10,7 @@ ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
     roomSizeLabel.setJustificationType(juce::Justification::centred);
     wetLabel.setJustificationType(juce::Justification::centred);
     
-    // Configure sliders to show 2 decimal places
+    // Configure sliders
     reverbRoomSizeSlider.setTextValueSuffix("");
     reverbRoomSizeSlider.setNumDecimalPlacesToDisplay(2);
     
@@ -23,21 +22,16 @@ ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
     addAndMakeVisible(reverbRoomSizeSlider);
     addAndMakeVisible(reverbWetSlider);
 
-    // Create and add reverb plugin to master track
-    if (auto track = edit.getMasterTrack())
+    // Create and setup plugin
+    plugin = createPlugin(tracktion_engine::ReverbPlugin::xmlTypeName);
+    
+    if (plugin != nullptr)
     {
-        reverbPlugin = edit.getPluginCache().createNewPlugin(tracktion_engine::ReverbPlugin::xmlTypeName, {});
-        track->pluginList.insertPlugin(reverbPlugin.get(), 0, nullptr);
-        
-        if (auto roomSizeParam = reverbPlugin->getAutomatableParameterByID("room size"))
-        {
+        if (auto roomSizeParam = plugin->getAutomatableParameterByID("room size"))
             bindSliderToParameter(reverbRoomSizeSlider, *roomSizeParam);
-        }
-        
-        if (auto wetParam = reverbPlugin->getAutomatableParameterByID("wet level"))
-        {
+            
+        if (auto wetParam = plugin->getAutomatableParameterByID("wet level"))
             bindSliderToParameter(reverbWetSlider, *wetParam);
-        }
     }
 }
 

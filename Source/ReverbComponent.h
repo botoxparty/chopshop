@@ -1,9 +1,8 @@
 #pragma once
 
-#include <JuceHeader.h>
+#include "BaseEffectComponent.h"
 
-
-class ReverbComponent : public juce::Component
+class ReverbComponent : public BaseEffectComponent
 {
 public:
     explicit ReverbComponent(tracktion_engine::Edit&);
@@ -12,9 +11,7 @@ public:
 private:
     juce::Slider reverbRoomSizeSlider;
     juce::Slider reverbWetSlider;
-    tracktion_engine::Plugin::Ptr reverbPlugin;
     
-    // Add labels
     juce::Label roomSizeLabel;
     juce::Label wetLabel;
 
