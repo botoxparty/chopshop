@@ -1,9 +1,12 @@
 #include "MainComponent.h"
-
+#include "DistortionEffectDemo.h"
 
 //==============================================================================
 MainComponent::MainComponent()
 {
+    // Register our custom plugin with the engine
+    engine.getPluginManager().createBuiltInType<DistortionPlugin>();
+
     addAndMakeVisible(openButton);
     addAndMakeVisible(saveButton);
     addAndMakeVisible(playButton);
@@ -35,6 +38,27 @@ MainComponent::MainComponent()
     crossfaderSlider.setRange(0.0, 1.0, 0.01);
     crossfaderSlider.setValue(0.0, juce::dontSendNotification);
     crossfaderSlider.onValueChange = [this] { updateCrossfader(); };
+
+    // Setup distortion control
+    distortionDriveSlider.setRange(1.0, 10.0, 0.1);
+    distortionDriveSlider.setValue(1.0, juce::dontSendNotification);
+    // distortionDriveSlider.onValueChange = [this] { updateDistortion(); };
+    addAndMakeVisible(distortionDriveSlider);
+
+    // Create and add distortion plugin to track 0
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+    {
+              // Creates new instance of Distortion Plugin and inserts to track 1
+        distortionPlugin = edit.getPluginCache().createNewPlugin (DistortionPlugin::xmlTypeName, {});
+        track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
+                // Setup slider value source
+        auto gainParam = distortionPlugin->getAutomatableParameterByID ("gain");
+        bindSliderToParameter (distortionDriveSlider, *gainParam);
+
+    }
+
+    // setup effects
+    
 }
 
 MainComponent::~MainComponent()
@@ -64,7 +88,7 @@ void MainComponent::resized()
     stopButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
     tempoSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
     crossfaderSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-
+    distortionDriveSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
     // Position thumbnail in remaining space
     bounds.reduce(10, 10);  // Add some padding
     thumbnail->setBounds(bounds);
@@ -178,6 +202,13 @@ void MainComponent::handleFileSelection(const juce::File& file)
         crossfaderSlider.setValue(0.0, juce::dontSendNotification);
         updateCrossfader();
 
+        // Create and add distortion plugin to the track
+        if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+        {
+            // Create distortion plugin instance
+            auto distortionPlugin = edit.getPluginCache().createNewPlugin(DistortionPlugin::xmlTypeName, {});
+            track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
+        }
 
         play();
     }
@@ -229,3 +260,11 @@ void MainComponent::setTrackVolume(int trackIndex, float gainDB)
     }
 }
 
+void MainComponent::updateDistortion()
+{
+    // if (auto plugin = dynamic_cast<DistortionPlugin*>(distortionPlugin.get()))
+    // {
+    //     auto gainParam = plugin->getAutomatableParameterByID ("gain");
+    //     bindSliderToParameter (distortionDriveSlider, *gainParam);
+    // }
+}
