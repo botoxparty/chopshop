@@ -1,5 +1,4 @@
 #include "MainComponent.h"
-#include "Parameters.h"
 
 //==============================================================================
 MainComponent::MainComponent()
@@ -71,37 +70,10 @@ MainComponent::MainComponent()
     crossfaderSlider.setPopupMenuEnabled(false);
 
     // Setup reverb control
-    reverbRoomSizeSlider.setRange(0.0, 1.0, 0.01);
-    reverbRoomSizeSlider.setValue(0.5, juce::dontSendNotification);
-    reverbWetSlider.setRange(0.0, 1.0, 0.01);
-    reverbWetSlider.setValue(0.33, juce::dontSendNotification);
-    addAndMakeVisible(reverbRoomSizeSlider);
-    addAndMakeVisible(reverbWetSlider);
+    reverbComponent = std::make_unique<ReverbComponent>(edit);
+    addAndMakeVisible(*reverbComponent);
+    resized();
 
-    // Create and master track
-    if (auto track = edit.getMasterTrack())
-    {
-        // Create and add reverb plugin
-        reverbPlugin = edit.getPluginCache().createNewPlugin(tracktion_engine::ReverbPlugin::xmlTypeName, {});
-        track->pluginList.insertPlugin(reverbPlugin, 0, nullptr);
-        if (auto roomSizeParam = reverbPlugin->getAutomatableParameterByID("room size"))
-        {
-            bindSliderToParameter(reverbRoomSizeSlider, *roomSizeParam);
-        }
-        else
-        {
-            DBG("Failed to find roomSize parameter");
-        }
-
-        if (auto wetParam = reverbPlugin->getAutomatableParameterByID("wet level"))
-        {
-            bindSliderToParameter(reverbWetSlider, *wetParam);
-        }
-        else
-        {
-            DBG("Failed to find wet parameter");
-        }
-    }
     // Configure tempo preset buttons (add after other button configurations)
     tempo70Button.setButtonText("70%");
     tempo75Button.setButtonText("75%");
@@ -238,8 +210,7 @@ void MainComponent::resized()
     // Column 3 (Effects)
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
-    column3.items.add(juce::FlexItem(reverbRoomSizeSlider).withHeight(30).withMargin(5));
-    column3.items.add(juce::FlexItem(reverbWetSlider).withHeight(30).withMargin(5));
+    column3.items.add(juce::FlexItem(*reverbComponent).withHeight(60).withMargin(5));
 
     // Add columns to main box
     mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));

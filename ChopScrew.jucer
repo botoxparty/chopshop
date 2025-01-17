@@ -5,6 +5,10 @@
               defines="JUCE_MODAL_LOOPS_PERMITTED=1">
   <MAINGROUP id="yFkC8Y" name="ChopScrew">
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <FILE id="pE2jio" name="ReverbComponent.cpp" compile="1" resource="0"
+            file="Source/ReverbComponent.cpp"/>
+      <FILE id="ju3agq" name="ReverbComponent.h" compile="0" resource="0"
+            file="Source/ReverbComponent.h"/>
       <FILE id="c2VwpY" name="Utilities.h" compile="0" resource="0" file="Source/Utilities.h"/>
       <FILE id="uAKnK4" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="EycTLt" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>

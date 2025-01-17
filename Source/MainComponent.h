@@ -3,6 +3,7 @@
 #include <JuceHeader.h>
 #include "Utilities.h"
 #include "CustomLookAndFeel.h"
+#include "ReverbComponent.h"
 
 // Add this line to enable console output
 #define JUCE_DEBUG 1
@@ -105,9 +106,7 @@ private:
 
     std::unique_ptr<Thumbnail> thumbnail;
 
-    juce::Slider reverbRoomSizeSlider;
-    juce::Slider reverbWetSlider;
-    te::Plugin::Ptr reverbPlugin;
+    std::unique_ptr<ReverbComponent> reverbComponent;
 
     juce::TextButton recordButton { "Record" };
 
