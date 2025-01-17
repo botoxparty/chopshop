@@ -5,6 +5,10 @@
               defines="JUCE_MODAL_LOOPS_PERMITTED=1">
   <MAINGROUP id="yFkC8Y" name="ChopScrew">
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <FILE id="cSGaRr" name="GamepadManager.cpp" compile="1" resource="0"
+            file="Source/GamepadManager.cpp"/>
+      <FILE id="PGi9j6" name="GamepadManager.h" compile="0" resource="0"
+            file="Source/GamepadManager.h"/>
       <FILE id="pE2jio" name="ReverbComponent.cpp" compile="1" resource="0"
             file="Source/ReverbComponent.cpp"/>
       <FILE id="ju3agq" name="ReverbComponent.h" compile="0" resource="0"
@@ -42,9 +46,10 @@
   </MODULES>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX">
+    <XCODE_MAC targetFolder="Builds/MacOSX" extraLinkerFlags="-lSDL2">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="ChopScrew"/>
+        <CONFIGURATION isDebug="1" name="Debug" targetName="ChopScrew" headerPath="/opt/homebrew/include"
+                       libraryPath="/opt/homebrew/lib"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="ChopScrew"/>
       </CONFIGURATIONS>
       <MODULEPATHS>

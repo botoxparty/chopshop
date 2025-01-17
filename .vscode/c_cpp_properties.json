@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "/Users/adamhammad/Projects/tracktion_engine/modules/juce/modules",
                 "/Users/adamhammad/Projects/tracktion_engine/modules",
-                "/Users/adamhammad/Downloads/JUCE_SoundTouch-main"
+                "/Users/adamhammad/Downloads/JUCE_SoundTouch-main",
+                "/opt/homebrew/include"
             ],
             "defines": [],
             "macFrameworkPath": [],

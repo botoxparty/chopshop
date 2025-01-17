@@ -4,6 +4,10 @@
 #include "Utilities.h"
 #include "CustomLookAndFeel.h"
 #include "ReverbComponent.h"
+#include "GamepadManager.h"
+
+// Add these includes for game controller support
+#include <JuceHeader.h>
 
 // Add this line to enable console output
 #define JUCE_DEBUG 1
@@ -14,7 +18,8 @@
     your controls and content.
 */
 class MainComponent  : public juce::Component,
-                     public juce::Timer
+                     public juce::Timer,
+                     public GamepadManager::Listener
 {
 public:
     //==============================================================================
@@ -25,6 +30,10 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    // GameControllerListener overrides
+    void gamepadButtonPressed (int buttonId);
+    void gamepadButtonReleased (int buttonId);
+    void gamepadAxisMoved (int axisId, float newValue);
     // Toggles playback state and updates UI
     void play();
     void stop();
@@ -130,6 +139,9 @@ private:
     double chopReleaseDelay = 0.0;
 
     juce::Label currentTrackLabel { "Track Label", "No Track Loaded" };
+
+    // GameController member variables
+    std::unique_ptr<GamepadManager> gamepadManager;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

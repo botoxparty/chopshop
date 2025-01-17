@@ -119,6 +119,9 @@ MainComponent::MainComponent()
     {
         EngineHelpers::showAudioDeviceSettings(engine);
     };
+
+    gamepadManager = std::make_unique<GamepadManager>();
+    gamepadManager->addListener(this);
 }
 
 MainComponent::~MainComponent()
@@ -426,4 +429,43 @@ void MainComponent::setTempoPercentage(double percentage)
     // Update slider value which will trigger the slider's callback
     tempoSlider.setValue(baseTempo * percentage, juce::sendNotification);
     
+}
+
+void MainComponent::gamepadButtonPressed(int buttonId)
+{
+    // PS5 button mapping
+    switch (buttonId)
+    {
+        case SDL_CONTROLLER_BUTTON_A:  // Cross
+            play();
+            break;
+        case SDL_CONTROLLER_BUTTON_B:  // Circle
+            stop();
+            break;
+        case SDL_CONTROLLER_BUTTON_X:  // Square
+            if (!edit.getTransport().isRecording())
+                startRecording();
+            else
+                stopRecording();
+            break;
+        case SDL_CONTROLLER_BUTTON_Y:  // Triangle
+            loadAudioFile();
+            break;
+    }
+}
+
+void MainComponent::gamepadButtonReleased(int buttonId)
+{
+    // Handle button releases if needed
+}
+
+void MainComponent::gamepadAxisMoved(int axisId, float value)
+{
+    // Handle left stick for crossfader
+    if (axisId == SDL_CONTROLLER_AXIS_LEFTX)
+    {
+        // Map -1.0 to 1.0 to 0.0 to 1.0
+        float crossfaderValue = (value + 1.0f) * 0.5f;
+        crossfaderSlider.setValue(crossfaderValue, juce::sendNotification);
+    }
 }
