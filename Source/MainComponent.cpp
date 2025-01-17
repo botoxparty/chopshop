@@ -4,6 +4,14 @@
 //==============================================================================
 MainComponent::MainComponent()
 {
+    // Add this near the start of the constructor, before other component setup
+    currentTrackLabel.setJustificationType(juce::Justification::centred);
+    currentTrackLabel.setText("No Track Loaded", juce::dontSendNotification);
+    currentTrackLabel.setColour(juce::Label::outlineColourId, juce::Colours::grey);
+    currentTrackLabel.setFont(juce::Font(16.0f));
+    currentTrackLabel.setMinimumHorizontalScale(1.0f);
+    addAndMakeVisible(currentTrackLabel);
+
     // Register our custom plugin with the engine
     engine.getPluginManager().createBuiltInType<DistortionPlugin>();
 
@@ -22,7 +30,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(chopButton);
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
-    setLookAndFeel(customLookAndFeel.get());
+    // // setLookAndFeel(customLookAndFeel.get());
     LookAndFeel::setDefaultLookAndFeel(customLookAndFeel.get());
 
     // Create and set up thumbnail
@@ -152,11 +160,13 @@ MainComponent::MainComponent()
     updateTrackOffsetLabel(trackOffset);
     addAndMakeVisible(trackOffsetLabel);
 
-    chopButton.onClick = [this] { /* Chop functionality will go here */ };
+    chopButton.addMouseListener(this, false);
     chopButton.setButtonText(chopButton.getButtonText()); // Trigger text update
     getLookAndFeel().setDefaultSansSerifTypefaceName("Arial");
     chopButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
     chopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
+
+    addAndMakeVisible(currentTrackLabel);
 }
 
 MainComponent::~MainComponent()
@@ -179,14 +189,39 @@ void MainComponent::resized()
     auto bounds = getLocalBounds();
     bounds.reduce(10, 10); // Add some padding
 
-    // Position thumbnail at the top, taking up about 1/3 of the height
-    auto thumbnailHeight = bounds.getHeight() / 3;
-    thumbnail->setBounds(bounds.removeFromTop(thumbnailHeight));
+    // Create main column FlexBox
+    juce::FlexBox mainColumn;
+    mainColumn.flexDirection = juce::FlexBox::Direction::column;
+    mainColumn.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
 
-    // Add some spacing between thumbnail and controls
-    bounds.removeFromTop(10);
+    // Row 1: Thumbnail (about 1/3 of height)
+    mainColumn.items.add(juce::FlexItem(*thumbnail).withFlex(1.0f).withMargin(5));
 
-    // Create main horizontal FlexBox
+    // Row 2: Control Bar
+    juce::FlexBox controlBarBox;
+    controlBarBox.flexDirection = juce::FlexBox::Direction::row;
+    controlBarBox.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    controlBarBox.alignItems = juce::FlexBox::AlignItems::center;
+
+    // Track label with border
+    juce::FlexBox trackLabelBox;
+    trackLabelBox.flexDirection = juce::FlexBox::Direction::row;
+    trackLabelBox.items.add(juce::FlexItem(currentTrackLabel).withFlex(1.0f).withHeight(30).withMargin(5));
+
+    // Transport controls
+    juce::FlexBox transportBox;
+    transportBox.flexDirection = juce::FlexBox::Direction::row;
+    transportBox.items.add(juce::FlexItem(playButton).withWidth(80).withHeight(30).withMargin(2));
+    transportBox.items.add(juce::FlexItem(stopButton).withWidth(80).withHeight(30).withMargin(2));
+    transportBox.items.add(juce::FlexItem(recordButton).withWidth(80).withHeight(30).withMargin(2));
+
+    controlBarBox.items.add(juce::FlexItem(trackLabelBox).withWidth(210));
+    controlBarBox.items.add(juce::FlexItem(transportBox).withWidth(260));
+
+    // Add control bar to main column
+    mainColumn.items.add(juce::FlexItem(controlBarBox).withHeight(40).withMargin(5));
+
+    // Row 3: Main Box (remaining space)
     juce::FlexBox mainBox;
     mainBox.flexDirection = juce::FlexBox::Direction::row;
     mainBox.flexWrap = juce::FlexBox::Wrap::noWrap;
@@ -197,8 +232,13 @@ void MainComponent::resized()
     column1.flexDirection = juce::FlexBox::Direction::column;
     column1.items.add(juce::FlexItem(openButton).withHeight(30).withMargin(5));
 
-    // Create a row for tempo buttons
-    auto tempoButtonBox = juce::FlexBox();
+    // Column 2 (Tempo and crossfader)
+    juce::FlexBox column2;
+    column2.flexDirection = juce::FlexBox::Direction::column;
+    column2.items.add(juce::FlexItem(tempoLabel).withHeight(20).withMargin(5));
+
+    // Tempo buttons row
+    juce::FlexBox tempoButtonBox;
     tempoButtonBox.flexDirection = juce::FlexBox::Direction::row;
     tempoButtonBox.items.add(juce::FlexItem(tempo70Button).withFlex(1.0f).withMargin(2));
     tempoButtonBox.items.add(juce::FlexItem(tempo75Button).withFlex(1.0f).withMargin(2));
@@ -206,20 +246,11 @@ void MainComponent::resized()
     tempoButtonBox.items.add(juce::FlexItem(tempo85Button).withFlex(1.0f).withMargin(2));
     tempoButtonBox.items.add(juce::FlexItem(tempo100Button).withFlex(1.0f).withMargin(2));
 
-    // Column 2 (Tempo and crossfader)
-    juce::FlexBox column2;
-    column2.flexDirection = juce::FlexBox::Direction::column;
-    column2.items.add(juce::FlexItem(tempoLabel).withHeight(20).withMargin(2).withFlex(0).withMargin(5));
     column2.items.add(juce::FlexItem(tempoButtonBox).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(tempoSlider).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(trackOffsetLabel).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(crossfaderSlider).withHeight(30).withMargin(5));
-
-    // Add chop button before play button
     column2.items.add(juce::FlexItem(chopButton).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(playButton).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(stopButton).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(recordButton).withHeight(30).withMargin(5));
 
     // Column 3 (Effects)
     juce::FlexBox column3;
@@ -233,8 +264,11 @@ void MainComponent::resized()
     mainBox.items.add(juce::FlexItem(column2).withFlex(1.0f));
     mainBox.items.add(juce::FlexItem(column3).withFlex(1.0f));
 
+    // Add main box to main column
+    mainColumn.items.add(juce::FlexItem(mainBox).withFlex(2.0f).withMargin(5));
+
     // Perform the layout
-    mainBox.performLayout(bounds);
+    mainColumn.performLayout(bounds);
 }
 
 void MainComponent::play()
@@ -324,15 +358,16 @@ void MainComponent::handleFileSelection(const juce::File &file)
 
         // Update thumbnail with the actual playback file
         thumbnail->setFile(EngineHelpers::loopAroundClip(*clip1)->getPlaybackFile());
+        currentTrackLabel.setText(file.getFileNameWithoutExtension(), juce::dontSendNotification);
 
         // Create second track and load the same file
         if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
         {
             EngineHelpers::removeAllClips(*track2);
 
-            // Add clip to second track
+            // Add clip to second track with offset
             if (auto clip2 = track2->insertWaveClip(file.getFileNameWithoutExtension(), file,
-                                                    {{tracktion::TimePosition::fromSeconds(1.0),
+                                                    {{tracktion::TimePosition::fromSeconds(trackOffset / 1000.0), // Convert ms to seconds
                                                       tracktion::TimeDuration::fromSeconds(clip1->getSourceLength().inSeconds())},
                                                      {}},
                                                     false))

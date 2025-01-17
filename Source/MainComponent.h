@@ -42,7 +42,8 @@ private:
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public juce::Component
+class MainComponent  : public juce::Component,
+                     public juce::Timer
 {
 public:
     //==============================================================================
@@ -58,6 +59,47 @@ public:
     void loadAudioFile();
     void updateTempo();
     tracktion_engine::WaveAudioClip::Ptr getClip(int trackIndex);
+
+    void mouseDown(const juce::MouseEvent& event) override
+    {
+        if (event.eventComponent == &chopButton)
+        {
+            chopStartTime = juce::Time::getMillisecondCounterHiRes();
+            // Switch crossfader to opposite position
+            float currentPosition = crossfaderSlider.getValue();
+            crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+        }
+    }
+
+    void mouseUp(const juce::MouseEvent& event) override
+    {
+        if (event.eventComponent == &chopButton)
+        {
+            double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
+            double minimumTime = trackOffset; // Convert seconds to milliseconds
+            
+            if (elapsedTime >= minimumTime)
+            {
+                // Switch back immediately
+                float currentPosition = crossfaderSlider.getValue();
+                crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+            }
+            else
+            {
+                // Set up timer for delayed switch back
+                chopReleaseDelay = minimumTime - elapsedTime;
+                startTimer(static_cast<int>(chopReleaseDelay));
+            }
+        }
+    }
+
+    void timerCallback() override
+    {
+        // Timer has finished, perform the delayed crossfade
+        stopTimer();
+        float currentPosition = crossfaderSlider.getValue();
+        crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+    }
 
 private:
     //==============================================================================
@@ -120,6 +162,11 @@ private:
     juce::TextButton tempo100Button { "100%" };
 
     void setTempoPercentage(double percentage);
+
+    double chopStartTime = 0.0;
+    double chopReleaseDelay = 0.0;
+
+    juce::Label currentTrackLabel { "Track Label", "No Track Loaded" };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
