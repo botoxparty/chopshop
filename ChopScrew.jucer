@@ -13,6 +13,10 @@
       <FILE id="NeM6Um" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
     </GROUP>
+    <FILE id="XkW3UG" name="Audiowide-Regular.ttf" compile="0" resource="1"
+          file="Source/Audiowide-Regular.ttf"/>
+    <FILE id="P0nXxS" name="JetBrainsMono-VariableFont_wght.ttf" compile="0"
+          resource="1" file="Source/JetBrainsMono-VariableFont_wght.ttf"/>
   </MAINGROUP>
   <MODULES>
     <MODULE id="ea_soundtouch" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>

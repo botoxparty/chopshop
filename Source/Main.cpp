@@ -64,20 +64,16 @@ public:
                               juce::Colours::black,
                               DocumentWindow::allButtons)
         {
+
             setUsingNativeTitleBar (true);
-            
-            // Apply custom look and feel
-            customLookAndFeel = std::make_unique<CustomLookAndFeel>();
-            setLookAndFeel(customLookAndFeel.get());
-            
             setContentOwned (new MainComponent(), true);
 
-           #if JUCE_IOS || JUCE_ANDROID
-            setFullScreen (true);
-           #else
-            setResizable (true, true);
-            centreWithSize (getWidth(), getHeight());
-           #endif
+            #if JUCE_IOS || JUCE_ANDROID
+                setFullScreen (true);
+            #else
+                setResizable (true, true);
+                centreWithSize (getWidth(), getHeight());
+            #endif
 
             setVisible (true);
         }
@@ -103,7 +99,6 @@ public:
         */
 
     private:
-        std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
     };
 

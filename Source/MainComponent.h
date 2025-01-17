@@ -2,6 +2,7 @@
 
 #include <JuceHeader.h>
 #include "Utilities.h"
+#include "CustomLookAndFeel.h"
 
 // Add this line to enable console output
 #define JUCE_DEBUG 1
@@ -66,6 +67,7 @@ private:
     tracktion_engine::Engine engine { ProjectInfo::projectName };
     tracktion_engine::Edit edit { engine, tracktion_engine::Edit::forEditing };
     juce::Slider tempoSlider;
+    std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
 
     double baseTempo = 120.0;
     double trackOffset = 0.0;

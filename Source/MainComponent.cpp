@@ -21,6 +21,10 @@ MainComponent::MainComponent()
     addAndMakeVisible(tempo100Button);
     addAndMakeVisible(chopButton);
 
+    customLookAndFeel = std::make_unique<CustomLookAndFeel>();
+    setLookAndFeel(customLookAndFeel.get());
+    LookAndFeel::setDefaultLookAndFeel(customLookAndFeel.get());
+
     // Create and set up thumbnail
     thumbnail = std::make_unique<Thumbnail>(edit.getTransport());
     addAndMakeVisible(*thumbnail);
@@ -30,24 +34,29 @@ MainComponent::MainComponent()
     edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
 
     setSize(800, 600);
-    
+
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
 
-    playButton.onClick = [this] { play(); };
-    stopButton.onClick = [this] { stop(); };
-    openButton.onClick = [this] { loadAudioFile(); };
+    playButton.onClick = [this]
+    { play(); };
+    stopButton.onClick = [this]
+    { stop(); };
+    openButton.onClick = [this]
+    { loadAudioFile(); };
 
     tempoSlider.setRange(30.0, 220.0, 0.1);
-    tempoSlider.onDragEnd = [this] { updateTempo(); };
-    
+    tempoSlider.onDragEnd = [this]
+    { updateTempo(); };
+
     // Add and configure tempo label
     addAndMakeVisible(tempoLabel);
 
     // Setup crossfader
     crossfaderSlider.setRange(0.0, 1.0, 0.01);
     crossfaderSlider.setValue(0.0, juce::dontSendNotification);
-    crossfaderSlider.onValueChange = [this] { updateCrossfader(); };
+    crossfaderSlider.onValueChange = [this]
+    { updateCrossfader(); };
 
     // Setup distortion control
     distortionDriveSlider.setRange(1.0, 10.0, 0.1);
@@ -65,13 +74,12 @@ MainComponent::MainComponent()
     // Create and add distortion plugin to track 0
     if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
     {
-              // Creates new instance of Distortion Plugin and inserts to track 1
-        distortionPlugin = edit.getPluginCache().createNewPlugin (DistortionPlugin::xmlTypeName, {});
+        // Creates new instance of Distortion Plugin and inserts to track 1
+        distortionPlugin = edit.getPluginCache().createNewPlugin(DistortionPlugin::xmlTypeName, {});
         track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
-                // Setup slider value source
-        auto gainParam = distortionPlugin->getAutomatableParameterByID ("gain");
-        bindSliderToParameter (distortionDriveSlider, *gainParam);
-
+        // Setup slider value source
+        auto gainParam = distortionPlugin->getAutomatableParameterByID("gain");
+        bindSliderToParameter(distortionDriveSlider, *gainParam);
 
         // Create and add reverb plugin to track 0
         reverbPlugin = edit.getPluginCache().createNewPlugin(ReverbPlugin::xmlTypeName, {});
@@ -95,18 +103,17 @@ MainComponent::MainComponent()
         }
     }
 
-        // Create and add distortion plugin to track 1
+    // Create and add distortion plugin to track 1
     if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
     {
-              // Creates new instance of Distortion Plugin and inserts to track 1
-        distortionPlugin = edit.getPluginCache().createNewPlugin (DistortionPlugin::xmlTypeName, {});
+        // Creates new instance of Distortion Plugin and inserts to track 1
+        distortionPlugin = edit.getPluginCache().createNewPlugin(DistortionPlugin::xmlTypeName, {});
         track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
-                // Setup slider value source
-        auto gainParam = distortionPlugin->getAutomatableParameterByID ("gain");
-        bindSliderToParameter (distortionDriveSlider, *gainParam);
+        // Setup slider value source
+        auto gainParam = distortionPlugin->getAutomatableParameterByID("gain");
+        bindSliderToParameter(distortionDriveSlider, *gainParam);
 
-
-        // Create and add reverb plugin to track 
+        // Create and add reverb plugin to track
         reverbPlugin = edit.getPluginCache().createNewPlugin(ReverbPlugin::xmlTypeName, {});
         track->pluginList.insertPlugin(reverbPlugin, 0, nullptr);
     }
@@ -118,14 +125,19 @@ MainComponent::MainComponent()
     tempo85Button.setButtonText("85%");
     tempo100Button.setButtonText("100%");
 
-    tempo70Button.onClick = [this] { setTempoPercentage(0.70); };
-    tempo75Button.onClick = [this] { setTempoPercentage(0.75); };
-    tempo80Button.onClick = [this] { setTempoPercentage(0.80); };
-    tempo85Button.onClick = [this] { setTempoPercentage(0.85); };
-    tempo100Button.onClick = [this] { setTempoPercentage(1.00); };
+    tempo70Button.onClick = [this]
+    { setTempoPercentage(0.70); };
+    tempo75Button.onClick = [this]
+    { setTempoPercentage(0.75); };
+    tempo80Button.onClick = [this]
+    { setTempoPercentage(0.80); };
+    tempo85Button.onClick = [this]
+    { setTempoPercentage(0.85); };
+    tempo100Button.onClick = [this]
+    { setTempoPercentage(1.00); };
 
     // setup effects
-    
+
     recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     recordButton.onClick = [this]
     {
@@ -152,20 +164,20 @@ MainComponent::~MainComponent()
 }
 
 //==============================================================================
-void MainComponent::paint (juce::Graphics& g)
+void MainComponent::paint(juce::Graphics &g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 
-    g.setFont (juce::FontOptions (16.0f));
-    g.setColour (juce::Colours::white);
+    g.setFont(juce::FontOptions(16.0f));
+    g.setColour(juce::Colours::white);
     // g.drawText ("Hello World!", getLocalBounds(), juce::Justification::centred, true);
 }
 
 void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
-    bounds.reduce(10, 10);  // Add some padding
+    bounds.reduce(10, 10); // Add some padding
 
     // Position thumbnail at the top, taking up about 1/3 of the height
     auto thumbnailHeight = bounds.getHeight() / 3;
@@ -185,7 +197,6 @@ void MainComponent::resized()
     column1.flexDirection = juce::FlexBox::Direction::column;
     column1.items.add(juce::FlexItem(openButton).withHeight(30).withMargin(5));
 
-
     // Create a row for tempo buttons
     auto tempoButtonBox = juce::FlexBox();
     tempoButtonBox.flexDirection = juce::FlexBox::Direction::row;
@@ -194,7 +205,6 @@ void MainComponent::resized()
     tempoButtonBox.items.add(juce::FlexItem(tempo80Button).withFlex(1.0f).withMargin(2));
     tempoButtonBox.items.add(juce::FlexItem(tempo85Button).withFlex(1.0f).withMargin(2));
     tempoButtonBox.items.add(juce::FlexItem(tempo100Button).withFlex(1.0f).withMargin(2));
-
 
     // Column 2 (Tempo and crossfader)
     juce::FlexBox column2;
@@ -229,7 +239,7 @@ void MainComponent::resized()
 
 void MainComponent::play()
 {
-    if(playState == PlayState::Playing) 
+    if (playState == PlayState::Playing)
         return;
 
     // Start transport playback
@@ -243,13 +253,13 @@ void MainComponent::play()
 
 void MainComponent::stop()
 {
-    if(playState == PlayState::Stopped)
+    if (playState == PlayState::Stopped)
         return;
 
     // Stop transport and reset position
     edit.getTransport().stop(true, false);
     edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
-    
+
     playState = PlayState::Stopped;
     stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
@@ -257,13 +267,11 @@ void MainComponent::stop()
 
 void MainComponent::loadAudioFile()
 {
-    EngineHelpers::browseForAudioFile(engine, [this](const juce::File& file)
-    {
-        handleFileSelection(file);
-    });
+    EngineHelpers::browseForAudioFile(engine, [this](const juce::File &file)
+                                      { handleFileSelection(file); });
 }
 
-void MainComponent::handleFileSelection(const juce::File& file)
+void MainComponent::handleFileSelection(const juce::File &file)
 {
     if (!file.existsAsFile())
         return;
@@ -273,12 +281,12 @@ void MainComponent::handleFileSelection(const juce::File& file)
     if (clip1)
     {
         // Create SoundTouch BPM detector
-        soundtouch::BPMDetect bpmDetector(2, 48000);  // Assuming stereo, 48kHz
-        
+        soundtouch::BPMDetect bpmDetector(2, 48000); // Assuming stereo, 48kHz
+
         // Load audio file and get samples
         juce::AudioFormatManager formatManager;
         formatManager.registerBasicFormats();
-        
+
         std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
         if (reader)
         {
@@ -289,7 +297,7 @@ void MainComponent::handleFileSelection(const juce::File& file)
 
             // Process samples through BPM detector
             bpmDetector.inputSamples(buffer.getReadPointer(0), numSamples);
-            
+
             // Get detected BPM
             float detectedBPM = bpmDetector.getBpm();
             DBG("Detected BPM: " << detectedBPM);
@@ -302,7 +310,7 @@ void MainComponent::handleFileSelection(const juce::File& file)
             }
             else
             {
-                baseTempo = 120.0; // fallback value
+                baseTempo = 120.0;                         // fallback value
                 trackOffset = (60.0 / baseTempo) * 1000.0; // Convert to milliseconds
                 tempoSlider.setValue(baseTempo, juce::dontSendNotification);
                 updateTrackOffsetLabel(trackOffset);
@@ -321,12 +329,13 @@ void MainComponent::handleFileSelection(const juce::File& file)
         if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
         {
             EngineHelpers::removeAllClips(*track2);
-            
+
             // Add clip to second track
             if (auto clip2 = track2->insertWaveClip(file.getFileNameWithoutExtension(), file,
-                { { tracktion::TimePosition::fromSeconds(1.0),
-                    tracktion::TimeDuration::fromSeconds(clip1->getSourceLength().inSeconds()) }, {} }, 
-                false))
+                                                    {{tracktion::TimePosition::fromSeconds(1.0),
+                                                      tracktion::TimeDuration::fromSeconds(clip1->getSourceLength().inSeconds())},
+                                                     {}},
+                                                    false))
             {
                 // Configure second clip
                 clip2->setAutoTempo(false);
@@ -347,7 +356,6 @@ void MainComponent::handleFileSelection(const juce::File& file)
             auto distortionPlugin = edit.getPluginCache().createNewPlugin(DistortionPlugin::xmlTypeName, {});
             track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
         }
-
     }
 }
 
@@ -373,7 +381,7 @@ void MainComponent::updateTempo()
 te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
 {
     if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, trackIndex))
-        if (auto clip = dynamic_cast<te::WaveAudioClip*>(track->getClips()[0]))
+        if (auto clip = dynamic_cast<te::WaveAudioClip *>(track->getClips()[0]))
             return *clip;
 
     return {};
@@ -418,21 +426,21 @@ void MainComponent::startRecording()
 {
     // Arm the first track for recording
     armTrack(0, true);
-    
+
     // Start transport recording
     edit.getTransport().record(false);
-    
+
     recordButton.setToggleState(true, juce::NotificationType::dontSendNotification);
 }
 
-void MainComponent::stopRecording() 
+void MainComponent::stopRecording()
 {
     // Stop recording
     edit.getTransport().stop(false, false);
-    
+
     // Disarm track
     armTrack(0, false);
-    
+
     recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
 }
 
