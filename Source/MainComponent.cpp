@@ -1,5 +1,5 @@
 #include "MainComponent.h"
-#include "DistortionEffectDemo.h"
+#include "Parameters.h"
 
 //==============================================================================
 MainComponent::MainComponent()
@@ -13,7 +13,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(currentTrackLabel);
 
     // Register our custom plugin with the engine
-    engine.getPluginManager().createBuiltInType<DistortionPlugin>();
+    // engine.getPluginManager().createBuiltInType<DistortionPlugin>();
 
     addAndMakeVisible(openButton);
     addAndMakeVisible(saveButton);
@@ -69,10 +69,6 @@ MainComponent::MainComponent()
     crossfaderSlider.onValueChange = [this] { updateCrossfader(); };
     crossfaderSlider.setPopupDisplayEnabled(true, false, this);
     crossfaderSlider.setPopupMenuEnabled(false);
-    // Setup distortion control
-    distortionDriveSlider.setRange(1.0, 10.0, 0.1);
-    distortionDriveSlider.setValue(1.0, juce::dontSendNotification);
-    addAndMakeVisible(distortionDriveSlider);
 
     // Setup reverb control
     reverbRoomSizeSlider.setRange(0.0, 1.0, 0.01);
@@ -82,18 +78,11 @@ MainComponent::MainComponent()
     addAndMakeVisible(reverbRoomSizeSlider);
     addAndMakeVisible(reverbWetSlider);
 
-    // Create and add distortion plugin to master track
+    // Create and master track
     if (auto track = edit.getMasterTrack())
     {
-        // Creates new instance of Distortion Plugin and inserts to track 1
-        distortionPlugin = edit.getPluginCache().createNewPlugin(DistortionPlugin::xmlTypeName, {});
-        track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
-        // Setup slider value source
-        auto gainParam = distortionPlugin->getAutomatableParameterByID("gain");
-        bindSliderToParameter(distortionDriveSlider, *gainParam);
-
-        // Create and add reverb plugin to track 0
-        reverbPlugin = edit.getPluginCache().createNewPlugin(ReverbPlugin::xmlTypeName, {});
+        // Create and add reverb plugin
+        reverbPlugin = edit.getPluginCache().createNewPlugin(tracktion_engine::ReverbPlugin::xmlTypeName, {});
         track->pluginList.insertPlugin(reverbPlugin, 0, nullptr);
         if (auto roomSizeParam = reverbPlugin->getAutomatableParameterByID("room size"))
         {
@@ -249,7 +238,6 @@ void MainComponent::resized()
     // Column 3 (Effects)
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
-    column3.items.add(juce::FlexItem(distortionDriveSlider).withHeight(30).withMargin(5));
     column3.items.add(juce::FlexItem(reverbRoomSizeSlider).withHeight(30).withMargin(5));
     column3.items.add(juce::FlexItem(reverbWetSlider).withHeight(30).withMargin(5));
 
@@ -374,14 +362,6 @@ void MainComponent::handleFileSelection(const juce::File &file)
         // Reset crossfader to first track
         crossfaderSlider.setValue(0.0, juce::dontSendNotification);
         updateCrossfader();
-
-        // Create and add distortion plugin to the track
-        if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
-        {
-            // Create distortion plugin instance
-            auto distortionPlugin = edit.getPluginCache().createNewPlugin(DistortionPlugin::xmlTypeName, {});
-            track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
-        }
     }
 }
 
@@ -433,15 +413,6 @@ void MainComponent::setTrackVolume(int trackIndex, float gainDB)
     {
         clip->setGainDB(gainDB);
     }
-}
-
-void MainComponent::updateDistortion()
-{
-    // if (auto plugin = dynamic_cast<DistortionPlugin*>(distortionPlugin.get()))
-    // {
-    //     auto gainParam = plugin->getAutomatableParameterByID ("gain");
-    //     bindSliderToParameter (distortionDriveSlider, *gainParam);
-    // }
 }
 
 void MainComponent::armTrack(int trackIndex, bool arm)

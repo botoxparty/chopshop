@@ -5,8 +5,6 @@
               defines="JUCE_MODAL_LOOPS_PERMITTED=1">
   <MAINGROUP id="yFkC8Y" name="ChopScrew">
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
-      <FILE id="AUCTuR" name="DistortionEffectDemo.h" compile="0" resource="0"
-            file="Source/DistortionEffectDemo.h"/>
       <FILE id="c2VwpY" name="Utilities.h" compile="0" resource="0" file="Source/Utilities.h"/>
       <FILE id="uAKnK4" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="EycTLt" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
@@ -17,6 +15,7 @@
           file="Source/Audiowide-Regular.ttf"/>
     <FILE id="P0nXxS" name="JetBrainsMono-VariableFont_wght.ttf" compile="0"
           resource="1" file="Source/JetBrainsMono-VariableFont_wght.ttf"/>
+    <FILE id="ffxrFQ" name="Parameters.h" compile="0" resource="0" file="Source/Parameters.h"/>
   </MAINGROUP>
   <MODULES>
     <MODULE id="ea_soundtouch" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
