@@ -26,6 +26,8 @@ public:
     {
         // This method is where you should put your application's initialisation code..
 
+        Process::setPriority(Process::HighPriority);
+
         mainWindow.reset (new MainWindow (getApplicationName()));
     }
 
