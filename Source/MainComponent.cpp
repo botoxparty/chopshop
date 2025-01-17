@@ -42,8 +42,15 @@ MainComponent::MainComponent()
     // Setup distortion control
     distortionDriveSlider.setRange(1.0, 10.0, 0.1);
     distortionDriveSlider.setValue(1.0, juce::dontSendNotification);
-    // distortionDriveSlider.onValueChange = [this] { updateDistortion(); };
     addAndMakeVisible(distortionDriveSlider);
+
+    // Setup reverb control
+    reverbRoomSizeSlider.setRange(0.0, 1.0, 0.01);
+    reverbRoomSizeSlider.setValue(0.5, juce::dontSendNotification);
+    reverbWetSlider.setRange(0.0, 1.0, 0.01);
+    reverbWetSlider.setValue(0.33, juce::dontSendNotification);
+    addAndMakeVisible(reverbRoomSizeSlider);
+    addAndMakeVisible(reverbWetSlider);
 
     // Create and add distortion plugin to track 0
     if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
@@ -55,6 +62,27 @@ MainComponent::MainComponent()
         auto gainParam = distortionPlugin->getAutomatableParameterByID ("gain");
         bindSliderToParameter (distortionDriveSlider, *gainParam);
 
+
+        // Create and add reverb plugin to track 0
+        reverbPlugin = edit.getPluginCache().createNewPlugin(ReverbPlugin::xmlTypeName, {});
+        track->pluginList.insertPlugin(reverbPlugin, 0, nullptr);
+        if (auto roomSizeParam = reverbPlugin->getAutomatableParameterByID("room size"))
+        {
+            bindSliderToParameter(reverbRoomSizeSlider, *roomSizeParam);
+        }
+        else
+        {
+            DBG("Failed to find roomSize parameter");
+        }
+
+        if (auto wetParam = reverbPlugin->getAutomatableParameterByID("wet level"))
+        {
+            bindSliderToParameter(reverbWetSlider, *wetParam);
+        }
+        else
+        {
+            DBG("Failed to find wet parameter");
+        }
     }
 
     // setup effects
@@ -89,6 +117,8 @@ void MainComponent::resized()
     tempoSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
     crossfaderSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
     distortionDriveSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
+    reverbRoomSizeSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
+    reverbWetSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
     // Position thumbnail in remaining space
     bounds.reduce(10, 10);  // Add some padding
     thumbnail->setBounds(bounds);

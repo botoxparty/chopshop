@@ -93,5 +93,9 @@ private:
 
     te::Plugin::Ptr distortionPlugin;
 
+    juce::Slider reverbRoomSizeSlider;
+    juce::Slider reverbWetSlider;
+    te::Plugin::Ptr reverbPlugin;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
