@@ -128,6 +128,14 @@ MainComponent::MainComponent()
     resized();
 
     updateButtonStates();
+
+    libraryComponent = std::make_unique<LibraryComponent>();
+    addAndMakeVisible(*libraryComponent);
+
+    // Set up the callback for when a file is selected
+    libraryComponent->onFileSelected = [this](const juce::File& file) {
+        handleFileSelection(file);
+    };
 }
 
 MainComponent::~MainComponent()
@@ -193,6 +201,7 @@ void MainComponent::resized()
     juce::FlexBox column1;
     column1.flexDirection = juce::FlexBox::Direction::column;
     column1.items.add(juce::FlexItem(openButton).withHeight(30).withMargin(5));
+    column1.items.add(juce::FlexItem(*libraryComponent).withFlex(1.0f).withHeight(300).withMargin(5));
     column1.items.add(juce::FlexItem(audioSettingsButton).withHeight(30).withMargin(5));
 
     // Column 2 (Tempo and crossfader)

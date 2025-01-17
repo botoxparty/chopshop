@@ -70,6 +70,9 @@
     "unordered_set": "cpp",
     "variant": "cpp",
     "vector": "cpp",
-    "algorithm": "cpp"
+    "algorithm": "cpp",
+    "atomic": "cpp",
+    "random": "cpp",
+    "thread": "cpp"
   }
 }

@@ -6,6 +6,7 @@
 #include "ReverbComponent.h"
 #include "GamepadManager.h"
 #include "FlangerComponent.h"
+#include "LibraryComponent.h"
 
 // Add these includes for game controller support
 #include <JuceHeader.h>
@@ -102,7 +103,7 @@ private:
 
     PlayState playState { PlayState::Stopped };
 
-    juce::TextButton openButton { "Open" };
+    juce::TextButton openButton { "Browse" };
     juce::TextButton saveButton { "Save" };
     juce::TextButton playButton { "Play" };
     juce::TextButton stopButton { "Stop" };
@@ -145,6 +146,8 @@ private:
     std::unique_ptr<GamepadManager> gamepadManager;
 
     std::unique_ptr<FlangerComponent> flangerComponent;
+
+    std::unique_ptr<LibraryComponent> libraryComponent;
 
     bool isTrackLoaded()
     {
