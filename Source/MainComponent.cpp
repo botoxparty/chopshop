@@ -13,6 +13,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(stopButton);
     addAndMakeVisible(tempoSlider);
     addAndMakeVisible(crossfaderSlider);
+    addAndMakeVisible(recordButton);
 
     // Create and set up thumbnail
     thumbnail = std::make_unique<Thumbnail>(edit.getTransport());
@@ -85,8 +86,37 @@ MainComponent::MainComponent()
         }
     }
 
+        // Create and add distortion plugin to track 1
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
+    {
+              // Creates new instance of Distortion Plugin and inserts to track 1
+        distortionPlugin = edit.getPluginCache().createNewPlugin (DistortionPlugin::xmlTypeName, {});
+        track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
+                // Setup slider value source
+        auto gainParam = distortionPlugin->getAutomatableParameterByID ("gain");
+        bindSliderToParameter (distortionDriveSlider, *gainParam);
+
+
+        // Create and add reverb plugin to track 
+        reverbPlugin = edit.getPluginCache().createNewPlugin(ReverbPlugin::xmlTypeName, {});
+        track->pluginList.insertPlugin(reverbPlugin, 0, nullptr);
+    }
+
     // setup effects
     
+    recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
+    recordButton.onClick = [this]
+    {
+        if (edit.getTransport().isRecording())
+            stopRecording();
+        else
+            startRecording();
+    };
+
+    // Setup track offset label
+    trackOffsetLabel.setJustificationType(juce::Justification::centred);
+    updateTrackOffsetLabel(trackOffset);
+    addAndMakeVisible(trackOffsetLabel);
 }
 
 MainComponent::~MainComponent()
@@ -107,21 +137,51 @@ void MainComponent::paint (juce::Graphics& g)
 void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
-    auto controlsArea = bounds.removeFromLeft(220);  // Space for controls
-
-    // Layout controls
-    openButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    saveButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    playButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    stopButton.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    tempoSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    crossfaderSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    distortionDriveSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    reverbRoomSizeSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    reverbWetSlider.setBounds(controlsArea.removeFromTop(30).reduced(10, 5));
-    // Position thumbnail in remaining space
     bounds.reduce(10, 10);  // Add some padding
-    thumbnail->setBounds(bounds);
+
+    // Position thumbnail at the top, taking up about 1/3 of the height
+    auto thumbnailHeight = bounds.getHeight() / 3;
+    thumbnail->setBounds(bounds.removeFromTop(thumbnailHeight));
+
+    // Add some spacing between thumbnail and controls
+    bounds.removeFromTop(10);
+
+    // Create main horizontal FlexBox
+    juce::FlexBox mainBox;
+    mainBox.flexDirection = juce::FlexBox::Direction::row;
+    mainBox.flexWrap = juce::FlexBox::Wrap::noWrap;
+    mainBox.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
+
+    // Column 1 (Transport controls)
+    juce::FlexBox column1;
+    column1.flexDirection = juce::FlexBox::Direction::column;
+    column1.items.add(juce::FlexItem(openButton).withHeight(30).withMargin(5));
+    column1.items.add(juce::FlexItem(playButton).withHeight(30).withMargin(5));
+    column1.items.add(juce::FlexItem(stopButton).withHeight(30).withMargin(5));
+    column1.items.add(juce::FlexItem(recordButton).withHeight(30).withMargin(5));
+
+    // Column 2 (Tempo and crossfader)
+    juce::FlexBox column2;
+    column2.flexDirection = juce::FlexBox::Direction::column;
+    column2.items.add(juce::FlexItem(trackOffsetLabel).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(saveButton).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(tempoSlider).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(crossfaderSlider).withHeight(30).withMargin(5));
+
+    // Column 3 (Effects)
+    juce::FlexBox column3;
+    column3.flexDirection = juce::FlexBox::Direction::column;
+    column3.items.add(juce::FlexItem(distortionDriveSlider).withHeight(30).withMargin(5));
+    column3.items.add(juce::FlexItem(reverbRoomSizeSlider).withHeight(30).withMargin(5));
+    column3.items.add(juce::FlexItem(reverbWetSlider).withHeight(30).withMargin(5));
+
+    // Add columns to main box
+    mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));
+    mainBox.items.add(juce::FlexItem(column2).withFlex(1.0f));
+    mainBox.items.add(juce::FlexItem(column3).withFlex(1.0f));
+
+    // Perform the layout
+    mainBox.performLayout(bounds);
 }
 
 void MainComponent::play()
@@ -193,11 +253,16 @@ void MainComponent::handleFileSelection(const juce::File& file)
             if (detectedBPM > 0)
             {
                 baseTempo = detectedBPM;
+                trackOffset = (60.0 / baseTempo) * 1000.0; // Convert to milliseconds
                 tempoSlider.setValue(baseTempo, juce::dontSendNotification);
+                updateTrackOffsetLabel(trackOffset);
             }
             else
             {
                 baseTempo = 120.0; // fallback value
+                trackOffset = (60.0 / baseTempo) * 1000.0; // Convert to milliseconds
+                tempoSlider.setValue(baseTempo, juce::dontSendNotification);
+                updateTrackOffsetLabel(trackOffset);
             }
         }
 
@@ -240,7 +305,6 @@ void MainComponent::handleFileSelection(const juce::File& file)
             track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
         }
 
-        play();
     }
 }
 
@@ -297,4 +361,39 @@ void MainComponent::updateDistortion()
     //     auto gainParam = plugin->getAutomatableParameterByID ("gain");
     //     bindSliderToParameter (distortionDriveSlider, *gainParam);
     // }
+}
+
+void MainComponent::armTrack(int trackIndex, bool arm)
+{
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, trackIndex))
+    {
+        EngineHelpers::armTrack(*track, arm);
+    }
+}
+
+void MainComponent::startRecording()
+{
+    // Arm the first track for recording
+    armTrack(0, true);
+    
+    // Start transport recording
+    edit.getTransport().record(false);
+    
+    recordButton.setToggleState(true, juce::NotificationType::dontSendNotification);
+}
+
+void MainComponent::stopRecording() 
+{
+    // Stop recording
+    edit.getTransport().stop(false, false);
+    
+    // Disarm track
+    armTrack(0, false);
+    
+    recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
+}
+
+void MainComponent::updateTrackOffsetLabel(double offset)
+{
+    trackOffsetLabel.setText("Beat Duration: " + juce::String(offset, 1) + " ms", juce::dontSendNotification);
 }

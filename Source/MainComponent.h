@@ -68,6 +68,7 @@ private:
     juce::Slider tempoSlider;
 
     double baseTempo = 120.0;
+    double trackOffset = 0.0;
 
     enum class PlayState {
         Stopped,
@@ -96,6 +97,16 @@ private:
     juce::Slider reverbRoomSizeSlider;
     juce::Slider reverbWetSlider;
     te::Plugin::Ptr reverbPlugin;
+
+    juce::TextButton recordButton { "Record" };
+
+    void armTrack(int trackIndex, bool arm);
+    void startRecording();
+    void stopRecording();
+
+    juce::Label trackOffsetLabel;
+
+    void updateTrackOffsetLabel(double offset);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
