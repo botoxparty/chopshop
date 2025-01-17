@@ -81,8 +81,8 @@ MainComponent::MainComponent()
     addAndMakeVisible(reverbRoomSizeSlider);
     addAndMakeVisible(reverbWetSlider);
 
-    // Create and add distortion plugin to track 0
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+    // Create and add distortion plugin to master track
+    if (auto track = edit.getMasterTrack())
     {
         // Creates new instance of Distortion Plugin and inserts to track 1
         distortionPlugin = edit.getPluginCache().createNewPlugin(DistortionPlugin::xmlTypeName, {});
@@ -112,22 +112,6 @@ MainComponent::MainComponent()
             DBG("Failed to find wet parameter");
         }
     }
-
-    // Create and add distortion plugin to track 1
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
-    {
-        // Creates new instance of Distortion Plugin and inserts to track 1
-        distortionPlugin = edit.getPluginCache().createNewPlugin(DistortionPlugin::xmlTypeName, {});
-        track->pluginList.insertPlugin(distortionPlugin, 0, nullptr);
-        // Setup slider value source
-        auto gainParam = distortionPlugin->getAutomatableParameterByID("gain");
-        bindSliderToParameter(distortionDriveSlider, *gainParam);
-
-        // Create and add reverb plugin to track
-        reverbPlugin = edit.getPluginCache().createNewPlugin(ReverbPlugin::xmlTypeName, {});
-        track->pluginList.insertPlugin(reverbPlugin, 0, nullptr);
-    }
-
     // Configure tempo preset buttons (add after other button configurations)
     tempo70Button.setButtonText("70%");
     tempo75Button.setButtonText("75%");
