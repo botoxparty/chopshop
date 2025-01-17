@@ -433,30 +433,45 @@ void MainComponent::setTempoPercentage(double percentage)
 
 void MainComponent::gamepadButtonPressed(int buttonId)
 {
-    // PS5 button mapping
+    float currentPosition;  // Moved outside switch
+    
     switch (buttonId)
     {
         case SDL_CONTROLLER_BUTTON_A:  // Cross
-            play();
+            chopStartTime = juce::Time::getMillisecondCounterHiRes();
+            currentPosition = crossfaderSlider.getValue();
+            crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
             break;
         case SDL_CONTROLLER_BUTTON_B:  // Circle
-            stop();
+            loadAudioFile();
             break;
         case SDL_CONTROLLER_BUTTON_X:  // Square
-            if (!edit.getTransport().isRecording())
-                startRecording();
-            else
-                stopRecording();
+            stop();
             break;
         case SDL_CONTROLLER_BUTTON_Y:  // Triangle
-            loadAudioFile();
+            play();
             break;
     }
 }
 
 void MainComponent::gamepadButtonReleased(int buttonId)
 {
-    // Handle button releases if needed
+    if (buttonId == SDL_CONTROLLER_BUTTON_A)  // Cross
+    {
+        double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
+        double minimumTime = trackOffset;
+        
+        if (elapsedTime >= minimumTime)
+        {
+            float currentPosition = crossfaderSlider.getValue();
+            crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+        }
+        else
+        {
+            chopReleaseDelay = minimumTime - elapsedTime;
+            startTimer(static_cast<int>(chopReleaseDelay));
+        }
+    }
 }
 
 void MainComponent::gamepadAxisMoved(int axisId, float value)
