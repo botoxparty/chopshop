@@ -70,7 +70,6 @@ MainComponent::MainComponent()
     // Setup reverb control
     reverbComponent = std::make_unique<ReverbComponent>(edit);
     addAndMakeVisible(*reverbComponent);
-    resized();
 
     // Configure tempo preset buttons (add after other button configurations)
     tempo70Button.setButtonText("70%");
@@ -122,6 +121,11 @@ MainComponent::MainComponent()
 
     gamepadManager = std::make_unique<GamepadManager>();
     gamepadManager->addListener(this);
+
+    // Add after reverbComponent initialization
+    flangerComponent = std::make_unique<FlangerComponent>(edit);
+    addAndMakeVisible(*flangerComponent);
+    resized();
 }
 
 MainComponent::~MainComponent()
@@ -211,6 +215,7 @@ void MainComponent::resized()
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
     column3.items.add(juce::FlexItem(*reverbComponent).withHeight(100).withMargin(5));
+    column3.items.add(juce::FlexItem(*flangerComponent).withHeight(100).withMargin(5));
 
     // Add columns to main box
     mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));

@@ -5,6 +5,7 @@
 #include "CustomLookAndFeel.h"
 #include "ReverbComponent.h"
 #include "GamepadManager.h"
+#include "FlangerComponent.h"
 
 // Add these includes for game controller support
 #include <JuceHeader.h>
@@ -142,6 +143,8 @@ private:
 
     // GameController member variables
     std::unique_ptr<GamepadManager> gamepadManager;
+
+    std::unique_ptr<FlangerComponent> flangerComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

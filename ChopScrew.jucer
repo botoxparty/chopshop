@@ -5,6 +5,10 @@
               defines="JUCE_MODAL_LOOPS_PERMITTED=1">
   <MAINGROUP id="yFkC8Y" name="ChopScrew">
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <FILE id="r6EX0r" name="FlangerComponent.cpp" compile="1" resource="0"
+            file="Source/FlangerComponent.cpp"/>
+      <FILE id="v4K91T" name="FlangerComponent.h" compile="0" resource="0"
+            file="Source/FlangerComponent.h"/>
       <FILE id="bWdMat" name="BaseEffectComponent.cpp" compile="1" resource="0"
             file="Source/BaseEffectComponent.cpp"/>
       <FILE id="Sy5aCM" name="BaseEffectComponent.h" compile="0" resource="0"
