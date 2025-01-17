@@ -54,18 +54,20 @@ MainComponent::MainComponent()
     { loadAudioFile(); };
 
     tempoSlider.setRange(30.0, 220.0, 0.1);
-    tempoSlider.onDragEnd = [this]
-    { updateTempo(); };
+    tempoSlider.onValueChange = [this] { updateTempo(); };
 
     // Add and configure tempo label
     addAndMakeVisible(tempoLabel);
 
     // Setup crossfader
+    crossfaderSlider.setName("Crossfader");
+    crossfaderSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    crossfaderSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     crossfaderSlider.setRange(0.0, 1.0, 0.01);
     crossfaderSlider.setValue(0.0, juce::dontSendNotification);
-    crossfaderSlider.onValueChange = [this]
-    { updateCrossfader(); };
-
+    crossfaderSlider.onValueChange = [this] { updateCrossfader(); };
+    crossfaderSlider.setPopupDisplayEnabled(true, false, this);
+    crossfaderSlider.setPopupMenuEnabled(false);
     // Setup distortion control
     distortionDriveSlider.setRange(1.0, 10.0, 0.1);
     distortionDriveSlider.setValue(1.0, juce::dontSendNotification);
@@ -249,7 +251,7 @@ void MainComponent::resized()
     column2.items.add(juce::FlexItem(tempoButtonBox).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(tempoSlider).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(trackOffsetLabel).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(crossfaderSlider).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(crossfaderSlider).withHeight(40).withMargin(5));
     column2.items.add(juce::FlexItem(chopButton).withHeight(30).withMargin(5));
 
     // Column 3 (Effects)
@@ -408,6 +410,10 @@ void MainComponent::updateTempo()
         clip2->setSpeedRatio(ratio);
         clip2->setLength(tracktion::TimeDuration::fromSeconds(clip2->getSourceLength().inSeconds()) / clip2->getSpeedRatio(), true);
     }
+
+    // Update beat duration based on new tempo
+    trackOffset = (60.0 / tempoSlider.getValue()) * 1000.0; // Convert to milliseconds
+    updateTrackOffsetLabel(trackOffset);
 }
 
 te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
@@ -483,5 +489,7 @@ void MainComponent::updateTrackOffsetLabel(double offset)
 
 void MainComponent::setTempoPercentage(double percentage)
 {
+    // Update slider value which will trigger the slider's callback
     tempoSlider.setValue(baseTempo * percentage, juce::sendNotification);
+    
 }
