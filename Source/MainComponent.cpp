@@ -273,22 +273,18 @@ void MainComponent::resized()
 
 void MainComponent::play()
 {
-    if (playState == PlayState::Playing)
-        return;
-
-    // Start transport playback
-    edit.getTransport().play(false);
-    playState = PlayState::Playing;
-    jassert(edit.getTransport().isPlaying());
-
-    stopButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-    playButton.setToggleState(true, juce::NotificationType::dontSendNotification);
+    EngineHelpers::togglePlay(edit);
+    
+    // Update button states based on transport state
+    const bool isPlaying = edit.getTransport().isPlaying();
+    stopButton.setToggleState(!isPlaying, juce::NotificationType::dontSendNotification);
+    playButton.setToggleState(isPlaying, juce::NotificationType::dontSendNotification);
+    playState = isPlaying ? PlayState::Playing : PlayState::Stopped;
 }
 
 void MainComponent::stop()
 {
-    if (playState == PlayState::Stopped)
-        return;
+    EngineHelpers::togglePlay(edit, EngineHelpers::ReturnToStart::yes);
 
     // Stop transport and reset position
     edit.getTransport().stop(true, false);
@@ -356,8 +352,9 @@ void MainComponent::handleFileSelection(const juce::File &file)
         clip1->setAutoPitch(false);
         clip1->setTimeStretchMode(te::TimeStretcher::defaultMode);
 
-        // Update thumbnail with the actual playback file
-        thumbnail->setFile(EngineHelpers::loopAroundClip(*clip1)->getPlaybackFile());
+        auto loopedClip = EngineHelpers::loopAroundClip(*clip1);
+        edit.getTransport().stop(false, false); // Stop playback after loop setup
+        thumbnail->setFile(loopedClip->getPlaybackFile());
         currentTrackLabel.setText(file.getFileNameWithoutExtension(), juce::dontSendNotification);
 
         // Create second track and load the same file

@@ -54,6 +54,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
+    // Toggles playback state and updates UI
     void play();
     void stop();
     void loadAudioFile();
