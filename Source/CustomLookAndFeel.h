@@ -56,13 +56,13 @@ public:
         g.setColour(baseColour);
         g.fillRoundedRectangle(bounds, 3.0f);
 
-        // Add subtle scanline effect
-        if (button.isEnabled())
-        {
-            g.setColour(juce::Colours::black.withAlpha(0.1f));
-            for (int y = 2; y < bounds.getHeight(); y += 4)
-                g.drawHorizontalLine(y, bounds.getX(), bounds.getRight());
-        }
+        // Remove or comment out the scanline effect code
+        // if (button.isEnabled())
+        // {
+        //     g.setColour(juce::Colours::black.withAlpha(0.1f));
+        //     for (int y = 2; y < bounds.getHeight(); y += 4)
+        //         g.drawHorizontalLine(y, bounds.getX(), bounds.getRight());
+        // }
     }
 
     void drawLinearSlider(juce::Graphics& g, int x, int y, int width, int height,

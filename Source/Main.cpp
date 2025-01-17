@@ -66,7 +66,6 @@ public:
                               juce::Colours::black,
                               DocumentWindow::allButtons)
         {
-
             setUsingNativeTitleBar (false);
             setContentOwned (new MainComponent(), true);
 
@@ -74,6 +73,7 @@ public:
                 setFullScreen (true);
             #else
                 setResizable (true, true);
+                setResizeLimits(800, 100, 10000, 10000);
                 centreWithSize (getWidth(), getHeight());
             #endif
 

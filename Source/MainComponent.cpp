@@ -162,10 +162,10 @@ void MainComponent::resized()
     controlBarBox.justifyContent = juce::FlexBox::JustifyContent::flexStart;
     controlBarBox.alignItems = juce::FlexBox::AlignItems::center;
 
-    // Track label with border
+    // Track label with border - modified to take full width
     juce::FlexBox trackLabelBox;
     trackLabelBox.flexDirection = juce::FlexBox::Direction::row;
-    trackLabelBox.items.add(juce::FlexItem(currentTrackLabel).withFlex(1.0f).withHeight(30).withMargin(5));
+    trackLabelBox.items.add(juce::FlexItem(currentTrackLabel).withFlex(1.0f).withHeight(30).withMargin(2));
 
     // Transport controls
     juce::FlexBox transportBox;
@@ -174,7 +174,8 @@ void MainComponent::resized()
     transportBox.items.add(juce::FlexItem(stopButton).withWidth(80).withHeight(30).withMargin(2));
     transportBox.items.add(juce::FlexItem(recordButton).withWidth(80).withHeight(30).withMargin(2));
 
-    controlBarBox.items.add(juce::FlexItem(trackLabelBox).withWidth(210));
+    // Modified to make trackLabelBox take remaining space
+    controlBarBox.items.add(juce::FlexItem(trackLabelBox).withFlex(1.0f));
     controlBarBox.items.add(juce::FlexItem(transportBox).withWidth(260));
 
     // Add control bar to main column
