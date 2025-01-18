@@ -1,4 +1,5 @@
 #include "MainComponent.h"
+#include <algorithm>
 
 //==============================================================================
 MainComponent::MainComponent()
@@ -45,7 +46,7 @@ MainComponent::MainComponent()
     // Set initial position
     edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
 
-    setSize(800, 600);
+    setSize(1024, 768);
 
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
@@ -254,6 +255,7 @@ void MainComponent::resized()
     column2.items.add(juce::FlexItem(trackOffsetLabel).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(crossfaderSlider).withHeight(40).withMargin(5));
     column2.items.add(juce::FlexItem(chopButton).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
 
     // Column 3 (Effects)
     juce::FlexBox column3;
@@ -261,7 +263,6 @@ void MainComponent::resized()
     column3.items.add(juce::FlexItem(*reverbComponent).withHeight(100).withMargin(5));
     column3.items.add(juce::FlexItem(*delayComponent).withHeight(100).withMargin(5));
     column3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMinHeight(180).withMargin(5));
-    column3.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
 
     // Add columns to main box
     mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));
@@ -298,6 +299,7 @@ void MainComponent::stop()
     playState = PlayState::Stopped;
     stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
+    playButton.setButtonText("Play");
 
     updateButtonStates();
 }
@@ -317,9 +319,6 @@ void MainComponent::handleFileSelection(const juce::File &file)
     auto clip1 = EngineHelpers::loadAudioFileAsClip(edit, file);
     if (clip1)
     {
-        // Create SoundTouch BPM detector
-        soundtouch::BPMDetect bpmDetector(2, 48000); // Assuming stereo, 48kHz
-
         // Load audio file and get samples
         juce::AudioFormatManager formatManager;
         formatManager.registerBasicFormats();
@@ -327,17 +326,44 @@ void MainComponent::handleFileSelection(const juce::File &file)
         std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
         if (reader)
         {
-            // Read audio data
-            const int numSamples = static_cast<int>(reader->lengthInSamples);
-            juce::AudioBuffer<float> buffer(reader->numChannels, numSamples);
-            reader->read(&buffer, 0, numSamples, 0, true, true);
-
-            // Process samples through BPM detector
-            bpmDetector.inputSamples(buffer.getReadPointer(0), numSamples);
-
-            // Get detected BPM
-            float detectedBPM = bpmDetector.getBpm();
-            DBG("Detected BPM: " << detectedBPM);
+            // Create aubio tempo detector
+            uint_t win_s = 1024;                // window size
+            uint_t hop_s = win_s / 2;           // hop size
+            aubio_tempo_t* tempo_detector = new_aubio_tempo("default", win_s, hop_s, reader->sampleRate);
+            
+            // Read audio data in chunks
+            juce::AudioBuffer<float> buffer(1, win_s); // Mono buffer
+            float* tempo_out = new float[2];           // Tempo output buffer
+            fvec_t* tempo_buf = new_fvec(2);          // Aubio output vector
+            
+            float total_beats = 0;
+            int num_beats = 0;
+            
+            for (int pos = 0; pos < reader->lengthInSamples; pos += hop_s)
+            {
+                reader->read(&buffer, 0, win_s, pos, true, false);
+                // Create a temporary buffer and copy the data
+                float* input_data = new float[win_s];
+                std::memcpy(input_data, buffer.getReadPointer(0), win_s * sizeof(float));
+                fvec_t input_buf = { win_s, input_data };
+                aubio_tempo_do(tempo_detector, &input_buf, tempo_buf);
+                delete[] input_data;
+                
+                if (tempo_buf->data[0] != 0)
+                {
+                    total_beats++;
+                }
+            }
+            
+            // Calculate BPM
+            float detectedBPM = (total_beats * 60.0f * reader->sampleRate) / 
+                               (reader->lengthInSamples);
+            
+            // Cleanup
+            del_aubio_tempo(tempo_detector);
+            del_fvec(tempo_buf);
+            delete[] tempo_out;
+            
             if (detectedBPM > 0)
             {
                 baseTempo = detectedBPM;
@@ -372,7 +398,7 @@ void MainComponent::handleFileSelection(const juce::File &file)
 
             // Add clip to second track with offset
             if (auto clip2 = track2->insertWaveClip(file.getFileNameWithoutExtension(), file,
-                                                    {{tracktion::TimePosition::fromSeconds(trackOffset / 1000.0), // Convert ms to seconds
+                                                    {{tracktion::TimePosition::fromSeconds(-trackOffset / 1000.0), // Convert ms to seconds
                                                       tracktion::TimeDuration::fromSeconds(clip1->getSourceLength().inSeconds())},
                                                      {}},
                                                     false))

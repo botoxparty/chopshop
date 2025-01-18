@@ -29,6 +29,7 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     mixSlider.setTextValueSuffix("%");
     mixSlider.setNumDecimalPlacesToDisplay(0);
     
+    
     lengthSlider.setTextValueSuffix(" ms");
     lengthSlider.setNumDecimalPlacesToDisplay(0);
     
@@ -50,7 +51,10 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
             DBG("Feedback parameter not found");
             
         if (auto mixParam = plugin->getAutomatableParameterByID("mix proportion"))
+        {
             bindSliderToParameter(mixSlider, *mixParam);
+            mixParam->setParameter(0.0f, juce::sendNotification); // Set mix to 0% by default
+        }
         else
             DBG("Mix parameter not found");
             

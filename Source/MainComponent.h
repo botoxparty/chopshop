@@ -9,6 +9,7 @@
 #include "LibraryComponent.h"
 #include "VinylBrakeComponent.h"
 #include "DelayComponent.h"
+#include <aubio/aubio.h>
 // Add this line to enable console output
 #define JUCE_DEBUG 1
 
@@ -17,9 +18,9 @@
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public juce::Component,
-                     public juce::Timer,
-                     public GamepadManager::Listener
+class MainComponent : public juce::Component,
+                      public juce::Timer,
+                      public GamepadManager::Listener
 {
 public:
     //==============================================================================
@@ -27,13 +28,13 @@ public:
     ~MainComponent() override;
 
     //==============================================================================
-    void paint (juce::Graphics&) override;
+    void paint(juce::Graphics &) override;
     void resized() override;
 
     // GameControllerListener overrides
-    void gamepadButtonPressed (int buttonId);
-    void gamepadButtonReleased (int buttonId);
-    void gamepadAxisMoved (int axisId, float newValue);
+    void gamepadButtonPressed(int buttonId);
+    void gamepadButtonReleased(int buttonId);
+    void gamepadAxisMoved(int axisId, float newValue);
     // Toggles playback state and updates UI
     void play();
     void stop();
@@ -41,7 +42,7 @@ public:
     void updateTempo();
     tracktion_engine::WaveAudioClip::Ptr getClip(int trackIndex);
 
-    void mouseDown(const juce::MouseEvent& event) override
+    void mouseDown(const juce::MouseEvent &event) override
     {
         if (event.eventComponent == &chopButton)
         {
@@ -52,13 +53,13 @@ public:
         }
     }
 
-    void mouseUp(const juce::MouseEvent& event) override
+    void mouseUp(const juce::MouseEvent &event) override
     {
         if (event.eventComponent == &chopButton)
         {
             double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
             double minimumTime = trackOffset; // Convert seconds to milliseconds
-            
+
             if (elapsedTime >= minimumTime)
             {
                 // Switch back immediately
@@ -85,30 +86,31 @@ public:
 
 private:
     //==============================================================================
-    tracktion_engine::Engine engine { ProjectInfo::projectName };
-    tracktion_engine::Edit edit { engine, tracktion_engine::Edit::forEditing };
+    tracktion_engine::Engine engine{ProjectInfo::projectName};
+    tracktion_engine::Edit edit{engine, tracktion_engine::Edit::forEditing};
     juce::Slider tempoSlider;
     std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
-    juce::TextButton audioSettingsButton { "Audio Settings" };
+    juce::TextButton audioSettingsButton{"Audio Settings"};
 
     double baseTempo = 120.0;
     double trackOffset = 0.0;
 
-    enum class PlayState {
+    enum class PlayState
+    {
         Stopped,
         Playing,
         Paused
     };
 
-    PlayState playState { PlayState::Stopped };
+    PlayState playState{PlayState::Stopped};
 
-    juce::TextButton openButton { "Browse" };
-    juce::TextButton saveButton { "Save" };
-    juce::TextButton playButton { "Play" };
-    juce::TextButton stopButton { "Stop" };
-    juce::TextButton chopButton { "Chop" };
+    juce::TextButton openButton{"Browse"};
+    juce::TextButton saveButton{"Save"};
+    juce::TextButton playButton{"Play"};
+    juce::TextButton stopButton{"Stop"};
+    juce::TextButton chopButton{"Chop"};
 
-    void handleFileSelection(const juce::File& file);
+    void handleFileSelection(const juce::File &file);
 
     juce::Slider crossfaderSlider;
     void updateCrossfader();
@@ -116,7 +118,7 @@ private:
 
     std::unique_ptr<Thumbnail> thumbnail;
 
-    juce::TextButton recordButton { "Record" };
+    juce::TextButton recordButton{"Record"};
 
     void armTrack(int trackIndex, bool arm);
     void startRecording();
@@ -126,22 +128,22 @@ private:
 
     void updateTrackOffsetLabel(double offset);
 
-    juce::TextButton tempo70Button  { "70%" };
-    juce::TextButton tempo75Button  { "75%" };
-    juce::TextButton tempo80Button  { "80%" };
-    juce::TextButton tempo85Button  { "85%" };
-    juce::TextButton tempo100Button { "100%" };
+    juce::TextButton tempo70Button{"70%"};
+    juce::TextButton tempo75Button{"75%"};
+    juce::TextButton tempo80Button{"80%"};
+    juce::TextButton tempo85Button{"85%"};
+    juce::TextButton tempo100Button{"100%"};
 
     void setTempoPercentage(double percentage);
 
     double chopStartTime = 0.0;
     double chopReleaseDelay = 0.0;
 
-    juce::Label currentTrackLabel { "Track Label", "No Track Loaded" };
+    juce::Label currentTrackLabel{"Track Label", "No Track Loaded"};
 
-    te::VolumeAndPanPlugin* volumeAndPan1 = nullptr;
-    te::VolumeAndPanPlugin* volumeAndPan2 = nullptr;
-    
+    te::VolumeAndPanPlugin *volumeAndPan1 = nullptr;
+    te::VolumeAndPanPlugin *volumeAndPan2 = nullptr;
+
     // GameController member variables
     std::unique_ptr<GamepadManager> gamepadManager;
 
@@ -166,11 +168,9 @@ private:
         recordButton.setEnabled(trackLoaded);
     }
 
-
-    juce::Label positionLabel { "Position Label", "00:00:00.000 | 1|1|000" };
+    juce::Label positionLabel{"Position Label", "00:00:00.000 | 1|1|000"};
 
     void updatePositionLabel();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
-
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

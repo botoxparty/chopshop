@@ -66,11 +66,12 @@
   </MODULES>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX" extraLinkerFlags="-lSDL2">
+    <XCODE_MAC targetFolder="Builds/MacOSX" extraLinkerFlags="-lSDL2 -laubio">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" targetName="ChopScrew" headerPath="/opt/homebrew/include"
-                       libraryPath="/opt/homebrew/lib"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="ChopScrew"/>
+                       libraryPath="/opt/homebrew/lib" extraLinkerFlags="-laubio"/>
+        <CONFIGURATION isDebug="0" name="Release" targetName="ChopScrew" headerPath="/opt/homebrew/include"
+                       libraryPath="/opt/homebrew/lib" extraLinkerFlags="-laubio"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../../../../Applications/JUCE/modules"/>
