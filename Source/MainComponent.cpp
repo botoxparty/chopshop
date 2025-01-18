@@ -6,7 +6,6 @@ MainComponent::MainComponent()
     // Add this near the start of the constructor, before other component setup
     currentTrackLabel.setJustificationType(juce::Justification::centred);
     currentTrackLabel.setText("No Track Loaded", juce::dontSendNotification);
-    currentTrackLabel.setColour(juce::Label::outlineColourId, juce::Colours::grey);
     currentTrackLabel.setFont(juce::Font(16.0f));
     currentTrackLabel.setMinimumHorizontalScale(1.0f);
     addAndMakeVisible(currentTrackLabel);
@@ -149,6 +148,9 @@ MainComponent::MainComponent()
         EngineHelpers::removeAllClips(*track2);
         volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin*>(track2->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
     }
+
+    vinylBrakeComponent = std::make_unique<VinylBrakeComponent>(edit);
+    addAndMakeVisible(*vinylBrakeComponent);
 }
 
 MainComponent::~MainComponent()
@@ -241,6 +243,7 @@ void MainComponent::resized()
     column3.flexDirection = juce::FlexBox::Direction::column;
     column3.items.add(juce::FlexItem(*reverbComponent).withHeight(100).withMargin(5));
     column3.items.add(juce::FlexItem(*flangerComponent).withHeight(100).withMargin(5));
+    column3.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
 
     // Add columns to main box
     mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));

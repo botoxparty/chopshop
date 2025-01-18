@@ -5,6 +5,10 @@
               defines="JUCE_MODAL_LOOPS_PERMITTED=1">
   <MAINGROUP id="yFkC8Y" name="ChopScrew">
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <FILE id="TLqqZc" name="VinylBrakeComponent.cpp" compile="1" resource="0"
+            file="Source/VinylBrakeComponent.cpp"/>
+      <FILE id="zeJeEn" name="VinylBrakeComponent.h" compile="0" resource="0"
+            file="Source/VinylBrakeComponent.h"/>
       <FILE id="QUHZRH" name="LibraryComponent.cpp" compile="1" resource="0"
             file="Source/LibraryComponent.cpp"/>
       <FILE id="y1Dzwv" name="LibraryComponent.h" compile="0" resource="0"

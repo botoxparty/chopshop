@@ -7,7 +7,7 @@
 #include "GamepadManager.h"
 #include "FlangerComponent.h"
 #include "LibraryComponent.h"
-
+#include "VinylBrakeComponent.h"
 // Add these includes for game controller support
 #include <JuceHeader.h>
 
@@ -166,6 +166,8 @@ private:
 
     te::VolumeAndPanPlugin* volumeAndPan1 = nullptr;
     te::VolumeAndPanPlugin* volumeAndPan2 = nullptr;
-
+    
+    std::unique_ptr<VinylBrakeComponent> vinylBrakeComponent;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
