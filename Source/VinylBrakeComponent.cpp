@@ -33,7 +33,7 @@ VinylBrakeComponent::VinylBrakeComponent(tracktion_engine::Edit& edit)
 
 void VinylBrakeComponent::resized()
 {
-    auto bounds = getLocalBounds();
+    auto bounds = getEffectiveArea().toNearestInt();
     auto buttonHeight = 30;
     
     // Decay time section

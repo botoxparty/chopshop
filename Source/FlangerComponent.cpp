@@ -24,18 +24,26 @@ FlangerComponent::FlangerComponent(tracktion_engine::Edit& edit)
     widthLabel.setJustificationType(juce::Justification::centred);
     mixLabel.setJustificationType(juce::Justification::centred);
     
-    // Configure sliders
+    // Configure sliders as rotary dials
     depthSlider.setTextValueSuffix("");
     depthSlider.setNumDecimalPlacesToDisplay(2);
+    depthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    depthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     speedSlider.setTextValueSuffix(" Hz");
     speedSlider.setNumDecimalPlacesToDisplay(2);
+    speedSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    speedSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     widthSlider.setTextValueSuffix("");
     widthSlider.setNumDecimalPlacesToDisplay(2);
+    widthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    widthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     mixSlider.setTextValueSuffix("%");
     mixSlider.setNumDecimalPlacesToDisplay(0);
+    mixSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    mixSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     addAndMakeVisible(depthLabel);
     addAndMakeVisible(speedLabel);
@@ -75,26 +83,30 @@ FlangerComponent::FlangerComponent(tracktion_engine::Edit& edit)
 
 void FlangerComponent::resized()
 {
-    auto bounds = getLocalBounds();
-    auto sliderHeight = bounds.getHeight() / 4;
+    auto bounds = getEffectiveArea();
     
-    // Depth section
-    auto depthBounds = bounds.removeFromTop(sliderHeight);
-    depthLabel.setBounds(depthBounds.removeFromTop(20));
-    depthSlider.setBounds(depthBounds);
+    // Create a grid layout
+    juce::Grid grid;
+    grid.rowGap = juce::Grid::Px(4);
+    grid.columnGap = juce::Grid::Px(4);
     
-    // Speed section
-    auto speedBounds = bounds.removeFromTop(sliderHeight);
-    speedLabel.setBounds(speedBounds.removeFromTop(20));
-    speedSlider.setBounds(speedBounds);
+    using Track = juce::Grid::TrackInfo;
+    using Fr = juce::Grid::Fr;
     
-    // Width section
-    auto widthBounds = bounds.removeFromTop(sliderHeight);
-    widthLabel.setBounds(widthBounds.removeFromTop(20));
-    widthSlider.setBounds(widthBounds);
+    grid.templateRows = { Track(Fr(1)), Track(Fr(2)) };    // Label row, Dial row
+    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
     
-    // Mix section
-    auto mixBounds = bounds;
-    mixLabel.setBounds(mixBounds.removeFromTop(20));
-    mixSlider.setBounds(mixBounds);
+    // Add items to grid
+    grid.items = {
+        juce::GridItem(depthLabel),
+        juce::GridItem(speedLabel),
+        juce::GridItem(widthLabel),
+        juce::GridItem(mixLabel),
+        juce::GridItem(depthSlider),
+        juce::GridItem(speedSlider),
+        juce::GridItem(widthSlider),
+        juce::GridItem(mixSlider)
+    };
+    
+    grid.performLayout(bounds.toNearestInt());
 }

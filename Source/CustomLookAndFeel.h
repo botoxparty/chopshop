@@ -12,20 +12,19 @@ public:
         // Override the default typeface for all fonts
         setDefaultSansSerifTypeface(getCustomFont().getTypefacePtr());
 
-        // Matrix-inspired colors
-        const auto matrixGreen = juce::Colour(0xFF00FF41);      // Bright matrix green
-        const auto darkGreen = juce::Colour(0xFF003B00);        // Dark green for backgrounds
-        const auto black = juce::Colour(0xFF000000);            // Pure black
-        const auto darkerGreen = juce::Colour(0xFF002200);      // Darker green for contrast
-
+        // Wireframe-inspired colors
+        const auto wireColor = juce::Colour(0xFF00FF41);      // Bright matrix green
+        const auto darkWire = juce::Colour(0xFF003B00);       // Dark green for backgrounds
+        const auto black = juce::Colour(0xFF000000);          // Pure black
+        
         setColour(juce::ResizableWindow::backgroundColourId, black);
-        setColour(juce::TextButton::buttonColourId, darkGreen);
-        setColour(juce::TextButton::buttonOnColourId, matrixGreen);
-        setColour(juce::TextButton::textColourOffId, matrixGreen);
-        setColour(juce::TextButton::textColourOnId, black);
-        setColour(juce::Slider::thumbColourId, matrixGreen);
-        setColour(juce::Slider::trackColourId, darkerGreen);
-        setColour(juce::Label::textColourId, matrixGreen);
+        setColour(juce::TextButton::buttonColourId, black);
+        setColour(juce::TextButton::buttonOnColourId, black);
+        setColour(juce::TextButton::textColourOffId, wireColor);
+        setColour(juce::TextButton::textColourOnId, wireColor);
+        setColour(juce::Slider::thumbColourId, wireColor);
+        setColour(juce::Slider::trackColourId, wireColor.withAlpha(0.3f));
+        setColour(juce::Label::textColourId, wireColor);
     }
 
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, 
@@ -34,35 +33,29 @@ public:
                             bool shouldDrawButtonAsDown) override
     {
         auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
-        auto baseColour = backgroundColour;
-        const auto matrixGreen = juce::Colour(0xFF00FF41);
+        const auto wireColor = juce::Colour(0xFF00FF41);
 
-        if (shouldDrawButtonAsDown)
-            baseColour = matrixGreen;
-        else if (shouldDrawButtonAsHighlighted)
-            baseColour = baseColour.brighter(0.3f);
-
-        // Matrix-style glow effect
-        if (button.isEnabled())
-        {
-            for (int i = 0; i < 4; ++i)
-            {
-                auto glow = bounds.expanded(i * 1.0f);
-                g.setColour(matrixGreen.withAlpha(0.15f - i * 0.03f));
-                g.drawRoundedRectangle(glow, 3.0f, 1.0f);
-            }
-        }
-
-        g.setColour(baseColour);
-        g.fillRoundedRectangle(bounds, 3.0f);
-
-        // Remove or comment out the scanline effect code
-        // if (button.isEnabled())
-        // {
-        //     g.setColour(juce::Colours::black.withAlpha(0.1f));
-        //     for (int y = 2; y < bounds.getHeight(); y += 4)
-        //         g.drawHorizontalLine(y, bounds.getX(), bounds.getRight());
-        // }
+        // Draw wireframe rectangle
+        g.setColour(wireColor.withAlpha(shouldDrawButtonAsDown ? 0.8f : 
+                                       shouldDrawButtonAsHighlighted ? 0.6f : 0.4f));
+        
+        // Main outline
+        g.drawRect(bounds, 1.0f);
+        
+        // Corner details
+        float cornerSize = 4.0f;
+        // Top left
+        g.drawLine(bounds.getX(), bounds.getY(), bounds.getX() + cornerSize, bounds.getY(), 1.0f);
+        g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getY() + cornerSize, 1.0f);
+        // Top right
+        g.drawLine(bounds.getRight() - cornerSize, bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);
+        g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getY() + cornerSize, 1.0f);
+        // Bottom left
+        g.drawLine(bounds.getX(), bounds.getBottom() - cornerSize, bounds.getX(), bounds.getBottom(), 1.0f);
+        g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getX() + cornerSize, bounds.getBottom(), 1.0f);
+        // Bottom right
+        g.drawLine(bounds.getRight(), bounds.getBottom() - cornerSize, bounds.getRight(), bounds.getBottom(), 1.0f);
+        g.drawLine(bounds.getRight() - cornerSize, bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);
     }
 
     void drawLinearSlider(juce::Graphics& g, int x, int y, int width, int height,
@@ -224,6 +217,49 @@ public:
                 g.fillRect(startX, y, lineWidth * 2.0f, 1.0f);
             }
         }
+    }
+
+    void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
+                         float sliderPosProportional, float rotaryStartAngle,
+                         float rotaryEndAngle, juce::Slider& slider) override
+    {
+        const auto matrixGreen = juce::Colour(0xFF00FF41);
+        auto bounds = juce::Rectangle<float>(x, y, width, height);
+        auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.4f;
+        auto centreX = bounds.getCentreX();
+        auto centreY = bounds.getCentreY();
+        auto angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
+        
+        // Draw outer glow rings
+        for (int i = 3; i > 0; --i)
+        {
+            g.setColour(matrixGreen.withAlpha(0.1f * i));
+            g.drawEllipse(centreX - radius - i * 2, 
+                         centreY - radius - i * 2,
+                         (radius + i * 2) * 2,
+                         (radius + i * 2) * 2, 
+                         1.0f);
+        }
+        
+        // Draw background circle
+        g.setColour(matrixGreen.withAlpha(0.1f));
+        g.fillEllipse(centreX - radius, centreY - radius, radius * 2, radius * 2);
+        
+        // Draw value arc
+        juce::Path valueArc;
+        valueArc.addArc(centreX - radius, centreY - radius, radius * 2, radius * 2,
+                        rotaryStartAngle, angle, true);
+        g.setColour(matrixGreen);
+        g.strokePath(valueArc, juce::PathStrokeType(2.0f));
+        
+        // Draw pointer
+        juce::Path pointer;
+        auto pointerLength = radius * 0.8f;
+        auto pointerThickness = 2.0f;
+        pointer.addRectangle(-pointerThickness * 0.5f, -radius, pointerThickness, pointerLength);
+        pointer.applyTransform(juce::AffineTransform::rotation(angle).translated(centreX, centreY));
+        g.setColour(matrixGreen);
+        g.fillPath(pointer);
     }
 
     static const juce::Font getCustomFont()

@@ -25,13 +25,19 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     // Configure sliders
     feedbackSlider.setTextValueSuffix(" dB");
     feedbackSlider.setNumDecimalPlacesToDisplay(1);
+    // In your effect components (DelayComponent, ReverbComponent, etc.), modify the slider style:
+    feedbackSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    feedbackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     mixSlider.setTextValueSuffix("%");
     mixSlider.setNumDecimalPlacesToDisplay(0);
-    
+    mixSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    mixSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     lengthSlider.setTextValueSuffix(" ms");
     lengthSlider.setNumDecimalPlacesToDisplay(0);
+    lengthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    lengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     addAndMakeVisible(feedbackLabel);
     addAndMakeVisible(mixLabel);
@@ -67,21 +73,29 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
 
 void DelayComponent::resized()
 {
-    auto bounds = getLocalBounds();
-    auto sliderHeight = bounds.getHeight() / 3;
+    auto bounds = getEffectiveArea();
+    const int dialSize = juce::jmin(bounds.getWidth() / 3, bounds.getHeight() / 2);
     
-    // Feedback section
-    auto feedbackBounds = bounds.removeFromTop(sliderHeight);
-    feedbackLabel.setBounds(feedbackBounds.removeFromTop(20));
-    feedbackSlider.setBounds(feedbackBounds);
+    // Create a grid layout
+    juce::Grid grid;
+    grid.rowGap = juce::Grid::Px(4);
+    grid.columnGap = juce::Grid::Px(4);
     
-    // Mix section
-    auto mixBounds = bounds.removeFromTop(sliderHeight);
-    mixLabel.setBounds(mixBounds.removeFromTop(20));
-    mixSlider.setBounds(mixBounds);
+    using Track = juce::Grid::TrackInfo;
+    using Fr = juce::Grid::Fr;
     
-    // Length section
-    auto lengthBounds = bounds;
-    lengthLabel.setBounds(lengthBounds.removeFromTop(20));
-    lengthSlider.setBounds(lengthBounds);
+    grid.templateRows = { Track(Fr(1)), Track(Fr(2)) };    // Label row, Dial row
+    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
+    
+    // Add items to grid
+    grid.items = {
+        juce::GridItem(feedbackLabel),
+        juce::GridItem(mixLabel),
+        juce::GridItem(lengthLabel),
+        juce::GridItem(feedbackSlider),
+        juce::GridItem(mixSlider),
+        juce::GridItem(lengthSlider)
+    };
+    
+    grid.performLayout(bounds.toNearestInt());
 }

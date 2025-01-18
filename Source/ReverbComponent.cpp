@@ -13,9 +13,13 @@ ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
     // Configure sliders
     reverbRoomSizeSlider.setTextValueSuffix("");
     reverbRoomSizeSlider.setNumDecimalPlacesToDisplay(2);
+    reverbRoomSizeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    reverbRoomSizeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     reverbWetSlider.setTextValueSuffix("");
     reverbWetSlider.setNumDecimalPlacesToDisplay(2);
+    reverbWetSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    reverbWetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     addAndMakeVisible(roomSizeLabel);
     addAndMakeVisible(wetLabel);
@@ -37,16 +41,26 @@ ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
 
 void ReverbComponent::resized()
 {
-    auto bounds = getLocalBounds();
-    auto sliderHeight = bounds.getHeight() / 2;
+    auto bounds = getEffectiveArea();
     
-    // Room size section
-    auto roomSizeBounds = bounds.removeFromTop(sliderHeight);
-    roomSizeLabel.setBounds(roomSizeBounds.removeFromTop(20));
-    reverbRoomSizeSlider.setBounds(roomSizeBounds);
+    // Create a grid layout
+    juce::Grid grid;
+    grid.rowGap = juce::Grid::Px(4);
+    grid.columnGap = juce::Grid::Px(4);
     
-    // Wet level section
-    auto wetBounds = bounds;
-    wetLabel.setBounds(wetBounds.removeFromTop(20));
-    reverbWetSlider.setBounds(wetBounds);
+    using Track = juce::Grid::TrackInfo;
+    using Fr = juce::Grid::Fr;
+    
+    grid.templateRows = { Track(Fr(1)), Track(Fr(2)) };    // Label row, Dial row
+    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)) };
+    
+    // Add items to grid
+    grid.items = {
+        juce::GridItem(roomSizeLabel),
+        juce::GridItem(wetLabel),
+        juce::GridItem(reverbRoomSizeSlider),
+        juce::GridItem(reverbWetSlider)
+    };
+    
+    grid.performLayout(bounds.toNearestInt());
 } 
