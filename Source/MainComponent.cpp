@@ -326,43 +326,31 @@ void MainComponent::handleFileSelection(const juce::File &file)
         std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
         if (reader)
         {
-            // Create aubio tempo detector
-            uint_t win_s = 1024;                // window size
-            uint_t hop_s = win_s / 2;           // hop size
-            aubio_tempo_t* tempo_detector = new_aubio_tempo("default", win_s, hop_s, reader->sampleRate);
+            const float minTempo = 60.0f;
+            const float maxTempo = 200.0f;
+            const int minPeakDistance = static_cast<int>(reader->sampleRate * 0.01); // 10ms
             
-            // Read audio data in chunks
-            juce::AudioBuffer<float> buffer(1, win_s); // Mono buffer
-            float* tempo_out = new float[2];           // Tempo output buffer
-            fvec_t* tempo_buf = new_fvec(2);          // Aubio output vector
+            // Create MiniBPM detector
+            breakfastquay::MiniBPM bpmDetector(reader->sampleRate);
+            bpmDetector.setBPMRange(60, 180);  // typical range for music
             
-            float total_beats = 0;
-            int num_beats = 0;
+            // Process audio in chunks
+            const int blockSize = 1024;
+            juce::AudioBuffer<float> buffer(1, blockSize);
+            std::vector<float> samples(blockSize);
             
-            for (int pos = 0; pos < reader->lengthInSamples; pos += hop_s)
+            for (int pos = 0; pos < reader->lengthInSamples; pos += blockSize) 
             {
-                reader->read(&buffer, 0, win_s, pos, true, false);
-                // Create a temporary buffer and copy the data
-                float* input_data = new float[win_s];
-                std::memcpy(input_data, buffer.getReadPointer(0), win_s * sizeof(float));
-                fvec_t input_buf = { win_s, input_data };
-                aubio_tempo_do(tempo_detector, &input_buf, tempo_buf);
-                delete[] input_data;
+                const int numSamples = std::min(blockSize, 
+                    static_cast<int>(reader->lengthInSamples - pos));
+                    
+                reader->read(&buffer, 0, numSamples, pos, true, false);
+                memcpy(samples.data(), buffer.getReadPointer(0), numSamples * sizeof(float));
                 
-                if (tempo_buf->data[0] != 0)
-                {
-                    total_beats++;
-                }
+                bpmDetector.process(samples.data(), numSamples);
             }
             
-            // Calculate BPM
-            float detectedBPM = (total_beats * 60.0f * reader->sampleRate) / 
-                               (reader->lengthInSamples);
-            
-            // Cleanup
-            del_aubio_tempo(tempo_detector);
-            del_fvec(tempo_buf);
-            delete[] tempo_out;
+            float detectedBPM = bpmDetector.estimateTempo();
             
             if (detectedBPM > 0)
             {

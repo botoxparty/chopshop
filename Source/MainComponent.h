@@ -10,6 +10,7 @@
 #include "VinylBrakeComponent.h"
 #include "DelayComponent.h"
 #include <aubio/aubio.h>
+#include "minibpm.h"
 // Add this line to enable console output
 #define JUCE_DEBUG 1
 

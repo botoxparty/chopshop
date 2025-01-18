@@ -4,6 +4,12 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" cppLanguageStandard="20"
               defines="JUCE_MODAL_LOOPS_PERMITTED=1">
   <MAINGROUP id="yFkC8Y" name="ChopScrew">
+    <GROUP id="{B1BF7118-A97C-6639-736D-41A0A841DDC8}" name="modules">
+      <GROUP id="{A4A53AB5-E81A-075F-343E-0DE99CECEE17}" name="minibpm">
+        <FILE id="tBdO88" name="minibpm.cpp" compile="1" resource="0" file="Source/minibpm.cpp"/>
+        <FILE id="I9RHhN" name="minibpm.h" compile="0" resource="0" file="Source/minibpm.h"/>
+      </GROUP>
+    </GROUP>
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
       <FILE id="uTNrMd" name="DelayComponent.cpp" compile="1" resource="0"
             file="Source/DelayComponent.cpp"/>
