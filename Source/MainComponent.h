@@ -164,5 +164,8 @@ private:
         recordButton.setEnabled(trackLoaded);
     }
 
+    te::VolumeAndPanPlugin* volumeAndPan1 = nullptr;
+    te::VolumeAndPanPlugin* volumeAndPan2 = nullptr;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

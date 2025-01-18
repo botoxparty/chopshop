@@ -136,6 +136,19 @@ MainComponent::MainComponent()
     libraryComponent->onFileSelected = [this](const juce::File& file) {
         handleFileSelection(file);
     };
+
+    // Initialize two tracks
+    if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+    {
+        EngineHelpers::removeAllClips(*track1);
+        volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin*>(track1->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
+    }
+
+    if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
+    {
+        EngineHelpers::removeAllClips(*track2);
+        volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin*>(track2->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
+    }
 }
 
 MainComponent::~MainComponent()
@@ -405,10 +418,10 @@ void MainComponent::updateCrossfader()
 
 void MainComponent::setTrackVolume(int trackIndex, float gainDB)
 {
-    if (auto clip = getClip(trackIndex))
-    {
-        clip->setGainDB(gainDB);
-    }
+    if (trackIndex == 0 && volumeAndPan1)
+        volumeAndPan1->setVolumeDb(gainDB);
+    else if (trackIndex == 1 && volumeAndPan2)
+        volumeAndPan2->setVolumeDb(gainDB);
 }
 
 void MainComponent::armTrack(int trackIndex, bool arm)
