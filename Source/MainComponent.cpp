@@ -129,7 +129,10 @@ MainComponent::MainComponent()
     // Add after reverbComponent initialization
     flangerComponent = std::make_unique<FlangerComponent>(edit);
     addAndMakeVisible(*flangerComponent);
-    resized();
+
+    delayComponent = std::make_unique<DelayComponent>(edit);
+    addAndMakeVisible(*delayComponent);
+
 
     updateButtonStates();
 
@@ -156,6 +159,8 @@ MainComponent::MainComponent()
 
     vinylBrakeComponent = std::make_unique<VinylBrakeComponent>(edit);
     addAndMakeVisible(*vinylBrakeComponent);
+
+    resized();
 
     startTimerHz(30); // Update 30 times per second
 }
@@ -254,6 +259,7 @@ void MainComponent::resized()
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
     column3.items.add(juce::FlexItem(*reverbComponent).withHeight(100).withMargin(5));
+    column3.items.add(juce::FlexItem(*delayComponent).withHeight(100).withMargin(5));
     column3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMinHeight(180).withMargin(5));
     column3.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
 

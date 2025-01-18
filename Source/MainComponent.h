@@ -8,9 +8,7 @@
 #include "FlangerComponent.h"
 #include "LibraryComponent.h"
 #include "VinylBrakeComponent.h"
-// Add these includes for game controller support
-#include <JuceHeader.h>
-
+#include "DelayComponent.h"
 // Add this line to enable console output
 #define JUCE_DEBUG 1
 
@@ -118,8 +116,6 @@ private:
 
     std::unique_ptr<Thumbnail> thumbnail;
 
-    std::unique_ptr<ReverbComponent> reverbComponent;
-
     juce::TextButton recordButton { "Record" };
 
     void armTrack(int trackIndex, bool arm);
@@ -143,12 +139,17 @@ private:
 
     juce::Label currentTrackLabel { "Track Label", "No Track Loaded" };
 
+    te::VolumeAndPanPlugin* volumeAndPan1 = nullptr;
+    te::VolumeAndPanPlugin* volumeAndPan2 = nullptr;
+    
     // GameController member variables
     std::unique_ptr<GamepadManager> gamepadManager;
 
+    std::unique_ptr<ReverbComponent> reverbComponent;
     std::unique_ptr<FlangerComponent> flangerComponent;
-
     std::unique_ptr<LibraryComponent> libraryComponent;
+    std::unique_ptr<VinylBrakeComponent> vinylBrakeComponent;
+    std::unique_ptr<DelayComponent> delayComponent;
 
     bool isTrackLoaded()
     {
@@ -165,14 +166,11 @@ private:
         recordButton.setEnabled(trackLoaded);
     }
 
-    te::VolumeAndPanPlugin* volumeAndPan1 = nullptr;
-    te::VolumeAndPanPlugin* volumeAndPan2 = nullptr;
-    
-    std::unique_ptr<VinylBrakeComponent> vinylBrakeComponent;
-    
+
     juce::Label positionLabel { "Position Label", "00:00:00.000 | 1|1|000" };
 
     void updatePositionLabel();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
+
 };
