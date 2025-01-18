@@ -172,7 +172,7 @@ namespace EngineHelpers
     {
         auto& transport = clip.edit.getTransport();
         transport.setLoopRange (clip.getEditTimeRange());
-        transport.looping = true;
+        // transport.looping = true;
         transport.setPosition (0s);
         transport.play (false);
 
@@ -342,13 +342,15 @@ struct Thumbnail    : public Component
             g.setColour (colour.withMultipliedBrightness (0.9f));
             g.drawText ("Creating proxy: " + String (roundToInt (smartThumbnail.getProxyProgress() * 100.0f)) + "%",
                         r, Justification::centred);
-
         }
         else
         {
             const float brightness = smartThumbnail.isOutOfDate() ? 0.4f : 0.66f;
             g.setColour (colour.withMultipliedBrightness (brightness));
-            smartThumbnail.drawChannels (g, r, { 0s, te::TimePosition::fromSeconds (smartThumbnail.getTotalLength()) }, 1.0f);
+            
+            // Draw the waveform using the original time range
+            auto totalLength = te::TimePosition::fromSeconds(smartThumbnail.getTotalLength());
+            smartThumbnail.drawChannels (g, r, { 0s, totalLength }, 1.0f);
         }
     }
 
@@ -401,6 +403,12 @@ struct Thumbnail    : public Component
         }
     }
 
+    void setSpeedRatio(double ratio)
+    {
+        currentSpeedRatio = ratio;
+        repaint();
+    }
+
 private:
     te::TransportControl& transport;
     te::SmartThumbnail smartThumbnail { transport.engine, te::AudioFile (transport.engine), *this, nullptr };
@@ -408,6 +416,7 @@ private:
     te::LambdaTimer cursorUpdater;
     std::optional<int> quantisationNumBars;
     std::optional<te::TimePosition> positionToJumpAt;
+    double currentSpeedRatio = 1.0;
 
     static te::TimePosition roundTo (te::TimePosition pos, const te::TempoSequence& ts, int quantisationNumBars, double adjustment)
     {

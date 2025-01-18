@@ -355,7 +355,8 @@ void MainComponent::handleFileSelection(const juce::File &file)
         }
 
         // Disable auto tempo and pitch for first clip
-        clip1->setAutoTempo(false);
+        // clip1->setAutoTempo(false);
+        clip1->setSyncType(te::Clip::syncBarsBeats);
         clip1->setAutoPitch(false);
         clip1->setTimeStretchMode(te::TimeStretcher::defaultMode);
 
@@ -377,7 +378,8 @@ void MainComponent::handleFileSelection(const juce::File &file)
                                                     false))
             {
                 // Configure second clip
-                clip2->setAutoTempo(false);
+                // clip2->setAutoTempo(false);
+                clip2->setSyncType(te::Clip::syncBarsBeats);
                 clip2->setAutoPitch(false);
                 clip2->setTimeStretchMode(te::TimeStretcher::defaultMode);
                 clip2->setGainDB(0.0f);
@@ -401,6 +403,10 @@ void MainComponent::updateTempo()
     {
         clip1->setSpeedRatio(ratio);
         clip1->setLength(tracktion::TimeDuration::fromSeconds(clip1->getSourceLength().inSeconds()) / clip1->getSpeedRatio(), true);
+        
+        // Update the transport's loop range to match the new clip length
+        auto& transport = edit.getTransport();
+        transport.setLoopRange(clip1->getEditTimeRange());
     }
 
     // Update second clip
@@ -413,6 +419,10 @@ void MainComponent::updateTempo()
         trackOffset = (60.0 / tempoSlider.getValue()) * 1000.0; // Convert to milliseconds
         clip2->setStart(tracktion::TimePosition::fromSeconds(trackOffset / 1000.0), false, true);
     }
+
+    // Update thumbnail speed ratio
+    if (thumbnail)
+        thumbnail->setSpeedRatio(ratio);
 
     // Update beat duration based on new tempo
     updateTrackOffsetLabel(trackOffset);
