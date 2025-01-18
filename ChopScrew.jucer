@@ -41,6 +41,8 @@
             file="Source/ReverbComponent.h"/>
       <FILE id="c2VwpY" name="Utilities.h" compile="0" resource="0" file="Source/Utilities.h"/>
       <FILE id="uAKnK4" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="yVwCpY" name="Osc2D.h" compile="0" resource="0" file="Source/Osc2D.h"/>
+      <FILE id="WIU8hi" name="RingBuffer.h" compile="0" resource="0" file="Source/RingBuffer.h"/>
       <FILE id="EycTLt" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="NeM6Um" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
@@ -65,6 +67,7 @@
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_osc" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="tracktion_core" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="tracktion_engine" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
@@ -97,6 +100,7 @@
         <MODULEPATH id="tracktion_graph" path="../tracktion_engine/modules"/>
         <MODULEPATH id="tracktion_core" path="../tracktion_engine/modules"/>
         <MODULEPATH id="ea_soundtouch" path="../../Downloads/JUCE_SoundTouch-main"/>
+        <MODULEPATH id="juce_opengl" path="../tracktion_engine/modules/juce/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>

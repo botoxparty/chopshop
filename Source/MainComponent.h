@@ -11,6 +11,7 @@
 #include "DelayComponent.h"
 #include <aubio/aubio.h>
 #include "minibpm.h"
+#include "Osc2D.h"
 // Add this line to enable console output
 #define JUCE_DEBUG 1
 
@@ -21,7 +22,8 @@
 */
 class MainComponent : public juce::Component,
                       public juce::Timer,
-                      public GamepadManager::Listener
+                      public GamepadManager::Listener,
+                      public juce::ChangeListener
 {
 public:
     //==============================================================================
@@ -83,6 +85,11 @@ public:
         stopTimer();
         float currentPosition = crossfaderSlider.getValue();
         crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+    }
+
+    void changeListenerCallback(juce::ChangeBroadcaster*) override
+    {
+        // This will be called when the transport state changes
     }
 
 private:
@@ -172,6 +179,9 @@ private:
     juce::Label positionLabel{"Position Label", "00:00:00.000 | 1|1|000"};
 
     void updatePositionLabel();
+
+    std::unique_ptr<RingBuffer<GLfloat>> oscilloscopeBuffer;
+    std::unique_ptr<Oscilloscope2D> oscilloscope;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

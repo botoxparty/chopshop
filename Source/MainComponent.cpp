@@ -134,6 +134,11 @@ MainComponent::MainComponent()
     delayComponent = std::make_unique<DelayComponent>(edit);
     addAndMakeVisible(*delayComponent);
 
+    // Initialize oscilloscope components (add after thumbnail initialization)
+    oscilloscopeBuffer = std::make_unique<RingBuffer<GLfloat>>(2, 1024);
+    oscilloscope = std::make_unique<Oscilloscope2D>(oscilloscopeBuffer.get());
+    addAndMakeVisible(*oscilloscope);
+    oscilloscope->start();
 
     updateButtonStates();
 
@@ -191,8 +196,13 @@ void MainComponent::resized()
     mainColumn.flexDirection = juce::FlexBox::Direction::column;
     mainColumn.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
 
-    // Row 1: Thumbnail (about 1/3 of height)
-    mainColumn.items.add(juce::FlexItem(*thumbnail).withFlex(1.0f).withMargin(5));
+    // Row 1: Thumbnail and Oscilloscope (about 1/3 of height)
+    juce::FlexBox visualizerBox;
+    visualizerBox.flexDirection = juce::FlexBox::Direction::column;
+    visualizerBox.items.add(juce::FlexItem(*thumbnail).withFlex(0.6f).withMargin(5));
+    visualizerBox.items.add(juce::FlexItem(*oscilloscope).withFlex(0.4f).withMargin(5));
+    
+    mainColumn.items.add(juce::FlexItem(visualizerBox).withFlex(1.0f));
 
     // Row 2: Control Bar
     juce::FlexBox controlBarBox;
