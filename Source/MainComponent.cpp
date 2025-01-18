@@ -424,11 +424,24 @@ te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
 void MainComponent::updateCrossfader()
 {
     const float position = crossfaderSlider.getValue();
-    // Convert linear position (0.0 to 1.0) to decibels (-20dB to 0dB)
-    // Track 1 volume goes from 0dB to -20dB
-    setTrackVolume(0, position <= 0.0f ? 0.0f : -20.0f * position);
-    // Track 2 volume goes from -20dB to 0dB
-    setTrackVolume(1, position >= 1.0f ? 0.0f : -20.0f * (1.0f - position));
+    const float threshold = 0.02f; // 2% threshold for complete silence
+    const float minDB = -60.0f;    // Effectively silent
+
+    // Track 1 volume
+    if (position >= 1.0f - threshold)
+        setTrackVolume(0, minDB);  // Completely silent
+    else if (position <= threshold)
+        setTrackVolume(0, 0.0f);   // Full volume
+    else
+        setTrackVolume(0, minDB * position);
+
+    // Track 2 volume
+    if (position <= threshold)
+        setTrackVolume(1, minDB);  // Completely silent
+    else if (position >= 1.0f - threshold)
+        setTrackVolume(1, 0.0f);   // Full volume
+    else
+        setTrackVolume(1, minDB * (1.0f - position));
 }
 
 void MainComponent::setTrackVolume(int trackIndex, float gainDB)
