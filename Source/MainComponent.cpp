@@ -10,6 +10,11 @@ MainComponent::MainComponent()
     currentTrackLabel.setMinimumHorizontalScale(1.0f);
     addAndMakeVisible(currentTrackLabel);
 
+    positionLabel.setJustificationType(juce::Justification::centred);
+    positionLabel.setFont(juce::Font(16.0f));
+    positionLabel.setMinimumHorizontalScale(1.0f);
+    addAndMakeVisible(positionLabel);
+
     // Register our custom plugin with the engine
     // engine.getPluginManager().createBuiltInType<DistortionPlugin>();
 
@@ -151,6 +156,8 @@ MainComponent::MainComponent()
 
     vinylBrakeComponent = std::make_unique<VinylBrakeComponent>(edit);
     addAndMakeVisible(*vinylBrakeComponent);
+
+    startTimerHz(30); // Update 30 times per second
 }
 
 MainComponent::~MainComponent()
@@ -192,6 +199,10 @@ void MainComponent::resized()
     trackLabelBox.flexDirection = juce::FlexBox::Direction::row;
     trackLabelBox.items.add(juce::FlexItem(currentTrackLabel).withFlex(1.0f).withHeight(30).withMargin(2));
 
+    juce::FlexBox positionLabelBox;
+    positionLabelBox.flexDirection = juce::FlexBox::Direction::row;
+    positionLabelBox.items.add(juce::FlexItem(positionLabel).withWidth(200).withHeight(30).withMargin(2));
+
     // Transport controls
     juce::FlexBox transportBox;
     transportBox.flexDirection = juce::FlexBox::Direction::row;
@@ -201,6 +212,7 @@ void MainComponent::resized()
 
     // Modified to make trackLabelBox take remaining space
     controlBarBox.items.add(juce::FlexItem(trackLabelBox).withFlex(1.0f));
+    controlBarBox.items.add(juce::FlexItem(positionLabelBox).withWidth(200));
     controlBarBox.items.add(juce::FlexItem(transportBox).withWidth(260));
 
     // Add control bar to main column
@@ -242,7 +254,7 @@ void MainComponent::resized()
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
     column3.items.add(juce::FlexItem(*reverbComponent).withHeight(100).withMargin(5));
-    column3.items.add(juce::FlexItem(*flangerComponent).withHeight(150).withMargin(5));
+    column3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMinHeight(180).withMargin(5));
     column3.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
 
     // Add columns to main box
@@ -521,4 +533,25 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
         float crossfaderValue = (value + 1.0f) * 0.5f;
         crossfaderSlider.setValue(crossfaderValue, juce::sendNotification);
     }
+}
+
+void MainComponent::updatePositionLabel()
+{
+    auto& transport = edit.getTransport();
+    auto position = transport.getPosition();
+    
+    // Get time position
+    auto timeString = PlayHeadHelpers::timeToTimecodeString(position.inSeconds());
+    
+    // Get beat position
+    auto& tempoSequence = edit.tempoSequence;
+    auto beatPosition = tempoSequence.toBarsAndBeats(position);
+    auto quarterNotes = beatPosition.getTotalBars() * 4.0; // Convert bars to quarter notes
+    auto beatString = PlayHeadHelpers::quarterNotePositionToBarsBeatsString(
+        quarterNotes,
+        tempoSequence.getTimeSigAt(position).numerator,
+        tempoSequence.getTimeSigAt(position).denominator
+    );
+    
+    positionLabel.setText(timeString + " | " + beatString, juce::dontSendNotification);
 }

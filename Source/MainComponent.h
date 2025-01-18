@@ -78,6 +78,7 @@ public:
 
     void timerCallback() override
     {
+        updatePositionLabel();
         // Timer has finished, perform the delayed crossfade
         stopTimer();
         float currentPosition = crossfaderSlider.getValue();
@@ -169,5 +170,9 @@ private:
     
     std::unique_ptr<VinylBrakeComponent> vinylBrakeComponent;
     
+    juce::Label positionLabel { "Position Label", "00:00:00.000 | 1|1|000" };
+
+    void updatePositionLabel();
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
