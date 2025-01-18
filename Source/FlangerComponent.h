@@ -22,10 +22,12 @@ private:
     juce::Slider depthSlider;
     juce::Slider speedSlider;
     juce::Slider widthSlider;
+    juce::Slider mixSlider;
     
     juce::Label depthLabel;
     juce::Label speedLabel;
     juce::Label widthLabel;
+    juce::Label mixLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FlangerComponent)
 };

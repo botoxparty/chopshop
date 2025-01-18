@@ -242,7 +242,7 @@ void MainComponent::resized()
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
     column3.items.add(juce::FlexItem(*reverbComponent).withHeight(100).withMargin(5));
-    column3.items.add(juce::FlexItem(*flangerComponent).withHeight(100).withMargin(5));
+    column3.items.add(juce::FlexItem(*flangerComponent).withHeight(150).withMargin(5));
     column3.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
 
     // Add columns to main box
