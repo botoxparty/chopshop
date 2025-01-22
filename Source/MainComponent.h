@@ -12,6 +12,7 @@
 #include <aubio/aubio.h>
 #include "minibpm.h"
 #include "Osc2D.h"
+#include "OscilloscopePlugin.h"
 // Add this line to enable console output
 #define JUCE_DEBUG 1
 

@@ -16,8 +16,8 @@ MainComponent::MainComponent()
     positionLabel.setMinimumHorizontalScale(1.0f);
     addAndMakeVisible(positionLabel);
 
-    // Register our custom plugin with the engine
-    // engine.getPluginManager().createBuiltInType<DistortionPlugin>();
+    // Register our custom plugins with the engine
+    engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
 
     addAndMakeVisible(openButton);
     addAndMakeVisible(saveButton);
@@ -155,6 +155,9 @@ MainComponent::MainComponent()
     {
         EngineHelpers::removeAllClips(*track1);
         volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin*>(track1->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
+        
+        // Add oscilloscope plugin to track 1
+        track1->pluginList.insertPlugin(te::OscilloscopePlugin::create(), -1);
     }
 
     if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))

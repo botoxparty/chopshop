@@ -11,6 +11,8 @@
       </GROUP>
     </GROUP>
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <FILE id="lwU3ej" name="OscilloscopePlugin.cpp" compile="1" resource="0"
+            file="Source/OscilloscopePlugin.cpp"/>
       <FILE id="uTNrMd" name="DelayComponent.cpp" compile="1" resource="0"
             file="Source/DelayComponent.cpp"/>
       <FILE id="bJhSDu" name="DelayComponent.h" compile="0" resource="0"
@@ -43,6 +45,8 @@
       <FILE id="uAKnK4" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="yVwCpY" name="Osc2D.h" compile="0" resource="0" file="Source/Osc2D.h"/>
       <FILE id="WIU8hi" name="RingBuffer.h" compile="0" resource="0" file="Source/RingBuffer.h"/>
+      <FILE id="M1RMgw" name="OscilloscopePlugin.h" compile="0" resource="0"
+            file="Source/OscilloscopePlugin.h"/>
       <FILE id="EycTLt" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="NeM6Um" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
