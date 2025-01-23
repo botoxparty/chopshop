@@ -108,11 +108,6 @@ MainComponent::MainComponent()
             startRecording();
     };
 
-    // Setup track offset label
-    trackOffsetLabel.setJustificationType(juce::Justification::centred);
-    updateTrackOffsetLabel(trackOffset);
-    addAndMakeVisible(trackOffsetLabel);
-
     chopButton.addMouseListener(this, false);
     chopButton.setButtonText(chopButton.getButtonText()); // Trigger text update
     getLookAndFeel().setDefaultSansSerifTypefaceName("Arial");
@@ -195,6 +190,17 @@ MainComponent::MainComponent()
         DBG("Oscilloscope component added to visualizer box");
     else 
         DBG("Oscilloscope component not added to visualizer box");
+
+    // Add after other component setup
+    chopDurationComboBox.addItem("1/4 Beat", 1);
+    chopDurationComboBox.addItem("1/2 Beat", 2);
+    chopDurationComboBox.addItem("1 Beat", 3);
+    chopDurationComboBox.addItem("2 Beats", 4);
+    chopDurationComboBox.addItem("4 Beats", 5);
+    addAndMakeVisible(chopDurationComboBox);
+
+    chopDurationComboBox.onChange = [this] { updateChopDuration(); };
+    chopDurationComboBox.setSelectedId(3, juce::dontSendNotification); // Default to 1 Beat
 }
 
 MainComponent::~MainComponent()
@@ -291,7 +297,7 @@ void MainComponent::resized()
 
     column2.items.add(juce::FlexItem(tempoButtonBox).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(tempoSlider).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(trackOffsetLabel).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(chopDurationComboBox).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(crossfaderSlider).withHeight(40).withMargin(5));
     column2.items.add(juce::FlexItem(chopButton).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
@@ -394,16 +400,16 @@ void MainComponent::handleFileSelection(const juce::File &file)
             if (detectedBPM > 0)
             {
                 baseTempo = detectedBPM;
-                trackOffset = (60.0 / baseTempo) * 1000.0; // Convert to milliseconds
+                trackOffset = getChopDurationInMs("1 Beat");
+                updateChopDuration(); // This will calculate trackOffset based on current combo box selection
                 tempoSlider.setValue(baseTempo, juce::dontSendNotification);
-                updateTrackOffsetLabel(trackOffset);
             }
             else
             {
-                baseTempo = 120.0;                         // fallback value
-                trackOffset = (60.0 / baseTempo) * 1000.0; // Convert to milliseconds
+                baseTempo = 120.0;  // fallback value
+                trackOffset = getChopDurationInMs("1 Beat");
+                updateChopDuration();
                 tempoSlider.setValue(baseTempo, juce::dontSendNotification);
-                updateTrackOffsetLabel(trackOffset);
             }
         }
 
@@ -456,9 +462,6 @@ void MainComponent::updateTempo()
     const double plusOrMinusProportion = ratio - 1.0;
 
     edit.getTransport().getCurrentPlaybackContext()->setTempoAdjustment(plusOrMinusProportion);
-
-    // Update beat duration based on new tempo
-    updateTrackOffsetLabel(trackOffset);
 }
 
 te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
@@ -529,11 +532,6 @@ void MainComponent::stopRecording()
     armTrack(0, false);
 
     recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-}
-
-void MainComponent::updateTrackOffsetLabel(double offset)
-{
-    trackOffsetLabel.setText("Beat Duration: " + juce::String(offset, 1) + " ms", juce::dontSendNotification);
 }
 
 void MainComponent::setTempoPercentage(double percentage)
@@ -633,4 +631,27 @@ void MainComponent::updatePositionLabel()
     );
     
     positionLabel.setText(timeString + " | " + beatString, juce::dontSendNotification);
+}
+
+void MainComponent::updateChopDuration()
+{
+    juce::String selected = chopDurationComboBox.getText();
+}
+
+double MainComponent::getChopDurationInMs(const juce::String& description)
+{
+    double beatDuration = (60.0 / baseTempo) * 1000.0; // One beat duration in ms
+    
+    if (description == "1/4 Beat")
+        return beatDuration * 0.25;
+    else if (description == "1/2 Beat")
+        return beatDuration * 0.5;
+    else if (description == "1 Beat")
+        return beatDuration;
+    else if (description == "2 Beats")
+        return beatDuration * 2.0;
+    else if (description == "4 Beats")
+        return beatDuration * 4.0;
+        
+    return beatDuration; // Default to 1 beat
 }

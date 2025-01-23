@@ -151,9 +151,9 @@ private:
     void startRecording();
     void stopRecording();
 
-    juce::Label trackOffsetLabel;
-
-    void updateTrackOffsetLabel(double offset);
+    juce::ComboBox chopDurationComboBox;
+    void updateChopDuration();
+    double getChopDurationInMs(const juce::String& description);
 
     juce::TextButton tempo70Button{"70%"};
     juce::TextButton tempo75Button{"75%"};
