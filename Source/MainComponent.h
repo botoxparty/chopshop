@@ -62,7 +62,7 @@ public:
         if (event.eventComponent == &chopButton)
         {
             double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-            double minimumTime = trackOffset; // Convert seconds to milliseconds
+            double minimumTime = getChopDurationInMs(chopDurationComboBox.getText());
 
             if (elapsedTime >= minimumTime)
             {
@@ -152,7 +152,6 @@ private:
     void stopRecording();
 
     juce::ComboBox chopDurationComboBox;
-    void updateChopDuration();
     double getChopDurationInMs(const juce::String& description);
 
     juce::TextButton tempo70Button{"70%"};

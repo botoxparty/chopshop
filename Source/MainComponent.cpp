@@ -199,7 +199,6 @@ MainComponent::MainComponent()
     chopDurationComboBox.addItem("4 Beats", 5);
     addAndMakeVisible(chopDurationComboBox);
 
-    chopDurationComboBox.onChange = [this] { updateChopDuration(); };
     chopDurationComboBox.setSelectedId(3, juce::dontSendNotification); // Default to 1 Beat
 }
 
@@ -400,15 +399,13 @@ void MainComponent::handleFileSelection(const juce::File &file)
             if (detectedBPM > 0)
             {
                 baseTempo = detectedBPM;
-                trackOffset = getChopDurationInMs("1 Beat");
-                updateChopDuration(); // This will calculate trackOffset based on current combo box selection
+                trackOffset = (60.0 / baseTempo) * 1000.0;
                 tempoSlider.setValue(baseTempo, juce::dontSendNotification);
             }
             else
             {
                 baseTempo = 120.0;  // fallback value
-                trackOffset = getChopDurationInMs("1 Beat");
-                updateChopDuration();
+                trackOffset = (60.0 / baseTempo) * 1000.0;
                 tempoSlider.setValue(baseTempo, juce::dontSendNotification);
             }
         }
@@ -633,14 +630,9 @@ void MainComponent::updatePositionLabel()
     positionLabel.setText(timeString + " | " + beatString, juce::dontSendNotification);
 }
 
-void MainComponent::updateChopDuration()
-{
-    juce::String selected = chopDurationComboBox.getText();
-}
-
 double MainComponent::getChopDurationInMs(const juce::String& description)
 {
-    double beatDuration = (60.0 / baseTempo) * 1000.0; // One beat duration in ms
+    double beatDuration = (60.0 / tempoSlider.getValue()) * 1000.0; // One beat duration in ms
     
     if (description == "1/4 Beat")
         return beatDuration * 0.25;
