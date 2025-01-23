@@ -70,7 +70,7 @@ public:
             g.fillRoundedRectangle(bounds, 2.0f);
             
             // Draw groove
-            auto grooveWidth = width * 0.9f;
+            auto grooveWidth = width * 0.8f;  // Reduced from 0.9f to give more space for handle
             auto grooveHeight = 8.0f;
             auto grooveBounds = juce::Rectangle<float>((width - grooveWidth) * 0.5f, (height - grooveHeight) * 0.5f,
                                                        grooveWidth, grooveHeight);
@@ -89,10 +89,15 @@ public:
             g.drawVerticalLine(static_cast<int>(centerX), grooveBounds.getY(), grooveBounds.getBottom());
 
             // Draw fader handle
-            float handleWidth = 40.0f;
+            float handleWidth = 30.0f;  // Reduced from 40.0f
             float handleHeight = height * 0.8f;
             
-            auto thumbBounds = juce::Rectangle<float>(sliderPos - handleWidth * 0.5f,
+            // Calculate handle position with limits to prevent clipping
+            float minX = x + handleWidth * 0.5f;
+            float maxX = x + width - handleWidth * 0.5f;
+            float limitedSliderPos = juce::jlimit(minX, maxX, sliderPos);
+            
+            auto thumbBounds = juce::Rectangle<float>(limitedSliderPos - handleWidth * 0.5f,
                                                       (height - handleHeight) * 0.5f,
                                                       handleWidth, handleHeight);
                                                   
