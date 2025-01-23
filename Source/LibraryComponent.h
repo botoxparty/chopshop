@@ -35,6 +35,10 @@ private:
     void saveLibraryDirectory(const juce::File& directory);
     juce::File getStoredLibraryDirectory();
 
+    const juce::Colour matrixGreen { 0xFF00FF41 };  // Bright matrix green
+    const juce::Colour darkWire { 0xFF003B00 };     // Dark green for backgrounds
+    const juce::Colour black { 0xFF000000 };        // Pure black
+
     juce::TextButton chooseFolderButton{"Choose Library Folder"};
     std::unique_ptr<juce::DirectoryContentsList> directoryList;
     std::unique_ptr<juce::FileListComponent> fileListComponent;
