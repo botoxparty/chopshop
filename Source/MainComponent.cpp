@@ -134,12 +134,6 @@ MainComponent::MainComponent()
     delayComponent = std::make_unique<DelayComponent>(edit);
     addAndMakeVisible(*delayComponent);
 
-    // Initialize oscilloscope components (add after thumbnail initialization)
-    oscilloscopeBuffer = std::make_unique<RingBuffer<GLfloat>>(2, 1024);
-    oscilloscope = std::make_unique<Oscilloscope2D>(oscilloscopeBuffer.get());
-    addAndMakeVisible(*oscilloscope);
-    oscilloscope->start();
-
     updateButtonStates();
 
     libraryComponent = std::make_unique<LibraryComponent>();
@@ -172,6 +166,46 @@ MainComponent::MainComponent()
     resized();
 
     startTimerHz(30); // Update 30 times per second
+
+    // Add oscilloscope to master track
+    if (auto masterTrack = edit.getMasterTrack())
+    {
+        DBG("Found master track");
+        
+        // Register our custom plugins with the engine
+        engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
+        
+        auto plugin = masterTrack->pluginList.insertPlugin(te::OscilloscopePlugin::create(), -1);
+        if (plugin != nullptr)
+        {
+            DBG("Created oscilloscope plugin");
+            auto oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(plugin.get());
+            
+            if (oscPlugin != nullptr)
+            {
+                DBG("Cast to oscilloscope plugin successful");
+                
+                // Initialize the plugin first
+                oscPlugin->initialise(tracktion::engine::PluginInitialisationInfo());
+                
+                // Wait a short moment to ensure initialization is complete
+                juce::Thread::sleep(100);
+                
+                oscilloscopeComponent.reset(oscPlugin->createControlPanel());
+                
+                if (oscilloscopeComponent != nullptr)
+                {
+                    DBG("Created oscilloscope component");
+                    addAndMakeVisible(*oscilloscopeComponent);
+                    resized(); // Force a layout update
+                }
+            }
+            else
+            {
+                DBG("Failed to cast to oscilloscope plugin");
+            }
+        }
+    }
 }
 
 MainComponent::~MainComponent()
@@ -203,8 +237,15 @@ void MainComponent::resized()
     juce::FlexBox visualizerBox;
     visualizerBox.flexDirection = juce::FlexBox::Direction::column;
     visualizerBox.items.add(juce::FlexItem(*thumbnail).withFlex(0.6f).withMargin(5));
-    visualizerBox.items.add(juce::FlexItem(*oscilloscope).withFlex(0.4f).withMargin(5));
-    
+    if (oscilloscopeComponent != nullptr)
+        visualizerBox.items.add(juce::FlexItem(*oscilloscopeComponent).withFlex(0.4f).withMargin(5));
+
+    // Add oscilloscope to visualizer box
+    if (oscilloscopeComponent != nullptr)
+        DBG("Oscilloscope component added to visualizer box");
+    else 
+        DBG("Oscilloscope component not added to visualizer box");
+
     mainColumn.items.add(juce::FlexItem(visualizerBox).withFlex(1.0f));
 
     // Row 2: Control Bar

@@ -88,7 +88,14 @@ public:
      */
     void newOpenGLContextCreated() override
     {
-        // Setup Shaders
+        // Add safety check for ring buffer
+        if (ringBuffer == nullptr)
+        {
+            statusText = "No buffer available";
+            triggerAsyncUpdate();
+            return;
+        }
+        
         createShaders();
         
         // Setup Buffer Objects
@@ -110,6 +117,23 @@ public:
      */
     void renderOpenGL() override
     {
+        if (ringBuffer == nullptr)
+            return;
+        
+        // Create a temporary buffer for reading samples
+        AudioBuffer<GLfloat> tempBuffer(2, RING_BUFFER_READ_SIZE);
+        
+        // Try to read samples, but handle empty buffer case
+        try 
+        {
+            ringBuffer->readSamples(tempBuffer, RING_BUFFER_READ_SIZE);
+        }
+        catch (...)
+        {
+            // If reading fails, just return without rendering
+            return;
+        }
+        
         jassert (OpenGLHelpers::isContextActive());
         
         // Setup Viewport
@@ -134,14 +158,12 @@ public:
         // Read in samples from ring buffer
         if (uniforms->audioSampleData != nullptr)
         {
-            ringBuffer->readSamples (readBuffer, RING_BUFFER_READ_SIZE);
-            
             FloatVectorOperations::clear (visualizationBuffer, RING_BUFFER_READ_SIZE);
             
             // Sum channels together
             for (int i = 0; i < 2; ++i)
             {
-                FloatVectorOperations::add (visualizationBuffer, readBuffer.getReadPointer(i, 0), RING_BUFFER_READ_SIZE);
+                FloatVectorOperations::add (visualizationBuffer, tempBuffer.getReadPointer(i, 0), RING_BUFFER_READ_SIZE);
             }
             
             uniforms->audioSampleData->set (visualizationBuffer, 256);

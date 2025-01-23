@@ -11,6 +11,7 @@
 #pragma once
 
 #include "JuceHeader.h"
+#include "Osc2D.h"
 
 namespace tracktion { inline namespace engine
 {
@@ -29,18 +30,26 @@ public:
     static const char* xmlTypeName;
 
     bool canBeAddedToFolderTrack() override             { return true; }
-    juce::String getName() const override               { return textTitle.get().isNotEmpty() ? textTitle : TRANS("Text Plugin"); }
+    juce::String getName() const override               { return textTitle.get().isNotEmpty() ? textTitle : TRANS("Oscilloscope"); }
     juce::String getPluginType() override               { return xmlTypeName; }
-    void initialise (const PluginInitialisationInfo&) override {}
-    void deinitialise() override                        {}
-    void applyToBuffer (const PluginRenderContext&) override {}
+    void initialise (const PluginInitialisationInfo&) override;
+    void deinitialise() override;
+    void applyToBuffer (const PluginRenderContext&) override;
     int getNumOutputChannelsGivenInputs (int numInputChannels) override     { return numInputChannels; }
     bool producesAudioWhenNoAudioInput() override       { return false; }
     juce::String getSelectableDescription() override    { return TRANS("Oscilloscope Plugin"); }
 
+    Component* createControlPanel();
+    
+    std::unique_ptr<RingBuffer<GLfloat>> getOscilloscopeBuffer() { return std::move(oscilloscopeBuffer); }
+
     juce::CachedValue<juce::String> textTitle, textBody;
 
 private:
+    static constexpr int BUFFER_SIZE = 1024;
+    std::unique_ptr<RingBuffer<GLfloat>> oscilloscopeBuffer;
+    std::unique_ptr<Oscilloscope2D> oscilloscope;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OscilloscopePlugin)
 };
 

@@ -11,7 +11,6 @@
 #include "DelayComponent.h"
 #include <aubio/aubio.h>
 #include "minibpm.h"
-#include "Osc2D.h"
 #include "OscilloscopePlugin.h"
 // Add this line to enable console output
 #define JUCE_DEBUG 1
@@ -181,8 +180,7 @@ private:
 
     void updatePositionLabel();
 
-    std::unique_ptr<RingBuffer<GLfloat>> oscilloscopeBuffer;
-    std::unique_ptr<Oscilloscope2D> oscilloscope;
+    std::unique_ptr<Component> oscilloscopeComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

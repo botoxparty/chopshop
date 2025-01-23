@@ -10,6 +10,8 @@
 #include <JuceHeader.h>
 #include <memory>
 
+using namespace juce;
+
 /** A circular, lock-free buffer for multiple channels of audio.
  
     Supports a single writer (producer) and any number of readers (consumers).
@@ -116,6 +118,13 @@ public:
     */
     void readSamples (AudioBuffer<Type> & bufferToFill, int readSize)
     {
+        // Add safety checks
+        if (readSize >= bufferSize || readSize <= 0)
+            return;
+        
+        if (writePosition.get() == 0) // Buffer is empty
+            return;
+        
         // Ensure readSize does not exceed bufferSize
         jassert (readSize < bufferSize);
         
