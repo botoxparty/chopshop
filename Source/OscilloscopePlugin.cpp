@@ -35,9 +35,21 @@ juce::ValueTree OscilloscopePlugin::create()
                             IDs::type, xmlTypeName);
 }
 
-void OscilloscopePlugin::initialise(const PluginInitialisationInfo&)
+void OscilloscopePlugin::initialise(const PluginInitialisationInfo& info)
 {
-    oscilloscopeBuffer = std::make_unique<RingBuffer<GLfloat>>(2, BUFFER_SIZE);
+    DBG("OscilloscopePlugin::initialise called");
+    DBG("  Sample rate: " << info.sampleRate);
+    DBG("  Block size: " << info.blockSizeSamples);
+    // DBG("  Num channels: " << info.numInputChannels);
+    
+    // Use provided block size or fallback to a reasonable default if zero
+    const int blockSize = info.blockSizeSamples > 0 ? info.blockSizeSamples : 1024;
+    const int bufferSize = blockSize * 10;
+    DBG("Creating oscilloscope buffer with size: " << bufferSize);
+    oscilloscopeBuffer = std::make_unique<RingBuffer<GLfloat>>(2, bufferSize);
+
+    // Notify listeners that initialization is complete
+    listeners.call(&Listener::oscilloscopePluginInitialised);
 }
 
 void OscilloscopePlugin::deinitialise()
@@ -49,15 +61,30 @@ void OscilloscopePlugin::applyToBuffer(const PluginRenderContext& rc)
 {
     if (rc.bufferNumSamples > 0 && oscilloscopeBuffer != nullptr)
     {
-        // Convert audio buffer to GLfloat buffer
-        AudioBuffer<GLfloat> tempBuffer(rc.destBuffer->getNumChannels(), rc.bufferNumSamples);
-        
-        for (int ch = 0; ch < rc.destBuffer->getNumChannels(); ++ch)
-            FloatVectorOperations::copy(tempBuffer.getWritePointer(ch), 
-                                      rc.destBuffer->getReadPointer(ch, rc.bufferStartSample), 
-                                      rc.bufferNumSamples);
+        // Only process if we actually have audio data
+        if (!rc.destBuffer->hasBeenCleared())
+        {
+            // Convert audio buffer to GLfloat buffer
+            AudioBuffer<GLfloat> tempBuffer(rc.destBuffer->getNumChannels(), rc.bufferNumSamples);
+            
+            for (int ch = 0; ch < rc.destBuffer->getNumChannels(); ++ch)
+            {
+                // Clear the temp buffer first
+                tempBuffer.clear(ch, 0, rc.bufferNumSamples);
+                
+                // Copy only if we have valid audio data
+                if (rc.destBuffer->getRMSLevel(ch, rc.bufferStartSample, rc.bufferNumSamples) > 0.0f)
+                {
+                    FloatVectorOperations::copy(
+                        tempBuffer.getWritePointer(ch), 
+                        rc.destBuffer->getReadPointer(ch, rc.bufferStartSample), 
+                        rc.bufferNumSamples
+                    );
+                }
+            }
 
-        oscilloscopeBuffer->writeSamples(tempBuffer, 0, rc.bufferNumSamples);
+            oscilloscopeBuffer->writeSamples(tempBuffer, 0, rc.bufferNumSamples);
+        }
     }
 }
 

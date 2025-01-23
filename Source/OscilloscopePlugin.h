@@ -45,10 +45,22 @@ public:
 
     juce::CachedValue<juce::String> textTitle, textBody;
 
+    // Add listener interface
+    class Listener
+    {
+    public:
+        virtual ~Listener() = default;
+        virtual void oscilloscopePluginInitialised() = 0;
+    };
+
+    void addListener(Listener* listener) { listeners.add(listener); }
+    void removeListener(Listener* listener) { listeners.remove(listener); }
+
 private:
     static constexpr int BUFFER_SIZE = 1024;
     std::unique_ptr<RingBuffer<GLfloat>> oscilloscopeBuffer;
     std::unique_ptr<Oscilloscope2D> oscilloscope;
+    juce::ListenerList<Listener> listeners;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OscilloscopePlugin)
 };

@@ -175,41 +175,29 @@ MainComponent::MainComponent()
         // Register our custom plugins with the engine
         engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
         
-        auto plugin = masterTrack->pluginList.insertPlugin(te::OscilloscopePlugin::create(), -1);
-        if (plugin != nullptr)
+        oscilloscopePlugin = std::shared_ptr<tracktion_engine::Plugin>(masterTrack->pluginList.insertPlugin(tracktion_engine::OscilloscopePlugin::create(), -1).get());
+        if (oscilloscopePlugin != nullptr)
         {
             DBG("Created oscilloscope plugin");
-            auto oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(plugin.get());
-            
-            if (oscPlugin != nullptr)
+            if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
             {
                 DBG("Cast to oscilloscope plugin successful");
-                
-                // Initialize the plugin first
-                oscPlugin->initialise(tracktion::engine::PluginInitialisationInfo());
-                
-                // Wait a short moment to ensure initialization is complete
-                juce::Thread::sleep(100);
-                
-                oscilloscopeComponent.reset(oscPlugin->createControlPanel());
-                
-                if (oscilloscopeComponent != nullptr)
-                {
-                    DBG("Created oscilloscope component");
-                    addAndMakeVisible(*oscilloscopeComponent);
-                    resized(); // Force a layout update
-                }
-            }
-            else
-            {
-                DBG("Failed to cast to oscilloscope plugin");
+                oscPlugin->addListener(this);
             }
         }
     }
+
+    // Add oscilloscope to visualizer box
+    if (oscilloscopeComponent != nullptr)
+        DBG("Oscilloscope component added to visualizer box");
+    else 
+        DBG("Oscilloscope component not added to visualizer box");
 }
 
 MainComponent::~MainComponent()
 {
+    if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
+        oscPlugin->removeListener(this);
 }
 
 //==============================================================================

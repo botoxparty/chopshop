@@ -23,7 +23,8 @@
 class MainComponent : public juce::Component,
                       public juce::Timer,
                       public GamepadManager::Listener,
-                      public juce::ChangeListener
+                      public juce::ChangeListener,
+                      public tracktion_engine::OscilloscopePlugin::Listener
 {
 public:
     //==============================================================================
@@ -90,6 +91,24 @@ public:
     void changeListenerCallback(juce::ChangeBroadcaster*) override
     {
         // This will be called when the transport state changes
+    }
+
+    void oscilloscopePluginInitialised() override
+    {
+        // Create and add the component on the message thread
+        juce::MessageManager::callAsync([this]()
+        {
+            if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
+            {
+                oscilloscopeComponent.reset(oscPlugin->createControlPanel());
+                if (oscilloscopeComponent != nullptr)
+                {
+                    DBG("Created oscilloscope component after initialization");
+                    addAndMakeVisible(*oscilloscopeComponent);
+                    resized();
+                }
+            }
+        });
     }
 
 private:
@@ -181,6 +200,9 @@ private:
     void updatePositionLabel();
 
     std::unique_ptr<Component> oscilloscopeComponent;
+
+    // Add a member to hold the plugin reference
+    std::shared_ptr<tracktion_engine::Plugin> oscilloscopePlugin;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
