@@ -162,6 +162,9 @@ private:
     juce::TextButton tempo100Button{"100%"};
 
     void setTempoPercentage(double percentage);
+    bool isTempoPercentageActive(double percentage) const;
+    void updateTempoButtonStates();
+
 
     double chopStartTime = 0.0;
     double chopReleaseDelay = 0.0;

@@ -60,7 +60,10 @@ MainComponent::MainComponent()
 
     tempoSlider.setRange(30.0, 220.0, 0.1);
     tempoSlider.setTextValueSuffix(" BPM");
-    tempoSlider.onValueChange = [this] { updateTempo(); };
+    tempoSlider.onValueChange = [this] { 
+        updateTempo(); 
+        updateTempoButtonStates();
+    };
 
     // Setup crossfader
     crossfaderSlider.setName("Crossfader");
@@ -227,12 +230,6 @@ void MainComponent::resized()
     visualizerBox.items.add(juce::FlexItem(*thumbnail).withFlex(0.6f).withMargin(5));
     if (oscilloscopeComponent != nullptr)
         visualizerBox.items.add(juce::FlexItem(*oscilloscopeComponent).withFlex(0.4f).withMargin(5));
-
-    // Add oscilloscope to visualizer box
-    if (oscilloscopeComponent != nullptr)
-        DBG("Oscilloscope component added to visualizer box");
-    else 
-        DBG("Oscilloscope component not added to visualizer box");
 
     mainColumn.items.add(juce::FlexItem(visualizerBox).withFlex(1.0f));
 
@@ -563,7 +560,24 @@ void MainComponent::setTempoPercentage(double percentage)
 {
     // Update slider value which will trigger the slider's callback
     tempoSlider.setValue(baseTempo * percentage, juce::sendNotification);
-    
+    updateTempoButtonStates();
+}
+
+bool MainComponent::isTempoPercentageActive(double percentage) const 
+{
+    // Compare current tempo with base tempo * percentage
+    const double currentPercentage = tempoSlider.getValue() / baseTempo;
+    // Allow for small floating point differences
+    return std::abs(currentPercentage - percentage) < 0.001;
+}
+
+void MainComponent::updateTempoButtonStates()
+{
+    tempo70Button.setToggleState(isTempoPercentageActive(0.70), juce::dontSendNotification);
+    tempo75Button.setToggleState(isTempoPercentageActive(0.75), juce::dontSendNotification);
+    tempo80Button.setToggleState(isTempoPercentageActive(0.80), juce::dontSendNotification);
+    tempo85Button.setToggleState(isTempoPercentageActive(0.85), juce::dontSendNotification);
+    tempo100Button.setToggleState(isTempoPercentageActive(1.00), juce::dontSendNotification);
 }
 
 void MainComponent::gamepadButtonPressed(int buttonId)
