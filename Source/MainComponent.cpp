@@ -363,6 +363,16 @@ void MainComponent::handleFileSelection(const juce::File &file)
     auto clip1 = EngineHelpers::loadAudioFileAsClip(edit, file);
     if (clip1)
     {
+        // Stop playback and reset transport
+        edit.getTransport().stop(false, false);
+        edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
+        
+        // Reset play/pause/stop button states
+        playState = PlayState::Stopped;
+        stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
+        playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
+        playButton.setButtonText("Play");
+
         // Load audio file and get samples
         juce::AudioFormatManager formatManager;
         formatManager.registerBasicFormats();
