@@ -13,6 +13,8 @@
 VinylBrakeComponent::VinylBrakeComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
+    titleLabel.setText("Vinyl Brake", juce::dontSendNotification);
+    
     // Configure label
     decayTimeLabel.setText("Decay Time", juce::dontSendNotification);
     decayTimeLabel.setJustificationType(juce::Justification::centred);

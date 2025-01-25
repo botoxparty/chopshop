@@ -233,7 +233,7 @@ public:
     {
         const auto matrixGreen = juce::Colour(0xFF00FF41);
         auto bounds = juce::Rectangle<float>(x, y, width, height);
-        auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.4f;
+        auto radius = juce::jmin(bounds.getWidth(), bounds.getHeight()) * 0.35f;
         auto centreX = bounds.getCentreX();
         auto centreY = bounds.getCentreY();
         auto angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);

@@ -13,6 +13,7 @@
 FlangerComponent::FlangerComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
+    titleLabel.setText("Flanger", juce::dontSendNotification);
     // Configure labels
     depthLabel.setText("Depth", juce::dontSendNotification);
     speedLabel.setText("Speed", juce::dontSendNotification);
@@ -84,6 +85,7 @@ FlangerComponent::FlangerComponent(tracktion_engine::Edit& edit)
 void FlangerComponent::resized()
 {
     auto bounds = getEffectiveArea();
+    BaseEffectComponent::resized();
     
     // Create a grid layout
     juce::Grid grid;
@@ -102,10 +104,10 @@ void FlangerComponent::resized()
         juce::GridItem(speedLabel),
         juce::GridItem(widthLabel),
         juce::GridItem(mixLabel),
-        juce::GridItem(depthSlider),
-        juce::GridItem(speedSlider),
-        juce::GridItem(widthSlider),
-        juce::GridItem(mixSlider)
+        juce::GridItem(depthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
+        juce::GridItem(speedSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
+        juce::GridItem(widthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
+        juce::GridItem(mixSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
     };
     
     grid.performLayout(bounds.toNearestInt());

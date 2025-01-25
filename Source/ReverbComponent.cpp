@@ -3,6 +3,7 @@
 ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
+    titleLabel.setText("Reverb", juce::dontSendNotification);
     // Configure labels
     roomSizeLabel.setText("Room Size", juce::dontSendNotification);
     wetLabel.setText("Wet Level", juce::dontSendNotification);
@@ -42,6 +43,7 @@ ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
 void ReverbComponent::resized()
 {
     auto bounds = getEffectiveArea();
+    BaseEffectComponent::resized(); // This will handle the title label
     
     // Create a grid layout
     juce::Grid grid;
@@ -58,8 +60,8 @@ void ReverbComponent::resized()
     grid.items = {
         juce::GridItem(roomSizeLabel),
         juce::GridItem(wetLabel),
-        juce::GridItem(reverbRoomSizeSlider),
-        juce::GridItem(reverbWetSlider)
+        juce::GridItem(reverbRoomSizeSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
+        juce::GridItem(reverbWetSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
     };
     
     grid.performLayout(bounds.toNearestInt());

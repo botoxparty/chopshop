@@ -28,6 +28,7 @@ protected:
     
     tracktion_engine::Edit& edit;
     tracktion_engine::Plugin::Ptr plugin;
+    juce::Label titleLabel;
     
 private:
     void drawScrew(juce::Graphics& g, float x, float y);

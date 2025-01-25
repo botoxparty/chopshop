@@ -13,6 +13,11 @@
 BaseEffectComponent::BaseEffectComponent(tracktion_engine::Edit& e)
     : edit(e)
 {
+    // Configure title label
+    titleLabel.setFont(juce::Font(16.0f, juce::Font::bold));
+    titleLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(titleLabel);
+    
     // Add some padding for the panel effect
     setPaintingIsUnclipped(true);
 }
@@ -105,7 +110,9 @@ juce::Rectangle<float> BaseEffectComponent::getEffectiveArea() const
 
 void BaseEffectComponent::resized()
 {
-    // Base implementation - override in derived classes
+    auto bounds = getLocalBounds();
+    // Reserve space at the top for the title
+    titleLabel.setBounds(bounds.removeFromTop(25));
 }
 
 void BaseEffectComponent::bindSliderToParameter(juce::Slider& slider, tracktion_engine::AutomatableParameter& param)

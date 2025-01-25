@@ -13,6 +13,7 @@
 DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
+    titleLabel.setText("Delay", juce::dontSendNotification);
     // Configure labels
     feedbackLabel.setText("Feedback", juce::dontSendNotification);
     mixLabel.setText("Mix", juce::dontSendNotification);
@@ -74,7 +75,7 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
 void DelayComponent::resized()
 {
     auto bounds = getEffectiveArea();
-    const int dialSize = juce::jmin(bounds.getWidth() / 3, bounds.getHeight() / 2);
+    BaseEffectComponent::resized();
     
     // Create a grid layout
     juce::Grid grid;
@@ -92,9 +93,9 @@ void DelayComponent::resized()
         juce::GridItem(feedbackLabel),
         juce::GridItem(mixLabel),
         juce::GridItem(lengthLabel),
-        juce::GridItem(feedbackSlider),
-        juce::GridItem(mixSlider),
-        juce::GridItem(lengthSlider)
+        juce::GridItem(feedbackSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
+        juce::GridItem(mixSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
+        juce::GridItem(lengthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
     };
     
     grid.performLayout(bounds.toNearestInt());
