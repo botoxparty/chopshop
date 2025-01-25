@@ -12,60 +12,58 @@ public:
         // Override the default typeface for all fonts
         setDefaultSansSerifTypeface(getCustomFont().getTypefacePtr());
 
-        // Wireframe-inspired colors
-        const auto wireColor = juce::Colour(0xFF00FF41); // Bright matrix green
-        const auto darkWire = juce::Colour(0xFF003B00);  // Dark green for backgrounds
-        const auto black = juce::Colour(0xFF000000);     // Pure black
+        // Winamp-inspired colors
+        const auto displayColor = juce::Colour(0xFF00FF41);    // Classic Winamp green
+        const auto metalGrey = juce::Colour(0xFF2A2A2A);      // Dark metallic
+        const auto metalLight = juce::Colour(0xFF3D3D3D);     // Light metallic
+        const auto accentColor = juce::Colour(0xFF484848);    // Accent grey
 
-        setColour(juce::ResizableWindow::backgroundColourId, black);
-        setColour(juce::TextButton::buttonColourId, black);
-        setColour(juce::TextButton::buttonOnColourId, black);
-        setColour(juce::TextButton::textColourOffId, wireColor);
-        setColour(juce::TextButton::textColourOnId, wireColor);
-        setColour(juce::Slider::thumbColourId, wireColor);
-        setColour(juce::Slider::trackColourId, wireColor.withAlpha(0.3f));
-        setColour(juce::Label::textColourId, wireColor);
+        setColour(juce::ResizableWindow::backgroundColourId, metalGrey);
+        setColour(juce::TextButton::buttonColourId, metalLight);
+        setColour(juce::TextButton::buttonOnColourId, accentColor);
+        setColour(juce::TextButton::textColourOffId, displayColor);
+        setColour(juce::TextButton::textColourOnId, displayColor);
+        setColour(juce::Slider::thumbColourId, metalLight);
+        setColour(juce::Slider::trackColourId, displayColor.withAlpha(0.5f));
+        setColour(juce::Label::textColourId, displayColor);
     }
 
-    void drawButtonBackground(juce::Graphics &g, juce::Button &button,
-                              const juce::Colour &backgroundColour,
-                              bool shouldDrawButtonAsHighlighted,
-                              bool shouldDrawButtonAsDown) override
+    void drawButtonBackground(juce::Graphics& g, juce::Button& button,
+                            const juce::Colour& backgroundColour,
+                            bool shouldDrawButtonAsHighlighted,
+                            bool shouldDrawButtonAsDown) override
     {
         auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
-        const auto wireColor = juce::Colour(0xFF00FF41);
+        
+        // Metallic gradient background
+        juce::ColourGradient gradient(
+            juce::Colour(0xFF3D3D3D),
+            bounds.getTopLeft(),
+            juce::Colour(0xFF2A2A2A),
+            bounds.getBottomRight(),
+            false);
+            
+        g.setGradientFill(gradient);
+        g.fillRoundedRectangle(bounds, 2.0f);
 
-        // Draw wireframe rectangle
-        g.setColour(wireColor.withAlpha(shouldDrawButtonAsDown ? 0.8f : shouldDrawButtonAsHighlighted ? 0.6f
-                                                                                                      : 0.4f));
-
-        // Main outline
-        g.drawRect(bounds, 1.0f);
-
-        // Corner details
-        float cornerSize = 4.0f;
-        // Top left
-        g.drawLine(bounds.getX(), bounds.getY(), bounds.getX() + cornerSize, bounds.getY(), 1.0f);
-        g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getY() + cornerSize, 1.0f);
-        // Top right
-        g.drawLine(bounds.getRight() - cornerSize, bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);
-        g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getY() + cornerSize, 1.0f);
-        // Bottom left
-        g.drawLine(bounds.getX(), bounds.getBottom() - cornerSize, bounds.getX(), bounds.getBottom(), 1.0f);
-        g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getX() + cornerSize, bounds.getBottom(), 1.0f);
-        // Bottom right
-        g.drawLine(bounds.getRight(), bounds.getBottom() - cornerSize, bounds.getRight(), bounds.getBottom(), 1.0f);
-        g.drawLine(bounds.getRight() - cornerSize, bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);
-        const auto baseColor = button.getToggleState() ? juce::Colours::green : backgroundColour;
-
-        auto finalColor = baseColor;
+        // Add metallic edge effect
         if (shouldDrawButtonAsDown)
-            finalColor = finalColor.darker(0.2f);
-        else if (shouldDrawButtonAsHighlighted)
-            finalColor = finalColor.brighter(0.2f);
-
-        g.setColour(finalColor);
-        g.fillRoundedRectangle(bounds, 4.0f);
+        {
+            g.setColour(juce::Colours::black.withAlpha(0.3f));
+            g.drawRoundedRectangle(bounds, 2.0f, 1.0f);
+        }
+        else
+        {
+            // Top-left highlight
+            g.setColour(juce::Colours::white.withAlpha(0.1f));
+            g.drawLine(bounds.getX(), bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);
+            g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getBottom(), 1.0f);
+            
+            // Bottom-right shadow
+            g.setColour(juce::Colours::black.withAlpha(0.2f));
+            g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);
+            g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getBottom(), 1.0f);
+        }
     }
 
     void drawLinearSlider(juce::Graphics &g, int x, int y, int width, int height,
