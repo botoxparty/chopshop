@@ -72,11 +72,6 @@ public:
     {
         if (slider.getName() == "Crossfader")
         {
-            // Main background
-            auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat();
-            g.setColour(juce::Colours::black);
-            g.fillRoundedRectangle(bounds, 2.0f);
-
             // Calculate groove dimensions and position
             auto grooveWidth = width * 0.8f;
             auto grooveHeight = 4.0f; // Reduced from 8.0f for a slimmer look
@@ -89,7 +84,7 @@ public:
             // Draw groove with glow effect
             const auto matrixGreen = juce::Colour(0xFF00FF41);
 
-            // Base groove
+            // Base groove - back to black
             g.setColour(juce::Colours::black);
             g.fillRoundedRectangle(grooveBounds, 2.0f);
 
@@ -125,11 +120,12 @@ public:
             g.fillRoundedRectangle(thumbBounds.translated(2, 2), 4.0f);
 
             // Handle base
-            g.setGradientFill(juce::ColourGradient(juce::Colours::white.darker(),
-                                                   thumbBounds.getX(), thumbBounds.getY(),
-                                                   juce::Colours::white.darker(0.2f),
-                                                   thumbBounds.getRight(), thumbBounds.getBottom(),
-                                                   false));
+            g.setGradientFill(juce::ColourGradient(
+                juce::Colour(0xFF3D3D3D),  // Light metallic
+                thumbBounds.getTopLeft(),
+                juce::Colour(0xFF2A2A2A),  // Dark metallic
+                thumbBounds.getBottomRight(),
+                false));
             g.fillRoundedRectangle(thumbBounds, 4.0f);
 
             // Handle detail lines
@@ -188,25 +184,11 @@ public:
         {
             auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat();
 
-            // Draw main background
-            g.setColour(juce::Colours::darkgrey.darker());
-            g.fillRoundedRectangle(bounds, 2.0f);
-
-            // Draw center line
-            g.setColour(juce::Colours::white.withAlpha(0.3f));
+            // Draw only the center line
+            const auto displayColor = juce::Colour(0xFF00FF41);  // Winamp green
+            g.setColour(displayColor.withAlpha(0.3f));
             float centerX = bounds.getCentreX();
-            g.drawVerticalLine(static_cast<int>(centerX), bounds.getY(), bounds.getBottom());
-
-            // Draw markers
-            g.setColour(juce::Colours::white.withAlpha(0.5f));
-            float markerWidth = 2.0f;
-            float markerHeight = bounds.getHeight() * 0.3f;
-
-            // Left marker
-            g.fillRect(bounds.getX() + 2, bounds.getCentreY() - markerHeight / 2, markerWidth, markerHeight);
-
-            // Right marker
-            g.fillRect(bounds.getRight() - 4, bounds.getCentreY() - markerHeight / 2, markerWidth, markerHeight);
+            g.drawVerticalLine(static_cast<int>(centerX), bounds.getY() + 4, bounds.getBottom() - 4);
         }
     }
 
