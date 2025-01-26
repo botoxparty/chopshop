@@ -17,8 +17,9 @@ public:
         const auto metalGrey = juce::Colour(0xFF2A2A2A);      // Dark metallic
         const auto metalLight = juce::Colour(0xFF3D3D3D);     // Light metallic
         const auto accentColor = juce::Colour(0xFF484848);    // Accent grey
+        const auto backgroundColor = juce::Colour(0xFF000000); // Background grey
 
-        setColour(juce::ResizableWindow::backgroundColourId, metalGrey);
+        setColour(juce::ResizableWindow::backgroundColourId, backgroundColor);
         setColour(juce::TextButton::buttonColourId, metalLight);
         setColour(juce::TextButton::buttonOnColourId, accentColor);
         setColour(juce::TextButton::textColourOffId, displayColor);

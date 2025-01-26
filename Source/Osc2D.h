@@ -287,7 +287,7 @@ private:
             shader = std::move (shaderProgramAttempt);
             uniforms.reset (new Uniforms (openGLContext, *shader));
             
-            statusText = "GLSL: v" + String (OpenGLShaderProgram::getLanguageVersion(), 2);
+            // statusText = "GLSL: v" + String (OpenGLShaderProgram::getLanguageVersion(), 2);
         }
         else
         {
