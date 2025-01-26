@@ -7,7 +7,7 @@ ChopComponent::ChopComponent(tracktion_engine::Edit& edit)
     
     // Configure labels
     durationLabel.setText("Duration", juce::dontSendNotification);
-    durationLabel.setJustificationType(juce::Justification::centred);
+    durationLabel.setJustificationType(juce::Justification::left);
     
     crossfaderLabel.setText("Crossfader", juce::dontSendNotification);
     crossfaderLabel.setJustificationType(juce::Justification::centred);
@@ -62,8 +62,8 @@ void ChopComponent::resized()
     
     grid.items = {
         juce::GridItem(durationLabel),
-        juce::GridItem(chopDurationComboBox),
-        juce::GridItem(chopButton),
+        juce::GridItem(chopDurationComboBox).withHeight(30),
+        juce::GridItem(chopButton).withHeight(30),
         juce::GridItem(crossfaderLabel),
         juce::GridItem(crossfaderSlider)
     };
