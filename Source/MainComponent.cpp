@@ -65,15 +65,6 @@ MainComponent::MainComponent()
         updateTempoButtonStates();
     };
 
-    // Setup crossfader
-    crossfaderSlider.setName("Crossfader");
-    crossfaderSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    crossfaderSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    crossfaderSlider.setRange(0.0, 1.0, 0.01);
-    crossfaderSlider.setValue(0.0, juce::dontSendNotification);
-    crossfaderSlider.onValueChange = [this] { updateCrossfader(); };
-    crossfaderSlider.setPopupDisplayEnabled(true, false, this);
-    crossfaderSlider.setPopupMenuEnabled(false);
 
     // Setup reverb control
     reverbComponent = std::make_unique<ReverbComponent>(edit);
@@ -98,7 +89,6 @@ MainComponent::MainComponent()
     { setTempoPercentage(1.00); };
 
     // setup effects
-
     recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     recordButton.onClick = [this]
     {
@@ -108,6 +98,9 @@ MainComponent::MainComponent()
             startRecording();
     };
 
+    chopComponent = std::make_unique<ChopComponent>(edit);
+    addAndMakeVisible(*chopComponent);
+    
     chopButton.addMouseListener(this, false);
     chopButton.setButtonText(chopButton.getButtonText()); // Trigger text update
     getLookAndFeel().setDefaultSansSerifTypefaceName("Arial");
@@ -192,14 +185,9 @@ MainComponent::MainComponent()
         DBG("Oscilloscope component not added to visualizer box");
 
     // Add after other component setup
-    chopDurationComboBox.addItem("1/4 Beat", 1);
-    chopDurationComboBox.addItem("1/2 Beat", 2);
-    chopDurationComboBox.addItem("1 Beat", 3);
-    chopDurationComboBox.addItem("2 Beats", 4);
-    chopDurationComboBox.addItem("4 Beats", 5);
-    addAndMakeVisible(chopDurationComboBox);
-
-    chopDurationComboBox.setSelectedId(3, juce::dontSendNotification); // Default to 1 Beat
+    chopComponent->onCrossfaderValueChanged = [this](float value) { 
+        updateCrossfader(); 
+    };
 }
 
 MainComponent::~MainComponent()
@@ -296,9 +284,7 @@ void MainComponent::resized()
 
     column2.items.add(juce::FlexItem(tempoButtonBox).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(tempoSlider).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(chopDurationComboBox).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(crossfaderSlider).withHeight(40).withMargin(5));
-    column2.items.add(juce::FlexItem(chopButton).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(*chopComponent).withHeight(100).withMargin(5));
     column2.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
 
     // Column 3 (Effects)

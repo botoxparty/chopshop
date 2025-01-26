@@ -12,6 +12,7 @@
 #include <aubio/aubio.h>
 #include "minibpm.h"
 #include "OscilloscopePlugin.h"
+#include "ChopComponent.h"
 // Add this line to enable console output
 #define JUCE_DEBUG 1
 
@@ -62,17 +63,15 @@ public:
         if (event.eventComponent == &chopButton)
         {
             double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-            double minimumTime = getChopDurationInMs(chopDurationComboBox.getText());
+            double minimumTime = chopComponent->getChopDurationInMs(tempoSlider.getValue());
 
             if (elapsedTime >= minimumTime)
             {
-                // Switch back immediately
                 float currentPosition = crossfaderSlider.getValue();
                 crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
             }
             else
             {
-                // Set up timer for delayed switch back
                 chopReleaseDelay = minimumTime - elapsedTime;
                 startTimer(static_cast<int>(chopReleaseDelay));
             }
@@ -151,9 +150,6 @@ private:
     void startRecording();
     void stopRecording();
 
-    juce::ComboBox chopDurationComboBox;
-    double getChopDurationInMs(const juce::String& description);
-
     juce::TextButton tempo70Button{"70%"};
     juce::TextButton tempo75Button{"75%"};
     juce::TextButton tempo80Button{"80%"};
@@ -181,6 +177,7 @@ private:
     std::unique_ptr<LibraryComponent> libraryComponent;
     std::unique_ptr<VinylBrakeComponent> vinylBrakeComponent;
     std::unique_ptr<DelayComponent> delayComponent;
+    std::unique_ptr<ChopComponent> chopComponent;
 
     bool isTrackLoaded()
     {
