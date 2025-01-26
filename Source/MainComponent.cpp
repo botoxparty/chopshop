@@ -19,7 +19,6 @@ MainComponent::MainComponent()
     // Register our custom plugins with the engine
     engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
 
-    addAndMakeVisible(openButton);
     addAndMakeVisible(saveButton);
     addAndMakeVisible(playButton);
     addAndMakeVisible(stopButton);
@@ -47,8 +46,6 @@ MainComponent::MainComponent()
     { play(); };
     stopButton.onClick = [this]
     { stop(); };
-    openButton.onClick = [this]
-    { loadAudioFile(); };
 
     // Setup reverb control
     reverbComponent = std::make_unique<ReverbComponent>(edit);
@@ -266,7 +263,6 @@ void MainComponent::resized()
     // Column 1 (Transport controls)
     juce::FlexBox column1;
     column1.flexDirection = juce::FlexBox::Direction::column;
-    column1.items.add(juce::FlexItem(openButton).withHeight(30).withMargin(5));
     column1.items.add(juce::FlexItem(*libraryComponent).withFlex(1.0f).withHeight(300).withMargin(5));
     column1.items.add(juce::FlexItem(audioSettingsButton).withHeight(30).withMargin(5));
     column1.items.add(juce::FlexItem(*controllerMappingComponent).withHeight(30).withMargin(5));
@@ -360,6 +356,7 @@ void MainComponent::handleFileSelection(const juce::File &file)
             float detectedBPM = libraryComponent->getBPMForFile(file);
             baseTempo = detectedBPM;
             trackOffset = (60.0 / baseTempo) * 1000.0;
+            screwComponent->setBaseTempo(baseTempo);
             screwComponent->setTempo(baseTempo, juce::sendNotification);
         }
 

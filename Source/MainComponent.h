@@ -99,7 +99,6 @@ private:
 
     PlayState playState{PlayState::Stopped};
 
-    juce::TextButton openButton{"Browse"};
     juce::TextButton saveButton{"Save"};
     juce::TextButton playButton{"Play"};
     juce::TextButton stopButton{"Stop"};
