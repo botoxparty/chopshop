@@ -23,6 +23,7 @@ ChopComponent::ChopComponent(tracktion_engine::Edit& edit)
     // Configure chop button
     chopButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
     chopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
+    chopButton.addMouseListener(this, false);
     
     // Configure crossfader
     crossfaderSlider.setSliderStyle(juce::Slider::LinearHorizontal);
@@ -87,4 +88,16 @@ double ChopComponent::getChopDurationInMs(double currentTempo) const
         return beatDuration * 4.0;
         
     return beatDuration; // Default to 1 beat
+}
+
+// Add mouse listener methods to the class
+void ChopComponent::buttonStateChanged(juce::Button* button)
+{
+    if (button == &chopButton)
+    {
+        if (button->isDown() && onChopButtonPressed)
+            onChopButtonPressed();
+        else if (!button->isDown() && onChopButtonReleased)
+            onChopButtonReleased();
+    }
 } 

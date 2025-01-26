@@ -47,44 +47,12 @@ public:
     void updateTempo();
     tracktion_engine::WaveAudioClip::Ptr getClip(int trackIndex);
 
-    void mouseDown(const juce::MouseEvent &event) override
-    {
-        if (event.eventComponent == &chopButton)
-        {
-            chopStartTime = juce::Time::getMillisecondCounterHiRes();
-            // Switch crossfader to opposite position
-            float currentPosition = crossfaderSlider.getValue();
-            crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
-        }
-    }
-
-    void mouseUp(const juce::MouseEvent &event) override
-    {
-        if (event.eventComponent == &chopButton)
-        {
-            double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-            double minimumTime = chopComponent->getChopDurationInMs(tempoSlider.getValue());
-
-            if (elapsedTime >= minimumTime)
-            {
-                float currentPosition = crossfaderSlider.getValue();
-                crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
-            }
-            else
-            {
-                chopReleaseDelay = minimumTime - elapsedTime;
-                startTimer(static_cast<int>(chopReleaseDelay));
-            }
-        }
-    }
-
     void timerCallback() override
     {
         updatePositionLabel();
-        // Timer has finished, perform the delayed crossfade
         stopTimer();
-        float currentPosition = crossfaderSlider.getValue();
-        crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+        float currentPosition = chopComponent->getCrossfaderValue();
+        chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
     }
 
     void changeListenerCallback(juce::ChangeBroadcaster*) override
@@ -134,11 +102,9 @@ private:
     juce::TextButton saveButton{"Save"};
     juce::TextButton playButton{"Play"};
     juce::TextButton stopButton{"Stop"};
-    juce::TextButton chopButton{"Chop"};
 
     void handleFileSelection(const juce::File &file);
 
-    juce::Slider crossfaderSlider;
     void updateCrossfader();
     void setTrackVolume(int trackIndex, float volume);
 

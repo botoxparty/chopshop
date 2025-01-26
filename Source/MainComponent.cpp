@@ -24,14 +24,12 @@ MainComponent::MainComponent()
     addAndMakeVisible(playButton);
     addAndMakeVisible(stopButton);
     addAndMakeVisible(tempoSlider);
-    addAndMakeVisible(crossfaderSlider);
     addAndMakeVisible(recordButton);
     addAndMakeVisible(tempo70Button);
     addAndMakeVisible(tempo75Button);
     addAndMakeVisible(tempo80Button);
     addAndMakeVisible(tempo85Button);
     addAndMakeVisible(tempo100Button);
-    addAndMakeVisible(chopButton);
     addAndMakeVisible(audioSettingsButton);
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
@@ -101,11 +99,26 @@ MainComponent::MainComponent()
     chopComponent = std::make_unique<ChopComponent>(edit);
     addAndMakeVisible(*chopComponent);
     
-    chopButton.addMouseListener(this, false);
-    chopButton.setButtonText(chopButton.getButtonText()); // Trigger text update
+    chopComponent->onChopButtonPressed = [this]() {
+        chopStartTime = juce::Time::getMillisecondCounterHiRes();
+        float currentPosition = chopComponent->getCrossfaderValue();
+        chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+    };
+    
+    chopComponent->onChopButtonReleased = [this]() {
+        double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
+        double minimumTime = chopComponent->getChopDurationInMs(tempoSlider.getValue());
+
+        if (elapsedTime >= minimumTime) {
+            float currentPosition = chopComponent->getCrossfaderValue();
+            chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+        } else {
+            chopReleaseDelay = minimumTime - elapsedTime;
+            startTimer(static_cast<int>(chopReleaseDelay));
+        }
+    };
+
     getLookAndFeel().setDefaultSansSerifTypefaceName("Arial");
-    chopButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
-    chopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
 
     addAndMakeVisible(currentTrackLabel);
 
@@ -441,7 +454,7 @@ void MainComponent::handleFileSelection(const juce::File &file)
         }
 
         // Reset crossfader to first track
-        crossfaderSlider.setValue(0.0, juce::dontSendNotification);
+        chopComponent->setCrossfaderValue(0.0);
         updateCrossfader();
     }
 
@@ -468,7 +481,7 @@ te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
 
 void MainComponent::updateCrossfader()
 {
-    const float position = crossfaderSlider.getValue();
+    const float position = chopComponent->getCrossfaderValue();
     const float threshold = 0.02f; // 2% threshold for complete silence
     const float minDB = -60.0f;    // Effectively silent
 
@@ -559,8 +572,8 @@ void MainComponent::gamepadButtonPressed(int buttonId)
     {
         case SDL_CONTROLLER_BUTTON_A:  // Cross
             chopStartTime = juce::Time::getMillisecondCounterHiRes();
-            currentPosition = crossfaderSlider.getValue();
-            crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+            currentPosition = chopComponent->getCrossfaderValue();
+            chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
             break;
         case SDL_CONTROLLER_BUTTON_B:  // Circle
             loadAudioFile();
@@ -583,8 +596,8 @@ void MainComponent::gamepadButtonReleased(int buttonId)
         
         if (elapsedTime >= minimumTime)
         {
-            float currentPosition = crossfaderSlider.getValue();
-            crossfaderSlider.setValue(currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+            float currentPosition = chopComponent->getCrossfaderValue();
+            chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
         }
         else
         {
@@ -601,7 +614,7 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
     {
         // Map -1.0 to 1.0 to 0.0 to 1.0
         float crossfaderValue = (value + 1.0f) * 0.5f;
-        crossfaderSlider.setValue(crossfaderValue, juce::sendNotification);
+        chopComponent->setCrossfaderValue(crossfaderValue);
     }
 }
 
@@ -624,22 +637,4 @@ void MainComponent::updatePositionLabel()
     );
     
     positionLabel.setText(timeString + " | " + beatString, juce::dontSendNotification);
-}
-
-double MainComponent::getChopDurationInMs(const juce::String& description)
-{
-    double beatDuration = (60.0 / tempoSlider.getValue()) * 1000.0; // One beat duration in ms
-    
-    if (description == "1/4 Beat")
-        return beatDuration * 0.25;
-    else if (description == "1/2 Beat")
-        return beatDuration * 0.5;
-    else if (description == "1 Beat")
-        return beatDuration;
-    else if (description == "2 Beats")
-        return beatDuration * 2.0;
-    else if (description == "4 Beats")
-        return beatDuration * 4.0;
-        
-    return beatDuration; // Default to 1 beat
 }
