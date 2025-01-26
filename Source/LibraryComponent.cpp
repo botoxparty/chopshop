@@ -9,6 +9,8 @@
 */
 
 #include "LibraryComponent.h"
+#include "minibpm.h"
+
 
 LibraryComponent::LibraryComponent()
 {
@@ -27,8 +29,8 @@ LibraryComponent::LibraryComponent()
     // Set up playlist table
     playlistTable = std::make_unique<juce::TableListBox>();
     playlistTable->setModel(this);
-    playlistTable->getHeader().addColumn("Name", 1, 200);
-    playlistTable->getHeader().addColumn("Path", 2, 300);
+    playlistTable->getHeader().addColumn("Name", 1, 300);
+    playlistTable->getHeader().addColumn("BPM", 2, 100);
     playlistTable->setColour(juce::ListBox::backgroundColourId, black);
     playlistTable->setColour(juce::ListBox::outlineColourId, matrixGreen.withAlpha(0.5f));
     playlistTable->setColour(juce::ListBox::textColourId, matrixGreen);
@@ -112,8 +114,8 @@ void LibraryComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId,
         
         if (columnId == 1) // Name column
             g.drawText(playlist[rowNumber].name, 2, 0, width - 4, height, juce::Justification::centredLeft);
-        else if (columnId == 2) // Path column
-            g.drawText(playlist[rowNumber].filePath, 2, 0, width - 4, height, juce::Justification::centredLeft);
+        else if (columnId == 2) // BPM column
+            g.drawText(juce::String(playlist[rowNumber].bpm, 1), 2, 0, width - 4, height, juce::Justification::centred);
     }
 }
 
@@ -132,6 +134,41 @@ void LibraryComponent::addToPlaylist(const juce::File& file)
     entry.name = file.getFileNameWithoutExtension();
     entry.filePath = file.getFullPathName();
     entry.lastModified = file.getLastModificationTime().toMilliseconds();
+    
+    // Calculate BPM
+    juce::AudioFormatManager formatManager;
+    formatManager.registerBasicFormats();
+    
+    std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
+    if (reader)
+    {
+        // Create MiniBPM detector
+        breakfastquay::MiniBPM bpmDetector(reader->sampleRate);
+        bpmDetector.setBPMRange(60, 180);  // typical range for music
+        
+        // Process audio in chunks
+        const int blockSize = 1024;
+        juce::AudioBuffer<float> buffer(1, blockSize);
+        std::vector<float> samples(blockSize);
+        
+        for (int pos = 0; pos < reader->lengthInSamples; pos += blockSize) 
+        {
+            const int numSamples = std::min(blockSize, 
+                static_cast<int>(reader->lengthInSamples - pos));
+                
+            reader->read(&buffer, 0, numSamples, pos, true, false);
+            memcpy(samples.data(), buffer.getReadPointer(0), numSamples * sizeof(float));
+            
+            bpmDetector.process(samples.data(), numSamples);
+        }
+        
+        float detectedBPM = bpmDetector.estimateTempo();
+        entry.bpm = detectedBPM > 0 ? detectedBPM : 120.0f;  // Use 120 as fallback
+    }
+    else
+    {
+        entry.bpm = 120.0f;  // Default BPM if file can't be read
+    }
     
     playlist.push_back(entry);
     playlistTable->updateContent();
@@ -169,6 +206,7 @@ void LibraryComponent::loadPlaylist()
                         pe.name = obj->getProperty("name").toString();
                         pe.filePath = obj->getProperty("path").toString();
                         pe.lastModified = obj->getProperty("modified").toString().getLargeIntValue();
+                        pe.bpm = static_cast<float>(obj->getProperty("bpm"));
                         playlist.push_back(pe);
                     }
                 }
@@ -196,6 +234,7 @@ void LibraryComponent::savePlaylist()
             obj->setProperty("name", entry.name);
             obj->setProperty("path", entry.filePath);
             obj->setProperty("modified", entry.lastModified);
+            obj->setProperty("bpm", entry.bpm);
             playlistArray.add(obj.get());
         }
         

@@ -66,21 +66,26 @@ MainComponent::MainComponent()
 
     chopComponent = std::make_unique<ChopComponent>(edit);
     addAndMakeVisible(*chopComponent);
-    
-    chopComponent->onChopButtonPressed = [this]() {
+
+    chopComponent->onChopButtonPressed = [this]()
+    {
         chopStartTime = juce::Time::getMillisecondCounterHiRes();
         float currentPosition = chopComponent->getCrossfaderValue();
         chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
     };
-    
-    chopComponent->onChopButtonReleased = [this]() {
+
+    chopComponent->onChopButtonReleased = [this]()
+    {
         double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
         double minimumTime = chopComponent->getChopDurationInMs(screwComponent->getTempo());
 
-        if (elapsedTime >= minimumTime) {
+        if (elapsedTime >= minimumTime)
+        {
             float currentPosition = chopComponent->getCrossfaderValue();
             chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
-        } else {
+        }
+        else
+        {
             chopReleaseDelay = minimumTime - elapsedTime;
             startTimer(static_cast<int>(chopReleaseDelay));
         }
@@ -112,7 +117,8 @@ MainComponent::MainComponent()
     addAndMakeVisible(*libraryComponent);
 
     // Set up the callback for when a file is selected
-    libraryComponent->onFileSelected = [this](const juce::File& file) {
+    libraryComponent->onFileSelected = [this](const juce::File &file)
+    {
         handleFileSelection(file);
     };
 
@@ -120,8 +126,8 @@ MainComponent::MainComponent()
     if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
     {
         EngineHelpers::removeAllClips(*track1);
-        volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin*>(track1->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
-        
+        volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin *>(track1->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
+
         // Add oscilloscope plugin to track 1
         track1->pluginList.insertPlugin(te::OscilloscopePlugin::create(), -1);
     }
@@ -129,7 +135,7 @@ MainComponent::MainComponent()
     if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
     {
         EngineHelpers::removeAllClips(*track2);
-        volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin*>(track2->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
+        volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin *>(track2->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
     }
 
     vinylBrakeComponent = std::make_unique<VinylBrakeComponent>(edit);
@@ -141,15 +147,15 @@ MainComponent::MainComponent()
     if (auto masterTrack = edit.getMasterTrack())
     {
         DBG("Found master track");
-        
+
         // Register our custom plugins with the engine
         engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
-        
+
         oscilloscopePlugin = std::shared_ptr<tracktion_engine::Plugin>(masterTrack->pluginList.insertPlugin(tracktion_engine::OscilloscopePlugin::create(), -1).get());
         if (oscilloscopePlugin != nullptr)
         {
             DBG("Created oscilloscope plugin");
-            if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
+            if (auto *oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin *>(oscilloscopePlugin.get()))
             {
                 DBG("Cast to oscilloscope plugin successful");
                 oscPlugin->addListener(this);
@@ -160,12 +166,13 @@ MainComponent::MainComponent()
     // Add oscilloscope to visualizer box
     if (oscilloscopeComponent != nullptr)
         DBG("Oscilloscope component added to visualizer box");
-    else 
+    else
         DBG("Oscilloscope component not added to visualizer box");
 
     // Add after other component setup
-    chopComponent->onCrossfaderValueChanged = [this](float value) { 
-        updateCrossfader(); 
+    chopComponent->onCrossfaderValueChanged = [this](float value)
+    {
+        updateCrossfader();
     };
 
     screwComponent = std::make_unique<ScrewComponent>(edit);
@@ -174,7 +181,8 @@ MainComponent::MainComponent()
     // Initialize the screw component with the current tempo
     screwComponent->setTempo(baseTempo, juce::dontSendNotification);
 
-    screwComponent->onTempoChanged = [this](double tempo) {
+    screwComponent->onTempoChanged = [this](double tempo)
+    {
         updateTempo();
     };
 
@@ -185,7 +193,7 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
-    if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
+    if (auto *oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin *>(oscilloscopePlugin.get()))
         oscPlugin->removeListener(this);
 }
 
@@ -292,7 +300,7 @@ void MainComponent::resized()
 void MainComponent::play()
 {
     EngineHelpers::togglePlay(edit);
-    
+
     // Update button states based on transport state
     const bool isPlaying = edit.getTransport().isPlaying();
     stopButton.setToggleState(!isPlaying, juce::NotificationType::dontSendNotification);
@@ -335,7 +343,7 @@ void MainComponent::handleFileSelection(const juce::File &file)
         // Stop playback and reset transport
         edit.getTransport().stop(false, false);
         edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
-        
+
         // Reset play/pause/stop button states
         playState = PlayState::Stopped;
         stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
@@ -349,44 +357,10 @@ void MainComponent::handleFileSelection(const juce::File &file)
         std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
         if (reader)
         {
-            const float minTempo = 60.0f;
-            const float maxTempo = 200.0f;
-            const int minPeakDistance = static_cast<int>(reader->sampleRate * 0.01); // 10ms
-            
-            // Create MiniBPM detector
-            breakfastquay::MiniBPM bpmDetector(reader->sampleRate);
-            bpmDetector.setBPMRange(60, 180);  // typical range for music
-            
-            // Process audio in chunks
-            const int blockSize = 1024;
-            juce::AudioBuffer<float> buffer(1, blockSize);
-            std::vector<float> samples(blockSize);
-            
-            for (int pos = 0; pos < reader->lengthInSamples; pos += blockSize) 
-            {
-                const int numSamples = std::min(blockSize, 
-                    static_cast<int>(reader->lengthInSamples - pos));
-                    
-                reader->read(&buffer, 0, numSamples, pos, true, false);
-                memcpy(samples.data(), buffer.getReadPointer(0), numSamples * sizeof(float));
-                
-                bpmDetector.process(samples.data(), numSamples);
-            }
-            
-            float detectedBPM = bpmDetector.estimateTempo();
-            
-            if (detectedBPM > 0)
-            {
-                baseTempo = detectedBPM;
-                trackOffset = (60.0 / baseTempo) * 1000.0;
-                screwComponent->setTempo(baseTempo, juce::sendNotification);
-            }
-            else
-            {
-                baseTempo = 120.0;  // fallback value
-                trackOffset = (60.0 / baseTempo) * 1000.0;
-                screwComponent->setTempo(baseTempo, juce::sendNotification);
-            }
+            float detectedBPM = libraryComponent->getBPMForFile(file);
+            baseTempo = detectedBPM;
+            trackOffset = (60.0 / baseTempo) * 1000.0;
+            screwComponent->setTempo(baseTempo, juce::sendNotification);
         }
 
         // Disable auto tempo and pitch for first clip
@@ -452,7 +426,7 @@ te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
 void MainComponent::updateCrossfader()
 {
     const float position = chopComponent->getCrossfaderValue();
-    const float minDB = -60.0f;    // Effectively silent
+    const float minDB = -60.0f; // Effectively silent
 
     // Calculate volume curves that give equal power at center position
     float gainTrack1 = std::cos(position * juce::MathConstants<float>::halfPi);
@@ -505,7 +479,7 @@ void MainComponent::stopRecording()
     recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
 }
 
-bool MainComponent::isTempoPercentageActive(double percentage) const 
+bool MainComponent::isTempoPercentageActive(double percentage) const
 {
     // Compare current tempo with base tempo * percentage
     const double currentPercentage = screwComponent->getTempo() / baseTempo;
@@ -515,34 +489,34 @@ bool MainComponent::isTempoPercentageActive(double percentage) const
 
 void MainComponent::gamepadButtonPressed(int buttonId)
 {
-    float currentPosition;  // Moved outside switch
-    
+    float currentPosition; // Moved outside switch
+
     switch (buttonId)
     {
-        case SDL_CONTROLLER_BUTTON_A:  // Cross
-            chopStartTime = juce::Time::getMillisecondCounterHiRes();
-            currentPosition = chopComponent->getCrossfaderValue();
-            chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
-            break;
-        case SDL_CONTROLLER_BUTTON_B:  // Circle
-            loadAudioFile();
-            break;
-        case SDL_CONTROLLER_BUTTON_X:  // Square
-            stop();
-            break;
-        case SDL_CONTROLLER_BUTTON_Y:  // Triangle
-            play();
-            break;
+    case SDL_CONTROLLER_BUTTON_A: // Cross
+        chopStartTime = juce::Time::getMillisecondCounterHiRes();
+        currentPosition = chopComponent->getCrossfaderValue();
+        chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+        break;
+    case SDL_CONTROLLER_BUTTON_B: // Circle
+        loadAudioFile();
+        break;
+    case SDL_CONTROLLER_BUTTON_X: // Square
+        stop();
+        break;
+    case SDL_CONTROLLER_BUTTON_Y: // Triangle
+        play();
+        break;
     }
 }
 
 void MainComponent::gamepadButtonReleased(int buttonId)
 {
-    if (buttonId == SDL_CONTROLLER_BUTTON_A)  // Cross
+    if (buttonId == SDL_CONTROLLER_BUTTON_A) // Cross
     {
         double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
         double minimumTime = trackOffset;
-        
+
         if (elapsedTime >= minimumTime)
         {
             float currentPosition = chopComponent->getCrossfaderValue();
@@ -569,21 +543,20 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
 
 void MainComponent::updatePositionLabel()
 {
-    auto& transport = edit.getTransport();
+    auto &transport = edit.getTransport();
     auto position = transport.getPosition();
-    
+
     // Get time position
     auto timeString = PlayHeadHelpers::timeToTimecodeString(position.inSeconds());
-    
+
     // Get beat position
-    auto& tempoSequence = edit.tempoSequence;
+    auto &tempoSequence = edit.tempoSequence;
     auto beatPosition = tempoSequence.toBarsAndBeats(position);
     auto quarterNotes = beatPosition.getTotalBars() * 4.0; // Convert bars to quarter notes
     auto beatString = PlayHeadHelpers::quarterNotePositionToBarsBeatsString(
         quarterNotes,
         tempoSequence.getTimeSigAt(position).numerator,
-        tempoSequence.getTimeSigAt(position).denominator
-    );
-    
+        tempoSequence.getTimeSigAt(position).denominator);
+
     positionLabel.setText(timeString + " | " + beatString, juce::dontSendNotification);
 }

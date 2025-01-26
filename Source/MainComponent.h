@@ -10,7 +10,6 @@
 #include "VinylBrakeComponent.h"
 #include "DelayComponent.h"
 #include <aubio/aubio.h>
-#include "minibpm.h"
 #include "OscilloscopePlugin.h"
 #include "ChopComponent.h"
 #include "ScrewComponent.h"

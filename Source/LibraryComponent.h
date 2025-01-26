@@ -16,6 +16,7 @@ struct PlaylistEntry {
     juce::String name;
     juce::String filePath;
     juce::int64 lastModified;
+    float bpm;
 };
 
 class LibraryComponent : public juce::Component,
@@ -42,6 +43,14 @@ public:
     void cellDoubleClicked(int rowNumber, int columnId, const juce::MouseEvent&) override;
 
     std::function<void(const juce::File&)> onFileSelected;
+
+    float getBPMForFile(const juce::File& file) const {
+        auto it = std::find_if(playlist.begin(), playlist.end(),
+            [&file](const PlaylistEntry& entry) {
+                return entry.filePath == file.getFullPathName();
+            });
+        return it != playlist.end() ? it->bpm : 120.0f;
+    }
 
 private:
     void addToPlaylist(const juce::File& file);
