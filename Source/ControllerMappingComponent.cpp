@@ -23,6 +23,7 @@ ControllerMappingComponent::ControllerMappingComponent()
             
             mappingDialog = options.launchAsync();
             mappingDialog->centreWithSize(600, 400);
+            mappingDialog->addComponentListener(new ComponentListener(*this));
         }
     };
 
@@ -172,4 +173,20 @@ void ControllerMappingComponent::resized()
 {
     auto bounds = getLocalBounds();
     mappingButton.setBounds(bounds.removeFromTop(30));
-} 
+}
+
+// Add this helper class to handle the window closing
+class ComponentListener : public juce::ComponentListener
+{
+public:
+    ComponentListener(ControllerMappingComponent& owner) : owner_(owner) {}
+    
+    void componentBeingDeleted(juce::Component& component) override
+    {
+        owner_.mappingDialog = nullptr;
+        delete this; // Clean up the listener
+    }
+    
+private:
+    ControllerMappingComponent& owner_;
+}; 

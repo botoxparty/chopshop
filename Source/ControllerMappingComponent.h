@@ -20,6 +20,23 @@ public:
     };
 
 private:
+    friend class ComponentListener;
+    
+    class ComponentListener : public juce::ComponentListener
+    {
+    public:
+        ComponentListener(ControllerMappingComponent& owner) : owner_(owner) {}
+        
+        void componentBeingDeleted(juce::Component& component) override
+        {
+            owner_.mappingDialog = nullptr;
+            delete this;
+        }
+        
+    private:
+        ControllerMappingComponent& owner_;
+    };
+
     void drawPS5Controller(juce::Graphics& g);
     void drawButton(juce::Graphics& g, juce::Point<float> center, float radius, 
                    const juce::String& label, bool isHighlighted);
