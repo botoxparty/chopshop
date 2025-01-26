@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="cLlPFk" name="ChopScrew" projectType="guiapp" useAppConfig="0"
+<JUCERPROJECT id="cLlPFk" name="ChopShop" projectType="guiapp" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" cppLanguageStandard="20"
               defines="JUCE_MODAL_LOOPS_PERMITTED=1">
-  <MAINGROUP id="yFkC8Y" name="ChopScrew">
+  <MAINGROUP id="yFkC8Y" name="ChopShop">
     <GROUP id="{B1BF7118-A97C-6639-736D-41A0A841DDC8}" name="modules">
       <GROUP id="{A4A53AB5-E81A-075F-343E-0DE99CECEE17}" name="minibpm">
         <FILE id="tBdO88" name="minibpm.cpp" compile="1" resource="0" file="Source/minibpm.cpp"/>
@@ -94,9 +94,9 @@
     <XCODE_MAC targetFolder="Builds/MacOSX" extraLinkerFlags="-lSDL2 -laubio"
                smallIcon="ZV5Is2" bigIcon="ZV5Is2">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="ChopScrew" headerPath="/opt/homebrew/include"
+        <CONFIGURATION isDebug="1" name="Debug" targetName="ChopShop" headerPath="/opt/homebrew/include"
                        libraryPath="/opt/homebrew/lib" extraLinkerFlags="-laubio"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="ChopScrew" headerPath="/opt/homebrew/include"
+        <CONFIGURATION isDebug="0" name="Release" targetName="ChopShop" headerPath="/opt/homebrew/include"
                        libraryPath="/opt/homebrew/lib" extraLinkerFlags="-laubio"/>
       </CONFIGURATIONS>
       <MODULEPATHS>

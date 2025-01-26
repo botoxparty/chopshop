@@ -185,9 +185,9 @@ void LibraryComponent::removeFromPlaylist(int index)
 void LibraryComponent::loadPlaylist()
 {
     auto properties = juce::PropertiesFile::Options();
-    properties.applicationName = "ChopScrew";
+    properties.applicationName = "ChopShop";
     properties.filenameSuffix = "settings";
-    properties.folderName = "ChopScrew";
+    properties.folderName = "ChopShop";
     properties.osxLibrarySubFolder = "Application Support";
     
     juce::ApplicationProperties appProperties;
@@ -216,9 +216,9 @@ void LibraryComponent::loadPlaylist()
 void LibraryComponent::savePlaylist()
 {
     auto properties = juce::PropertiesFile::Options();
-    properties.applicationName = "ChopScrew";
+    properties.applicationName = "ChopShop";
     properties.filenameSuffix = "settings";
-    properties.folderName = "ChopScrew";
+    properties.folderName = "ChopShop";
     properties.osxLibrarySubFolder = "Application Support";
     
     juce::ApplicationProperties appProperties;

@@ -11,11 +11,11 @@
 #include "CustomLookAndFeel.h"
 
 //==============================================================================
-class ChopScrewApplication  : public juce::JUCEApplication
+class ChopShopApplication  : public juce::JUCEApplication
 {
 public:
     //==============================================================================
-    ChopScrewApplication() {}
+    ChopShopApplication() {}
 
     const juce::String getApplicationName() override       { return ProjectInfo::projectName; }
     const juce::String getApplicationVersion() override    { return ProjectInfo::versionString; }
@@ -110,4 +110,4 @@ private:
 
 //==============================================================================
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (ChopScrewApplication)
+START_JUCE_APPLICATION (ChopShopApplication)
