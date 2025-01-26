@@ -135,8 +135,6 @@ MainComponent::MainComponent()
     vinylBrakeComponent = std::make_unique<VinylBrakeComponent>(edit);
     addAndMakeVisible(*vinylBrakeComponent);
 
-    resized();
-
     startTimerHz(30); // Update 30 times per second
 
     // Add oscilloscope to master track
@@ -179,6 +177,10 @@ MainComponent::MainComponent()
     screwComponent->onTempoChanged = [this](double tempo) {
         updateTempo();
     };
+
+    controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
+    addAndMakeVisible(*controllerMappingComponent);
+    resized();
 }
 
 MainComponent::~MainComponent()
@@ -259,6 +261,7 @@ void MainComponent::resized()
     column1.items.add(juce::FlexItem(openButton).withHeight(30).withMargin(5));
     column1.items.add(juce::FlexItem(*libraryComponent).withFlex(1.0f).withHeight(300).withMargin(5));
     column1.items.add(juce::FlexItem(audioSettingsButton).withHeight(30).withMargin(5));
+    column1.items.add(juce::FlexItem(*controllerMappingComponent).withHeight(30).withMargin(5));
 
     // Column 2 (Tempo and crossfader)
     juce::FlexBox column2;

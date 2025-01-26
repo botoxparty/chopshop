@@ -14,6 +14,7 @@
 #include "OscilloscopePlugin.h"
 #include "ChopComponent.h"
 #include "ScrewComponent.h"
+#include "ControllerMappingComponent.h"
 
 // Add this line to enable console output
 #define JUCE_DEBUG 1
@@ -161,6 +162,8 @@ private:
 
     // Add a member to hold the plugin reference
     std::shared_ptr<tracktion_engine::Plugin> oscilloscopePlugin;
+
+    std::unique_ptr<ControllerMappingComponent> controllerMappingComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
