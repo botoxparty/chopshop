@@ -84,15 +84,13 @@ void LibraryComponent::resized()
     auto bounds = getLocalBounds();
     auto buttonHeight = 30;
     
-    auto buttonArea = bounds.removeFromTop(buttonHeight);
+    // Playlist table takes all space except bottom button area
+    auto buttonArea = bounds.removeFromBottom(buttonHeight);
+    playlistTable->setBounds(bounds.reduced(2));
+    
+    // Add buttons at the bottom
     addFileButton.setBounds(buttonArea.removeFromLeft(100).reduced(2));
     removeFileButton.setBounds(buttonArea.removeFromLeft(100).reduced(2));
-    
-    // Add some padding
-    bounds.removeFromTop(4);
-    
-    // Playlist table takes remaining space
-    playlistTable->setBounds(bounds.reduced(2));
 }
 
 // TableListBoxModel implementations

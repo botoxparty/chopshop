@@ -62,7 +62,7 @@ private:
     const juce::Colour darkWire { 0xFF003B00 };     // Dark green for backgrounds
     const juce::Colour black { 0xFF000000 };        // Pure black
 
-    juce::TextButton addFileButton{"Add File"};
+    juce::TextButton addFileButton{"Add Files"};
     juce::TextButton removeFileButton{"Remove"};
     std::unique_ptr<juce::TableListBox> playlistTable;
     
