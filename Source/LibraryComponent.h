@@ -12,8 +12,15 @@
 
 #include <JuceHeader.h>
 
+struct PlaylistEntry {
+    juce::String name;
+    juce::String filePath;
+    juce::int64 lastModified;
+};
+
 class LibraryComponent : public juce::Component,
-                        public juce::FileBrowserListener
+                        public juce::FileBrowserListener,
+                        public juce::TableListBoxModel
 {
 public:
     LibraryComponent();
@@ -28,23 +35,31 @@ public:
     void fileDoubleClicked(const juce::File& file) override;
     void browserRootChanged(const juce::File& newRoot) override;
 
+    // TableListBoxModel methods
+    int getNumRows() override;
+    void paintRowBackground(juce::Graphics& g, int rowNumber, int width, int height, bool rowIsSelected) override;
+    void paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected) override;
+    void cellDoubleClicked(int rowNumber, int columnId, const juce::MouseEvent&) override;
+
     std::function<void(const juce::File&)> onFileSelected;
 
 private:
-    void updateLibraryDirectory(const juce::File& directory);
-    void saveLibraryDirectory(const juce::File& directory);
-    juce::File getStoredLibraryDirectory();
-
+    void addToPlaylist(const juce::File& file);
+    void removeFromPlaylist(int index);
+    void loadPlaylist();
+    void savePlaylist();
+    
     const juce::Colour matrixGreen { 0xFF00FF41 };  // Bright matrix green
     const juce::Colour darkWire { 0xFF003B00 };     // Dark green for backgrounds
     const juce::Colour black { 0xFF000000 };        // Pure black
 
-    juce::TextButton chooseFolderButton{"Choose Library Folder"};
-    std::unique_ptr<juce::DirectoryContentsList> directoryList;
-    std::unique_ptr<juce::FileListComponent> fileListComponent;
-    juce::TimeSliceThread timeSliceThread{"Library Scanner Thread"};
+    juce::TextButton addFileButton{"Add File"};
+    juce::TextButton removeFileButton{"Remove"};
+    std::unique_ptr<juce::TableListBox> playlistTable;
     
-    juce::File currentLibraryDirectory;
+    std::vector<PlaylistEntry> playlist;
+    
+    std::shared_ptr<juce::FileChooser> fileChooser;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LibraryComponent)
 };

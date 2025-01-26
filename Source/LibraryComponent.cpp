@@ -11,67 +11,65 @@
 #include "LibraryComponent.h"
 
 LibraryComponent::LibraryComponent()
-    : timeSliceThread("Library Scanner Thread")
 {
-    // Style the choose folder button
-    chooseFolderButton.setButtonText("Choose Library Folder");
-    chooseFolderButton.setColour(juce::TextButton::buttonColourId, black);
-    chooseFolderButton.setColour(juce::TextButton::textColourOffId, matrixGreen);
-    chooseFolderButton.setColour(juce::TextButton::textColourOnId, matrixGreen);
-    addAndMakeVisible(chooseFolderButton);
+    // Set up add file button
+    addFileButton.setColour(juce::TextButton::buttonColourId, black);
+    addFileButton.setColour(juce::TextButton::textColourOffId, matrixGreen);
+    addFileButton.setColour(juce::TextButton::textColourOnId, matrixGreen);
+    addAndMakeVisible(addFileButton);
     
-    // Start the background thread for file scanning
-    timeSliceThread.startThread();
+    // Set up remove file button
+    removeFileButton.setColour(juce::TextButton::buttonColourId, black);
+    removeFileButton.setColour(juce::TextButton::textColourOffId, matrixGreen);
+    removeFileButton.setColour(juce::TextButton::textColourOnId, matrixGreen);
+    addAndMakeVisible(removeFileButton);
     
-    // Set up file list component with audio file filter
-    auto fileFilter = std::make_unique<juce::WildcardFileFilter>("*.wav;*.mp3;*.aif;*.aiff", "*", "Audio Files");
-    directoryList = std::make_unique<juce::DirectoryContentsList>(fileFilter.release(), timeSliceThread);
-    fileListComponent = std::make_unique<juce::FileListComponent>(*directoryList);
+    // Set up playlist table
+    playlistTable = std::make_unique<juce::TableListBox>();
+    playlistTable->setModel(this);
+    playlistTable->getHeader().addColumn("Name", 1, 200);
+    playlistTable->getHeader().addColumn("Path", 2, 300);
+    playlistTable->setColour(juce::ListBox::backgroundColourId, black);
+    playlistTable->setColour(juce::ListBox::outlineColourId, matrixGreen.withAlpha(0.5f));
+    playlistTable->setColour(juce::ListBox::textColourId, matrixGreen);
+    addAndMakeVisible(playlistTable.get());
     
-    // Style the file list component
-    fileListComponent->setColour(juce::DirectoryContentsDisplayComponent::highlightColourId, matrixGreen.withAlpha(0.3f));
-    fileListComponent->setColour(juce::DirectoryContentsDisplayComponent::textColourId, matrixGreen);
-    fileListComponent->setColour(juce::ListBox::backgroundColourId, black);
-    fileListComponent->setColour(juce::ListBox::outlineColourId, matrixGreen.withAlpha(0.5f));
-    
-    fileListComponent->addListener(this);
-    addAndMakeVisible(fileListComponent.get());
-    
-    // Load the last used directory or default to user's music folder
-    currentLibraryDirectory = getStoredLibraryDirectory();
-    updateLibraryDirectory(currentLibraryDirectory);
-    
-    // Set up folder chooser button callback
-    chooseFolderButton.onClick = [this]() {
-        auto chooser = std::make_unique<juce::FileChooser>("Select Library Folder", 
-                                                          currentLibraryDirectory,
-                                                          "*");
-        
-        chooser->launchAsync(juce::FileBrowserComponent::openMode | 
-                            juce::FileBrowserComponent::canSelectDirectories,
-                            [this](const juce::FileChooser& fc) {
-                                auto result = fc.getResult();
-                                if (result.exists()) {
-                                    updateLibraryDirectory(result);
-                                    saveLibraryDirectory(result);
-                                }
-                            });
+    // Set up button callbacks
+    addFileButton.onClick = [this]() {
+        fileChooser = std::make_shared<juce::FileChooser>(
+            "Select Audio File",
+            juce::File::getSpecialLocation(juce::File::userMusicDirectory),
+            "*.wav;*.mp3;*.aif;*.aiff");
+            
+        fileChooser->launchAsync(juce::FileBrowserComponent::openMode | 
+                           juce::FileBrowserComponent::canSelectFiles,
+                           [this](const juce::FileChooser& fc) {
+                               auto result = fc.getResult();
+                               if (result.exists()) {
+                                   addToPlaylist(result);
+                               }
+                           });
     };
+    
+    removeFileButton.onClick = [this]() {
+        auto selectedRow = playlistTable->getSelectedRow();
+        if (selectedRow >= 0) {
+            removeFromPlaylist(selectedRow);
+        }
+    };
+    
+    // Load existing playlist
+    loadPlaylist();
 }
 
 LibraryComponent::~LibraryComponent()
 {
-    fileListComponent = nullptr;  // Destroy FileListComponent first
-    directoryList = nullptr;      // Then destroy DirectoryContentsList
-    timeSliceThread.stopThread(2000);
+    savePlaylist();
 }
 
 void LibraryComponent::paint(juce::Graphics& g)
 {
-    // Draw the background
     g.fillAll(black);
-    
-    // Draw border
     g.setColour(matrixGreen.withAlpha(0.5f));
     g.drawRect(getLocalBounds(), 1);
 }
@@ -79,23 +77,74 @@ void LibraryComponent::paint(juce::Graphics& g)
 void LibraryComponent::resized()
 {
     auto bounds = getLocalBounds();
-    chooseFolderButton.setBounds(bounds.removeFromTop(30).reduced(2));
+    auto buttonHeight = 30;
     
-    // Add some padding between the button and file list
+    auto buttonArea = bounds.removeFromTop(buttonHeight);
+    addFileButton.setBounds(buttonArea.removeFromLeft(100).reduced(2));
+    removeFileButton.setBounds(buttonArea.removeFromLeft(100).reduced(2));
+    
+    // Add some padding
     bounds.removeFromTop(4);
     
-    // File list takes up the remaining space
-    fileListComponent->setBounds(bounds.reduced(2));
+    // Playlist table takes remaining space
+    playlistTable->setBounds(bounds.reduced(2));
 }
 
-void LibraryComponent::updateLibraryDirectory(const juce::File& directory)
+// TableListBoxModel implementations
+int LibraryComponent::getNumRows()
 {
-    currentLibraryDirectory = directory;
-    directoryList->setDirectory(directory, true, true);
-    fileListComponent->updateContent();
+    return static_cast<int>(playlist.size());
 }
 
-void LibraryComponent::saveLibraryDirectory(const juce::File& directory)
+void LibraryComponent::paintRowBackground(juce::Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
+{
+    if (rowIsSelected)
+        g.fillAll(matrixGreen.withAlpha(0.3f));
+}
+
+void LibraryComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
+{
+    if (rowNumber < playlist.size()) {
+        g.setColour(matrixGreen);
+        
+        if (columnId == 1) // Name column
+            g.drawText(playlist[rowNumber].name, 2, 0, width - 4, height, juce::Justification::centredLeft);
+        else if (columnId == 2) // Path column
+            g.drawText(playlist[rowNumber].filePath, 2, 0, width - 4, height, juce::Justification::centredLeft);
+    }
+}
+
+void LibraryComponent::cellDoubleClicked(int rowNumber, int columnId, const juce::MouseEvent&)
+{
+    if (rowNumber < playlist.size() && onFileSelected) {
+        juce::File file(playlist[rowNumber].filePath);
+        if (file.exists())
+            onFileSelected(file);
+    }
+}
+
+void LibraryComponent::addToPlaylist(const juce::File& file)
+{
+    PlaylistEntry entry;
+    entry.name = file.getFileNameWithoutExtension();
+    entry.filePath = file.getFullPathName();
+    entry.lastModified = file.getLastModificationTime().toMilliseconds();
+    
+    playlist.push_back(entry);
+    playlistTable->updateContent();
+    savePlaylist();
+}
+
+void LibraryComponent::removeFromPlaylist(int index)
+{
+    if (index >= 0 && index < playlist.size()) {
+        playlist.erase(playlist.begin() + index);
+        playlistTable->updateContent();
+        savePlaylist();
+    }
+}
+
+void LibraryComponent::loadPlaylist()
 {
     auto properties = juce::PropertiesFile::Options();
     properties.applicationName = "ChopScrew";
@@ -107,49 +156,53 @@ void LibraryComponent::saveLibraryDirectory(const juce::File& directory)
     appProperties.setStorageParameters(properties);
     
     if (auto userSettings = appProperties.getUserSettings()) {
-        userSettings->setValue("libraryDirectory", directory.getFullPathName());
+        auto playlistData = userSettings->getValue("playlist");
+        if (playlistData.isNotEmpty()) {
+            auto var = juce::JSON::parse(playlistData);
+            if (auto* arr = var.getArray()) {
+                for (const auto& entry : *arr) {
+                    if (auto* obj = entry.getDynamicObject()) {
+                        PlaylistEntry pe;
+                        pe.name = obj->getProperty("name").toString();
+                        pe.filePath = obj->getProperty("path").toString();
+                        pe.lastModified = obj->getProperty("modified").toString().getLargeIntValue();
+                        playlist.push_back(pe);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void LibraryComponent::savePlaylist()
+{
+    auto properties = juce::PropertiesFile::Options();
+    properties.applicationName = "ChopScrew";
+    properties.filenameSuffix = "settings";
+    properties.folderName = "ChopScrew";
+    properties.osxLibrarySubFolder = "Application Support";
+    
+    juce::ApplicationProperties appProperties;
+    appProperties.setStorageParameters(properties);
+    
+    if (auto userSettings = appProperties.getUserSettings()) {
+        juce::Array<juce::var> playlistArray;
+        
+        for (const auto& entry : playlist) {
+            juce::DynamicObject::Ptr obj = new juce::DynamicObject();
+            obj->setProperty("name", entry.name);
+            obj->setProperty("path", entry.filePath);
+            obj->setProperty("modified", entry.lastModified);
+            playlistArray.add(obj.get());
+        }
+        
+        userSettings->setValue("playlist", juce::JSON::toString(playlistArray));
         userSettings->save();
     }
 }
 
-juce::File LibraryComponent::getStoredLibraryDirectory()
-{
-    auto properties = juce::PropertiesFile::Options();
-    properties.applicationName = "ChopScrew";
-    properties.filenameSuffix = "settings";
-    properties.folderName = "ChopScrew";
-    properties.osxLibrarySubFolder = "Application Support";
-    
-    juce::ApplicationProperties appProperties;
-    appProperties.setStorageParameters(properties);
-    
-    if (auto userSettings = appProperties.getUserSettings()) {
-        auto savedPath = userSettings->getValue("libraryDirectory");
-        if (savedPath.isNotEmpty()) {
-            return juce::File(savedPath);
-        }
-    }
-    
-    return juce::File("/Users/adamhammad/Downloads/ChoppedTracks");
-}
-
-void LibraryComponent::selectionChanged()
-{
-    // Handle selection changes if needed
-}
-
-void LibraryComponent::fileClicked(const juce::File& file, const juce::MouseEvent& e)
-{
-    // Handle single clicks if needed
-}
-
-void LibraryComponent::fileDoubleClicked(const juce::File& file)
-{
-    if (onFileSelected)
-        onFileSelected(file);
-}
-
-void LibraryComponent::browserRootChanged(const juce::File& newRoot)
-{
-    // Handle root directory changes if needed
-}
+// These methods are no longer used but kept for FileBrowserListener interface
+void LibraryComponent::selectionChanged() {}
+void LibraryComponent::fileClicked(const juce::File& file, const juce::MouseEvent& e) {}
+void LibraryComponent::fileDoubleClicked(const juce::File& file) {}
+void LibraryComponent::browserRootChanged(const juce::File& newRoot) {}
