@@ -2,7 +2,7 @@
 
 #include "BaseEffectComponent.h"
 
-class ChopComponent : public BaseEffectComponent, public juce::Button::Listener
+class ChopComponent : public BaseEffectComponent
 {
 public:
     explicit ChopComponent(tracktion_engine::Edit&);
@@ -17,8 +17,8 @@ public:
     void setCrossfaderValue(float value) { crossfaderSlider.setValue(value, juce::sendNotification); }
 
 private:
-    void buttonStateChanged(juce::Button* button) override;
-    void buttonClicked(juce::Button*) override {}
+    void mouseDown(const juce::MouseEvent& event) override;
+    void mouseUp(const juce::MouseEvent& event) override;
     juce::TextButton chopButton{"Chop"};
     juce::ComboBox chopDurationComboBox;
     juce::Label durationLabel;

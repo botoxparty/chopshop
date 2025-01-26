@@ -90,14 +90,20 @@ double ChopComponent::getChopDurationInMs(double currentTempo) const
     return beatDuration; // Default to 1 beat
 }
 
-// Add mouse listener methods to the class
-void ChopComponent::buttonStateChanged(juce::Button* button)
+void ChopComponent::mouseDown(const juce::MouseEvent& event)
 {
-    if (button == &chopButton)
+    if (event.eventComponent == &chopButton && onChopButtonPressed)
     {
-        if (button->isDown() && onChopButtonPressed)
-            onChopButtonPressed();
-        else if (!button->isDown() && onChopButtonReleased)
-            onChopButtonReleased();
+        DBG("Mouse down on chop button");
+        onChopButtonPressed();
+    }
+}
+
+void ChopComponent::mouseUp(const juce::MouseEvent& event)
+{
+    if (event.eventComponent == &chopButton && onChopButtonReleased)
+    {
+        DBG("Mouse up on chop button");
+        onChopButtonReleased();
     }
 } 
