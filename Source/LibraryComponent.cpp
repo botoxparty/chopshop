@@ -31,6 +31,7 @@ LibraryComponent::LibraryComponent()
     playlistTable->setModel(this);
     playlistTable->getHeader().addColumn("Name", 1, 300);
     playlistTable->getHeader().addColumn("BPM", 2, 100);
+    playlistTable->getHeader().setStretchToFitActive(true);
     playlistTable->setColour(juce::ListBox::backgroundColourId, black);
     playlistTable->setColour(juce::ListBox::outlineColourId, matrixGreen.withAlpha(0.5f));
     playlistTable->setColour(juce::ListBox::textColourId, matrixGreen);
