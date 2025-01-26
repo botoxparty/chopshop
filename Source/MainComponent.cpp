@@ -232,10 +232,10 @@ void MainComponent::resized()
     // Row 1: Thumbnail and Oscilloscope (about 1/3 of height)
     juce::FlexBox visualizerBox;
     visualizerBox.flexDirection = juce::FlexBox::Direction::column;
-    visualizerBox.items.add(juce::FlexItem(*thumbnail).withFlex(0.6f).withMargin(5));
     if (oscilloscopeComponent != nullptr)
-        visualizerBox.items.add(juce::FlexItem(*oscilloscopeComponent).withFlex(0.4f).withMargin(5));
+        visualizerBox.items.add(juce::FlexItem(*oscilloscopeComponent).withFlex(0.7f).withMargin(5));
 
+    visualizerBox.items.add(juce::FlexItem(*thumbnail).withFlex(0.3f).withMargin(5));
     mainColumn.items.add(juce::FlexItem(visualizerBox).withFlex(1.0f));
 
     // Row 2: Control Bar
@@ -304,9 +304,9 @@ void MainComponent::resized()
     // Column 3 (Effects)
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
-    column3.items.add(juce::FlexItem(*reverbComponent).withHeight(120).withMargin(5));
-    column3.items.add(juce::FlexItem(*delayComponent).withHeight(120).withMargin(5));
-    column3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withHeight(120).withMargin(5));
+    column3.items.add(juce::FlexItem(*reverbComponent).withFlex(1.0f).withMinHeight(120).withMargin(5));
+    column3.items.add(juce::FlexItem(*delayComponent).withFlex(1.0f).withMinHeight(120).withMargin(5));
+    column3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMinHeight(120).withMargin(5));
 
     // Add columns to main box
     mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));
