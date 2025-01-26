@@ -37,16 +37,19 @@ LibraryComponent::LibraryComponent()
     // Set up button callbacks
     addFileButton.onClick = [this]() {
         fileChooser = std::make_shared<juce::FileChooser>(
-            "Select Audio File",
+            "Select Audio Files",
             juce::File::getSpecialLocation(juce::File::userMusicDirectory),
             "*.wav;*.mp3;*.aif;*.aiff");
             
         fileChooser->launchAsync(juce::FileBrowserComponent::openMode | 
-                           juce::FileBrowserComponent::canSelectFiles,
+                           juce::FileBrowserComponent::canSelectFiles |
+                           juce::FileBrowserComponent::canSelectMultipleItems,
                            [this](const juce::FileChooser& fc) {
-                               auto result = fc.getResult();
-                               if (result.exists()) {
-                                   addToPlaylist(result);
+                               auto results = fc.getResults();
+                               for (const auto& file : results) {
+                                   if (file.exists()) {
+                                       addToPlaylist(file);
+                                   }
                                }
                            });
     };
