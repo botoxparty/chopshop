@@ -376,13 +376,13 @@ void MainComponent::handleFileSelection(const juce::File &file)
             {
                 baseTempo = detectedBPM;
                 trackOffset = (60.0 / baseTempo) * 1000.0;
-                screwComponent->setTempo(baseTempo, juce::dontSendNotification);
+                screwComponent->setTempo(baseTempo, juce::sendNotification);
             }
             else
             {
                 baseTempo = 120.0;  // fallback value
                 trackOffset = (60.0 / baseTempo) * 1000.0;
-                screwComponent->setTempo(baseTempo, juce::dontSendNotification);
+                screwComponent->setTempo(baseTempo, juce::sendNotification);
             }
         }
 

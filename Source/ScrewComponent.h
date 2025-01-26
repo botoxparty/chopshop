@@ -15,6 +15,8 @@ public:
     void setTempoPercentage(double percentage);
     double getTempo() const { return tempoSlider.getValue(); }
     
+    void setBaseTempo(double tempo) { baseTempo = tempo; updateTempoButtonStates(); }
+    
 private:
     juce::Slider tempoSlider;
     juce::TextButton tempo70Button{"70%"};
@@ -22,6 +24,8 @@ private:
     juce::TextButton tempo80Button{"80%"};
     juce::TextButton tempo85Button{"85%"};
     juce::TextButton tempo100Button{"100%"};
+    
+    double baseTempo = 120.0;
     
     void updateTempoButtonStates();
     bool isTempoPercentageActive(double percentage) const;

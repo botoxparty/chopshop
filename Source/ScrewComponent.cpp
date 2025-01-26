@@ -80,14 +80,22 @@ void ScrewComponent::setTempo(double tempo, juce::NotificationType notification)
 
 void ScrewComponent::setTempoPercentage(double percentage)
 {
+    // Calculate the new tempo based on the percentage of base tempo
+    double newTempo = baseTempo * percentage;
+    
+    // Set the tempo slider value which will trigger the onTempoChanged callback
+    setTempo(newTempo, juce::sendNotification);
+    
+    // Call the percentage changed callback if it exists
     if (onTempoPercentageChanged)
         onTempoPercentageChanged(percentage);
+        
     updateTempoButtonStates();
 }
 
 bool ScrewComponent::isTempoPercentageActive(double percentage) const
 {
-    const double currentPercentage = tempoSlider.getValue() / 120.0; // assuming base tempo of 120
+    const double currentPercentage = tempoSlider.getValue() / baseTempo;
     return std::abs(currentPercentage - percentage) < 0.001;
 }
 
