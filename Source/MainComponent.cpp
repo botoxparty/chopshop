@@ -452,24 +452,19 @@ te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
 void MainComponent::updateCrossfader()
 {
     const float position = chopComponent->getCrossfaderValue();
-    const float threshold = 0.02f; // 2% threshold for complete silence
     const float minDB = -60.0f;    // Effectively silent
 
-    // Track 1 volume
-    if (position >= 1.0f - threshold)
-        setTrackVolume(0, minDB);  // Completely silent
-    else if (position <= threshold)
-        setTrackVolume(0, 0.0f);   // Full volume
-    else
-        setTrackVolume(0, minDB * position);
+    // Calculate volume curves that give equal power at center position
+    float gainTrack1 = std::cos(position * juce::MathConstants<float>::halfPi);
+    float gainTrack2 = std::sin(position * juce::MathConstants<float>::halfPi);
 
-    // Track 2 volume
-    if (position <= threshold)
-        setTrackVolume(1, minDB);  // Completely silent
-    else if (position >= 1.0f - threshold)
-        setTrackVolume(1, 0.0f);   // Full volume
-    else
-        setTrackVolume(1, minDB * (1.0f - position));
+    // Convert linear gains to dB
+    float gainDB1 = gainTrack1 <= 0.0f ? minDB : juce::Decibels::gainToDecibels(gainTrack1);
+    float gainDB2 = gainTrack2 <= 0.0f ? minDB : juce::Decibels::gainToDecibels(gainTrack2);
+
+    // Apply volumes to tracks
+    setTrackVolume(0, gainDB1);
+    setTrackVolume(1, gainDB2);
 }
 
 void MainComponent::setTrackVolume(int trackIndex, float gainDB)

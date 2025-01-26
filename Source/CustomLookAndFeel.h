@@ -271,6 +271,71 @@ public:
         g.fillPath(pointer);
     }
 
+    void drawComboBox(Graphics& g, int width, int height, bool isButtonDown,
+                     int buttonX, int buttonY, int buttonW, int buttonH,
+                     ComboBox& box) override
+    {
+        const auto matrixGreen = Colour(0xFF00FF41);
+        const auto cornerSize = 3.0f;
+        
+        // Draw main background
+        g.setColour(Colours::black);
+        g.fillRoundedRectangle(0, 0, width, height, cornerSize);
+        
+        // Draw border with glow effect
+        for (int i = 0; i < 3; ++i)
+        {
+            g.setColour(matrixGreen.withAlpha(0.1f - i * 0.03f));
+            g.drawRoundedRectangle(0.5f + i, 0.5f + i, 
+                                  width - 1 - 2 * i, height - 1 - 2 * i, 
+                                  cornerSize, 1.0f);
+        }
+
+        // Draw arrow
+        Path path;
+        const float arrowSize = 10.0f;
+        const float x = buttonX + buttonW * 0.5f;
+        const float y = buttonY + buttonH * 0.5f;
+        
+        path.addTriangle(x - arrowSize * 0.5f, y - arrowSize * 0.25f,
+                        x + arrowSize * 0.5f, y - arrowSize * 0.25f,
+                        x, y + arrowSize * 0.25f);
+
+        g.setColour(matrixGreen);
+        g.fillPath(path);
+    }
+
+    void drawPopupMenuItem(Graphics& g, const Rectangle<int>& area,
+                          bool isSeparator, bool isActive, bool isHighlighted,
+                          bool isTicked, bool hasSubMenu, const String& text,
+                          const String& shortcutKeyText, const Drawable* icon,
+                          const Colour* textColour) override
+    {
+        const auto matrixGreen = Colour(0xFF00FF41);
+        
+        if (isHighlighted && isActive)
+        {
+            g.setColour(matrixGreen.withAlpha(0.2f));
+            g.fillRect(area);
+        }
+
+        g.setColour(isActive ? matrixGreen : matrixGreen.withAlpha(0.5f));
+        g.setFont(getCustomFont().withHeight(14.0f));
+        
+        Rectangle<int> textArea = area.reduced(2);
+        g.drawFittedText(text, textArea, Justification::centredLeft, 1);
+    }
+
+    PopupMenu::Options getOptionsForComboBoxPopupMenu(ComboBox& box, Label& label) override
+    {
+        return PopupMenu::Options()
+            .withTargetComponent(&box)
+            .withItemThatMustBeVisible(box.getSelectedId())
+            .withMinimumWidth(box.getWidth())
+            .withMaximumNumColumns(1)
+            .withStandardItemHeight(24);
+    }
+
     static const juce::Font getCustomFont()
     {
         static auto typeface = juce::Typeface::createSystemTypefaceFor(
