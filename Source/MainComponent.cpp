@@ -297,8 +297,8 @@ void MainComponent::resized()
 
     column2.items.add(juce::FlexItem(tempoButtonBox).withHeight(30).withMargin(5));
     column2.items.add(juce::FlexItem(tempoSlider).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(*chopComponent).withHeight(100).withMargin(5));
-    column2.items.add(juce::FlexItem(*vinylBrakeComponent).withHeight(100).withMargin(5));
+    column2.items.add(juce::FlexItem(*chopComponent).withMinHeight(120).withMargin(5));
+    column2.items.add(juce::FlexItem(*vinylBrakeComponent).withMinHeight(120).withMargin(5));
 
     // Column 3 (Effects)
     juce::FlexBox column3;
