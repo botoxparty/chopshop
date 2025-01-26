@@ -127,6 +127,30 @@ void LibraryComponent::cellDoubleClicked(int rowNumber, int columnId, const juce
     }
 }
 
+void LibraryComponent::cellClicked(int rowNumber, int columnId, const juce::MouseEvent& event)
+{
+    if (event.mods.isRightButtonDown() && rowNumber < playlist.size())
+    {
+        juce::PopupMenu menu;
+        menu.addItem(1, "Show in Finder");
+        menu.addItem(2, "Remove");
+
+        menu.showMenuAsync(juce::PopupMenu::Options(), [this, rowNumber](int result)
+        {
+            if (result == 1) // Show in Finder
+            {
+                juce::File file(playlist[rowNumber].filePath);
+                if (file.exists())
+                    file.revealToUser();
+            }
+            else if (result == 2) // Remove
+            {
+                removeFromPlaylist(rowNumber);
+            }
+        });
+    }
+}
+
 void LibraryComponent::addToPlaylist(const juce::File& file)
 {
     PlaylistEntry entry;
