@@ -23,13 +23,7 @@ MainComponent::MainComponent()
     addAndMakeVisible(saveButton);
     addAndMakeVisible(playButton);
     addAndMakeVisible(stopButton);
-    addAndMakeVisible(tempoSlider);
     addAndMakeVisible(recordButton);
-    addAndMakeVisible(tempo70Button);
-    addAndMakeVisible(tempo75Button);
-    addAndMakeVisible(tempo80Button);
-    addAndMakeVisible(tempo85Button);
-    addAndMakeVisible(tempo100Button);
     addAndMakeVisible(audioSettingsButton);
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
@@ -56,35 +50,9 @@ MainComponent::MainComponent()
     openButton.onClick = [this]
     { loadAudioFile(); };
 
-    tempoSlider.setRange(30.0, 220.0, 0.1);
-    tempoSlider.setTextValueSuffix(" BPM");
-    tempoSlider.onValueChange = [this] { 
-        updateTempo(); 
-        updateTempoButtonStates();
-    };
-
-
     // Setup reverb control
     reverbComponent = std::make_unique<ReverbComponent>(edit);
     addAndMakeVisible(*reverbComponent);
-
-    // Configure tempo preset buttons (add after other button configurations)
-    tempo70Button.setButtonText("70%");
-    tempo75Button.setButtonText("75%");
-    tempo80Button.setButtonText("80%");
-    tempo85Button.setButtonText("85%");
-    tempo100Button.setButtonText("100%");
-
-    tempo70Button.onClick = [this]
-    { setTempoPercentage(0.70); };
-    tempo75Button.onClick = [this]
-    { setTempoPercentage(0.75); };
-    tempo80Button.onClick = [this]
-    { setTempoPercentage(0.80); };
-    tempo85Button.onClick = [this]
-    { setTempoPercentage(0.85); };
-    tempo100Button.onClick = [this]
-    { setTempoPercentage(1.00); };
 
     // setup effects
     recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
@@ -107,7 +75,7 @@ MainComponent::MainComponent()
     
     chopComponent->onChopButtonReleased = [this]() {
         double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-        double minimumTime = chopComponent->getChopDurationInMs(tempoSlider.getValue());
+        double minimumTime = chopComponent->getChopDurationInMs(screwComponent->getTempo());
 
         if (elapsedTime >= minimumTime) {
             float currentPosition = chopComponent->getCrossfaderValue();
@@ -201,6 +169,16 @@ MainComponent::MainComponent()
     chopComponent->onCrossfaderValueChanged = [this](float value) { 
         updateCrossfader(); 
     };
+
+    screwComponent = std::make_unique<ScrewComponent>(edit);
+    addAndMakeVisible(*screwComponent);
+
+    // Initialize the screw component with the current tempo
+    screwComponent->setTempo(baseTempo, juce::dontSendNotification);
+
+    screwComponent->onTempoChanged = [this](double tempo) {
+        updateTempo();
+    };
 }
 
 MainComponent::~MainComponent()
@@ -285,18 +263,7 @@ void MainComponent::resized()
     // Column 2 (Tempo and crossfader)
     juce::FlexBox column2;
     column2.flexDirection = juce::FlexBox::Direction::column;
-
-    // Tempo buttons row
-    juce::FlexBox tempoButtonBox;
-    tempoButtonBox.flexDirection = juce::FlexBox::Direction::row;
-    tempoButtonBox.items.add(juce::FlexItem(tempo70Button).withFlex(1.0f).withMargin(2));
-    tempoButtonBox.items.add(juce::FlexItem(tempo75Button).withFlex(1.0f).withMargin(2));
-    tempoButtonBox.items.add(juce::FlexItem(tempo80Button).withFlex(1.0f).withMargin(2));
-    tempoButtonBox.items.add(juce::FlexItem(tempo85Button).withFlex(1.0f).withMargin(2));
-    tempoButtonBox.items.add(juce::FlexItem(tempo100Button).withFlex(1.0f).withMargin(2));
-
-    column2.items.add(juce::FlexItem(tempoButtonBox).withHeight(30).withMargin(5));
-    column2.items.add(juce::FlexItem(tempoSlider).withHeight(30).withMargin(5));
+    column2.items.add(juce::FlexItem(*screwComponent).withMinHeight(120).withMargin(5));
     column2.items.add(juce::FlexItem(*chopComponent).withMinHeight(120).withMargin(5));
     column2.items.add(juce::FlexItem(*vinylBrakeComponent).withMinHeight(120).withMargin(5));
 
@@ -409,13 +376,13 @@ void MainComponent::handleFileSelection(const juce::File &file)
             {
                 baseTempo = detectedBPM;
                 trackOffset = (60.0 / baseTempo) * 1000.0;
-                tempoSlider.setValue(baseTempo, juce::dontSendNotification);
+                screwComponent->setTempo(baseTempo, juce::dontSendNotification);
             }
             else
             {
                 baseTempo = 120.0;  // fallback value
                 trackOffset = (60.0 / baseTempo) * 1000.0;
-                tempoSlider.setValue(baseTempo, juce::dontSendNotification);
+                screwComponent->setTempo(baseTempo, juce::dontSendNotification);
             }
         }
 
@@ -463,7 +430,7 @@ void MainComponent::handleFileSelection(const juce::File &file)
 
 void MainComponent::updateTempo()
 {
-    const double ratio = tempoSlider.getValue() / baseTempo;
+    const double ratio = screwComponent->getTempo() / baseTempo;
     // Convert ratio to plus/minus proportion (e.g., 1.5 becomes 0.5, 0.5 becomes -0.5)
     const double plusOrMinusProportion = ratio - 1.0;
 
@@ -540,28 +507,12 @@ void MainComponent::stopRecording()
     recordButton.setToggleState(false, juce::NotificationType::dontSendNotification);
 }
 
-void MainComponent::setTempoPercentage(double percentage)
-{
-    // Update slider value which will trigger the slider's callback
-    tempoSlider.setValue(baseTempo * percentage, juce::sendNotification);
-    updateTempoButtonStates();
-}
-
 bool MainComponent::isTempoPercentageActive(double percentage) const 
 {
     // Compare current tempo with base tempo * percentage
-    const double currentPercentage = tempoSlider.getValue() / baseTempo;
+    const double currentPercentage = screwComponent->getTempo() / baseTempo;
     // Allow for small floating point differences
     return std::abs(currentPercentage - percentage) < 0.001;
-}
-
-void MainComponent::updateTempoButtonStates()
-{
-    tempo70Button.setToggleState(isTempoPercentageActive(0.70), juce::dontSendNotification);
-    tempo75Button.setToggleState(isTempoPercentageActive(0.75), juce::dontSendNotification);
-    tempo80Button.setToggleState(isTempoPercentageActive(0.80), juce::dontSendNotification);
-    tempo85Button.setToggleState(isTempoPercentageActive(0.85), juce::dontSendNotification);
-    tempo100Button.setToggleState(isTempoPercentageActive(1.00), juce::dontSendNotification);
 }
 
 void MainComponent::gamepadButtonPressed(int buttonId)

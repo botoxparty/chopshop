@@ -13,6 +13,8 @@
 #include "minibpm.h"
 #include "OscilloscopePlugin.h"
 #include "ChopComponent.h"
+#include "ScrewComponent.h"
+
 // Add this line to enable console output
 #define JUCE_DEBUG 1
 
@@ -82,7 +84,6 @@ private:
     //==============================================================================
     tracktion_engine::Engine engine{ProjectInfo::projectName};
     tracktion_engine::Edit edit{engine, tracktion_engine::Edit::forEditing};
-    juce::Slider tempoSlider;
     std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
     juce::TextButton audioSettingsButton{"Audio Settings"};
 
@@ -116,16 +117,7 @@ private:
     void startRecording();
     void stopRecording();
 
-    juce::TextButton tempo70Button{"70%"};
-    juce::TextButton tempo75Button{"75%"};
-    juce::TextButton tempo80Button{"80%"};
-    juce::TextButton tempo85Button{"85%"};
-    juce::TextButton tempo100Button{"100%"};
-
-    void setTempoPercentage(double percentage);
     bool isTempoPercentageActive(double percentage) const;
-    void updateTempoButtonStates();
-
 
     double chopStartTime = 0.0;
     double chopReleaseDelay = 0.0;
@@ -144,6 +136,7 @@ private:
     std::unique_ptr<VinylBrakeComponent> vinylBrakeComponent;
     std::unique_ptr<DelayComponent> delayComponent;
     std::unique_ptr<ChopComponent> chopComponent;
+    std::unique_ptr<ScrewComponent> screwComponent;
 
     bool isTrackLoaded()
     {

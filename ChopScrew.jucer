@@ -11,6 +11,10 @@
       </GROUP>
     </GROUP>
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <FILE id="UtCHuh" name="ScrewComponent.cpp" compile="1" resource="0"
+            file="Source/ScrewComponent.cpp"/>
+      <FILE id="C39Rfw" name="ScrewComponent.h" compile="0" resource="0"
+            file="Source/ScrewComponent.h"/>
       <FILE id="pMp5BH" name="ChopComponent.cpp" compile="1" resource="0"
             file="Source/ChopComponent.cpp"/>
       <FILE id="LuPMlw" name="ChopComponent.h" compile="0" resource="0" file="Source/ChopComponent.h"/>
