@@ -13,6 +13,7 @@
 VinylBrakeComponent::VinylBrakeComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
+    // Use the base class's titleLabel instead of creating a new one
     titleLabel.setText("Vinyl Brake", juce::dontSendNotification);
     
     // Configure brake slider
@@ -20,20 +21,23 @@ VinylBrakeComponent::VinylBrakeComponent(tracktion_engine::Edit& edit)
     brakeSlider.setValue(0.0, juce::dontSendNotification);
     brakeSlider.setTextValueSuffix("");
     brakeSlider.setNumDecimalPlacesToDisplay(2);
-    brakeSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+    brakeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     brakeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
     // Add slider listeners
     brakeSlider.addListener(this);
     
-    addAndMakeVisible(titleLabel);
     addAndMakeVisible(brakeSlider);
 }
 
 void VinylBrakeComponent::resized()
 {
-    auto bounds = getEffectiveArea().toNearestInt();
-    brakeSlider.setBounds(bounds);
+    auto bounds = getLocalBounds();
+    BaseEffectComponent::resized(); // This will handle the title label
+    
+    // Get the effective area for the slider (area below title)
+    auto sliderBounds = getEffectiveArea().toNearestInt();
+    brakeSlider.setBounds(sliderBounds);
 }
 
 void VinylBrakeComponent::sliderValueChanged(juce::Slider* slider)

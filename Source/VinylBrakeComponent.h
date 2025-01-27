@@ -14,7 +14,6 @@ public:
     std::function<double()> getCurrentTempoAdjustment;
 
 private:
-    juce::Label titleLabel;
     juce::Slider brakeSlider;
     
     double originalTempoAdjustment = 0.0;
