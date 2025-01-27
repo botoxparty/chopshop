@@ -348,4 +348,37 @@ public:
     {
         return getCustomFont().getTypefacePtr();
     }
+
+    void drawDocumentWindowTitleBar(DocumentWindow& window, Graphics& g,
+                                  int w, int h, int titleSpaceX, int titleSpaceW,
+                                  const Image* icon, bool drawTitleTextOnLeft) override
+    {
+        const auto matrixGreen = Colour(0xFF00FF41);
+        const auto metalGrey = Colour(0xFF2A2A2A);
+        const auto metalLight = Colour(0xFF3D3D3D);
+
+        // Draw title bar background with metallic gradient
+        ColourGradient gradient(
+            metalLight,
+            0.0f, 0.0f,
+            metalGrey,
+            0.0f, (float)h,
+            false);
+        g.setGradientFill(gradient);
+        g.fillAll();
+
+        // Draw title text
+        g.setColour(matrixGreen);
+        g.setFont(getCustomFont().withHeight(16.0f));
+        
+        const String title = window.getName();
+        const int titleWidth = w - 100; // Leave space for buttons
+        g.drawText(title, (w - titleWidth) / 2, 0, titleWidth, h, Justification::centred, true);
+
+        // Draw metallic edge effects
+        g.setColour(Colours::white.withAlpha(0.1f));
+        g.drawHorizontalLine(0, 0.0f, (float)w);
+        g.setColour(Colours::black.withAlpha(0.2f));
+        g.drawHorizontalLine(h - 1, 0.0f, (float)w);
+    }
 };
