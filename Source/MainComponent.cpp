@@ -503,12 +503,26 @@ void MainComponent::gamepadButtonPressed(int buttonId)
     case SDL_CONTROLLER_BUTTON_Y: // Triangle
         play();
         break;
+    case SDL_CONTROLLER_BUTTON_DPAD_UP:
+        if (reverbComponent)
+            reverbComponent->storeAndSetMixLevel(1.0f);
+        break;
+    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+        if (delayComponent)
+            delayComponent->storeAndSetMixLevel(1.0f);
+        break;
+    case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+        if (flangerComponent)
+            flangerComponent->storeAndSetMixLevel(1.0f);
+        break;
     }
 }
 
 void MainComponent::gamepadButtonReleased(int buttonId)
 {
-    if (buttonId == SDL_CONTROLLER_BUTTON_A) // Cross
+    switch (buttonId)
+    {
+    case SDL_CONTROLLER_BUTTON_A: // Cross
     {
         double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
         double minimumTime = trackOffset;
@@ -523,17 +537,46 @@ void MainComponent::gamepadButtonReleased(int buttonId)
             chopReleaseDelay = minimumTime - elapsedTime;
             startTimer(static_cast<int>(chopReleaseDelay));
         }
+        break;
+    }
+    case SDL_CONTROLLER_BUTTON_DPAD_UP:
+    {
+        if (reverbComponent)
+            reverbComponent->restoreMixLevel();
+        break;
+    }
+    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+    {
+        if (delayComponent)
+            delayComponent->restoreMixLevel();
+        break;
+    }
+    case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+    {
+        if (flangerComponent)
+            flangerComponent->restoreMixLevel();
+        break;
+    }
     }
 }
 
 void MainComponent::gamepadAxisMoved(int axisId, float value)
 {
-    // Handle left stick for crossfader
-    if (axisId == SDL_CONTROLLER_AXIS_LEFTX)
+    // Handle right trigger for vinyl brake
+    if (axisId == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
     {
-        // Map -1.0 to 1.0 to 0.0 to 1.0
-        float crossfaderValue = (value + 1.0f) * 0.5f;
-        chopComponent->setCrossfaderValue(crossfaderValue);
+        if (vinylBrakeComponent)
+        {
+            if (value < 0.01f && vinylBrakeComponent->getBrakeValue() > 0.0f)
+            {
+                // Trigger is released and brake was active
+                vinylBrakeComponent->startSpringAnimation();
+            }
+            else
+            {
+                vinylBrakeComponent->setBrakeValue(value);
+            }
+        }
     }
 }
 

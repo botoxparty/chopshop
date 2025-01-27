@@ -3,6 +3,8 @@
 ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
+    setMixParameterId("wet level"); // Set the correct parameter ID for reverb
+    reverbWetSlider.setComponentID("wet level");
     titleLabel.setText("Reverb", juce::dontSendNotification);
     // Configure labels
     roomSizeLabel.setText("Room Size", juce::dontSendNotification);

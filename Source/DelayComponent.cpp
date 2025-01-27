@@ -13,6 +13,8 @@
 DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
+    setMixParameterId("mix proportion"); // Set the correct parameter ID for delay
+    mixSlider.setComponentID("mix proportion");
     titleLabel.setText("Delay", juce::dontSendNotification);
     // Configure labels
     feedbackLabel.setText("Feedback", juce::dontSendNotification);

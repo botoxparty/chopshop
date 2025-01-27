@@ -15,6 +15,21 @@ public:
     // Add callback for getting parent's tempo adjustment
     std::function<double()> getCurrentTempoAdjustment;
 
+    void setBrakeValue(float value)
+    {
+        if (!isSpringAnimating)  // Only set value if not currently animating
+        {
+            brakeSlider.setValue(value, juce::sendNotification);
+        }
+    }
+
+    float getBrakeValue() const
+    {
+        return brakeSlider.getValue();
+    }
+
+    void startSpringAnimation();
+
 private:
     class SpringSlider : public juce::Slider
     {
@@ -38,8 +53,6 @@ private:
     double currentSpringValue = 0.0;
     double springStartTime = 0.0;
     double springStartValue = 0.0;
-    
-    void startSpringAnimation();
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VinylBrakeComponent)
 };

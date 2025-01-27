@@ -21,6 +21,31 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
     
+    virtual void storeAndSetMixLevel(float newLevel)
+    {
+        if (auto mixParam = plugin->getAutomatableParameterByID(mixParameterId))
+        {
+            storedMixLevel = mixParam->getCurrentValue();
+            mixParam->setParameter(newLevel, juce::sendNotification);
+            if (auto* slider = findChildWithID(mixParameterId))
+                if (auto* mixSlider = dynamic_cast<juce::Slider*>(slider))
+                    mixSlider->setValue(newLevel, juce::sendNotification);
+        }
+    }
+    
+    virtual void restoreMixLevel()
+    {
+        if (auto mixParam = plugin->getAutomatableParameterByID(mixParameterId))
+        {
+            mixParam->setParameter(storedMixLevel, juce::sendNotification);
+            if (auto* slider = findChildWithID(mixParameterId))
+                if (auto* mixSlider = dynamic_cast<juce::Slider*>(slider))
+                    mixSlider->setValue(storedMixLevel, juce::sendNotification);
+        }
+    }
+    
+    void setMixParameterId(const juce::String& id) { mixParameterId = id; }
+    
 protected:
     void bindSliderToParameter(juce::Slider& slider, tracktion_engine::AutomatableParameter& param);
     tracktion_engine::Plugin::Ptr createPlugin(const juce::String& xmlType);
@@ -29,6 +54,9 @@ protected:
     tracktion_engine::Edit& edit;
     tracktion_engine::Plugin::Ptr plugin;
     juce::Label titleLabel;
+    
+    float storedMixLevel = 0.0f;
+    juce::String mixParameterId = "mix"; // Default ID, can be overridden by derived classes
     
 private:
     void drawScrew(juce::Graphics& g, float x, float y);

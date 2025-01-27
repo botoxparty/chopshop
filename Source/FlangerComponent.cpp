@@ -13,6 +13,8 @@
 FlangerComponent::FlangerComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
+    setMixParameterId("mix"); // Set the correct parameter ID for flanger
+    mixSlider.setComponentID("mix");
     titleLabel.setText("Flanger", juce::dontSendNotification);
     // Configure labels
     depthLabel.setText("Depth", juce::dontSendNotification);
