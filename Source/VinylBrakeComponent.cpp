@@ -28,9 +28,10 @@ VinylBrakeComponent::VinylBrakeComponent(tracktion_engine::Edit& edit)
     // Configure brake button
     brakeButton.onClick = [this] { triggerBrakeEffect(); };
     
+    addAndMakeVisible(titleLabel);
+    addAndMakeVisible(brakeButton);
     addAndMakeVisible(decayTimeLabel);
     addAndMakeVisible(decayTimeSlider);
-    addAndMakeVisible(brakeButton);
 }
 
 void VinylBrakeComponent::resized()
@@ -49,41 +50,93 @@ void VinylBrakeComponent::resized()
 
 void VinylBrakeComponent::triggerBrakeEffect()
 {
-    const double decayTime = decayTimeSlider.getValue();
-    double startSpeed = 1.0; // Default speed
-    double startTime = edit.getTransport().getPosition().inSeconds();
-
-    // Retrieve the current speed from the transport's play speed automation parameter
-    if (auto speedParam = edit.getTempoTrack()->getAllAutomatableParams().getFirst())
+    // Multiply the decay time by 3 for a longer effect
+    const double decayTime = decayTimeSlider.getValue() * 3.0;
+    auto startPosition = edit.getTransport().getPosition();
+    double startTime = startPosition.inSeconds();
+    
+    // Get the current tempo
+    double startTempo = edit.tempoSequence.getTempoAt(startPosition).getBpm();
+    
+    // Store the timer pointer
+    if (currentBrakeTimer != nullptr)
     {
-        startSpeed = speedParam->getCurrentValue(); // Retrieve current playback speed
-
-        // Clear existing automation points
-        auto& curve = speedParam->getCurve();
-        juce::ValueTree automationState = curve.state;
-        automationState.removeAllChildren(nullptr); // Remove existing points
-
-        // Create new automation points for speed reduction
-        const int numPoints = 50;
-        for (int i = 0; i < numPoints; ++i)
-        {
-            double t = static_cast<double>(i) / (numPoints - 1);
-            double speed = startSpeed * std::exp(-5.0 * t); // Exponential decay
-            double time = startTime + t * decayTime;
-
-            // Create a new automation point using fromSeconds
-            tracktion::TimePosition pos = tracktion::TimePosition::fromSeconds(time);
-            curve.addPoint(pos, static_cast<float>(speed), juce::Justification::centred);
-        }
-
-        // Add final point at zero speed
-        tracktion::TimePosition finalPos = tracktion::TimePosition::fromSeconds(startTime + decayTime);
-        curve.addPoint(finalPos, 0.0f, juce::Justification::centred);
+        currentBrakeTimer->startRelease();
     }
-
-    // Stop transport after decay time
-    juce::Timer::callAfterDelay(static_cast<int>(decayTime * 1000), [this]
+    else
     {
-        edit.getTransport().stop(false, false);
-    });
+        currentBrakeTimer = new BrakeTimer(edit, startTempo, decayTime);
+        currentBrakeTimer->startTimer(30); // Update 30 times per second
+    }
+}
+
+void VinylBrakeComponent::mouseDown(const juce::MouseEvent& event)
+{
+    if (event.eventComponent == &brakeButton)
+    {
+        triggerBrakeEffect();
+    }
+}
+
+void VinylBrakeComponent::mouseUp(const juce::MouseEvent& event)
+{
+    if (event.eventComponent == &brakeButton && currentBrakeTimer != nullptr)
+    {
+        currentBrakeTimer->startRelease();
+        currentBrakeTimer = nullptr;
+    }
+}
+
+VinylBrakeComponent::BrakeTimer::BrakeTimer(tracktion_engine::Edit& e, double startTempo, double decayTime)
+    : edit(e), initialTempo(startTempo), decayTimeMs(decayTime * 1000), isReleasing(false)
+{
+    startTime = juce::Time::getMillisecondCounter();
+}
+
+void VinylBrakeComponent::BrakeTimer::timerCallback()
+{
+    auto currentTime = juce::Time::getMillisecondCounter();
+    auto elapsedMs = currentTime - startTime;
+    
+    double t;
+    if (isReleasing)
+    {
+        // When releasing, go from current tempo back to initial tempo
+        t = juce::jmin(1.0, elapsedMs / releaseTimeMs);
+        double releaseProgress = t; // Linear interpolation for release
+        double tempoMultiplier = currentTempoMultiplier + (1.0 - currentTempoMultiplier) * releaseProgress;
+        
+        // Update tempo through playback context
+        const double ratio = tempoMultiplier;
+        const double plusOrMinusProportion = ratio - 1.0;
+        edit.getTransport().getCurrentPlaybackContext()->setTempoAdjustment(plusOrMinusProportion);
+        
+        if (t >= 1.0)
+        {
+            stopTimer();
+            delete this;
+        }
+    }
+    else
+    {
+        // Normal brake behavior
+        t = juce::jmin(1.0, elapsedMs / decayTimeMs);
+        // Increased power to 6.0 for an even more gradual initial slowdown
+        currentTempoMultiplier = std::pow(1.0 - t, 6.0);
+        
+        // Update tempo through playback context
+        const double ratio = currentTempoMultiplier;
+        const double plusOrMinusProportion = ratio - 1.0;
+        edit.getTransport().getCurrentPlaybackContext()->setTempoAdjustment(plusOrMinusProportion);
+    }
+}
+
+void VinylBrakeComponent::BrakeTimer::startRelease()
+{
+    if (!isReleasing)
+    {
+        isReleasing = true;
+        startTime = juce::Time::getMillisecondCounter();
+        releaseTimeMs = 500.0; // 500ms for release time - adjust as needed
+    }
 }
