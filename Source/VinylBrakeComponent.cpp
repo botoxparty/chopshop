@@ -23,6 +23,8 @@ VinylBrakeComponent::VinylBrakeComponent(tracktion_engine::Edit& edit)
     brakeSlider.setNumDecimalPlacesToDisplay(2);
     brakeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     brakeSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+    brakeSlider.setPopupDisplayEnabled(true, false, this);
+    brakeSlider.setTextBoxIsEditable(false);
     
     // Add slider listeners
     brakeSlider.addListener(this);
@@ -57,17 +59,63 @@ void VinylBrakeComponent::sliderValueChanged(juce::Slider* slider)
                 hasStoredAdjustment = true;
             }
             
-            // Reset to original adjustment when returning to normal speed
-            if (value == 0.0)
-            {
-                const double plusOrMinusProportion = originalTempoAdjustment;
-                context->setTempoAdjustment(plusOrMinusProportion);
-                hasStoredAdjustment = false;
-            }
-            else
+            if (!isSpringAnimating)  // Only update directly if not animating
             {
                 const double plusOrMinusProportion = originalTempoAdjustment - value;
                 context->setTempoAdjustment(plusOrMinusProportion);
+            }
+        }
+    }
+}
+
+void VinylBrakeComponent::startSpringAnimation()
+{
+    if (!isSpringAnimating)
+    {
+        isSpringAnimating = true;
+        springStartValue = brakeSlider.getValue();
+        springStartTime = juce::Time::getMillisecondCounterHiRes();
+        startTimerHz(60);
+    }
+}
+
+void VinylBrakeComponent::timerCallback()
+{
+    if (isSpringAnimating)
+    {
+        // Track elapsed time
+        const double elapsedMs = (juce::Time::getMillisecondCounterHiRes() - springStartTime);
+        const double duration = 500.0; // Match the 500ms duration from React
+        const double progress = juce::jmin(elapsedMs / duration, 1.0);
+        
+        // Cubic easing function to match React implementation
+        const double easeOut = 1.0 - pow(1.0 - progress, 3.0);
+        currentSpringValue = springStartValue * (1.0 - easeOut);
+        
+        // Update slider and tempo
+        brakeSlider.setValue(currentSpringValue, juce::dontSendNotification);
+        
+        auto& transport = edit.getTransport();
+        auto context = transport.getCurrentPlaybackContext();
+        
+        if (context != nullptr)
+        {
+            const double plusOrMinusProportion = originalTempoAdjustment - currentSpringValue;
+            context->setTempoAdjustment(plusOrMinusProportion);
+        }
+        
+        // Stop animation when complete
+        if (progress >= 1.0)
+        {
+            isSpringAnimating = false;
+            currentSpringValue = 0.0;
+            brakeSlider.setValue(0.0, juce::dontSendNotification);
+            stopTimer();
+            
+            if (context != nullptr)
+            {
+                context->setTempoAdjustment(originalTempoAdjustment);
+                hasStoredAdjustment = false;
             }
         }
     }
