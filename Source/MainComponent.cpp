@@ -135,8 +135,7 @@ MainComponent::MainComponent()
         volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin *>(track2->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0).get());
     }
 
-    vinylBrakeComponent = std::make_unique<VinylBrakeComponent>(edit);
-    addAndMakeVisible(*vinylBrakeComponent);
+    createVinylBrakeComponent();
 
     startTimerHz(30); // Update 30 times per second
 
@@ -556,4 +555,19 @@ void MainComponent::updatePositionLabel()
         tempoSequence.getTimeSigAt(position).denominator);
 
     positionLabel.setText(timeString + " | " + beatString, juce::dontSendNotification);
+}
+
+void MainComponent::createVinylBrakeComponent()
+{
+    vinylBrakeComponent = std::make_unique<VinylBrakeComponent>(edit);
+    
+    // Set up the callback to get current tempo adjustment
+    vinylBrakeComponent->getCurrentTempoAdjustment = [this]() {
+        // Get the current tempo ratio from the screw component
+        double ratio = screwComponent->getTempo() / baseTempo;
+        // Convert to plus/minus proportion (same as updateTempo())
+        return ratio - 1.0;
+    };
+    
+    addAndMakeVisible(*vinylBrakeComponent);
 }

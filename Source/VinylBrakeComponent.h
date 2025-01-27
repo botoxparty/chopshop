@@ -2,40 +2,23 @@
 
 #include "BaseEffectComponent.h"
 
-class VinylBrakeComponent : public BaseEffectComponent
+class VinylBrakeComponent : public BaseEffectComponent,
+                           public juce::Slider::Listener
 {
 public:
     explicit VinylBrakeComponent(tracktion_engine::Edit&);
     void resized() override;
+    void sliderValueChanged(juce::Slider* slider) override;
     
-    void triggerBrakeEffect();
+    // Add callback for getting parent's tempo adjustment
+    std::function<double()> getCurrentTempoAdjustment;
 
 private:
-    struct BrakeTimer : public juce::Timer
-    {
-        BrakeTimer(tracktion_engine::Edit& e, double startTempo, double decayTime);
-        void timerCallback() override;
-        void startRelease();
-        
-        tracktion_engine::Edit& edit;
-        double initialTempo;
-        double decayTimeMs;
-        double releaseTimeMs;
-        juce::uint32 startTime;
-        bool isReleasing;
-        double currentTempoMultiplier = 1.0;
-    };
-
-    void mouseDown(const juce::MouseEvent& event) override;
-    void mouseUp(const juce::MouseEvent& event) override;
-
-    juce::Slider decayTimeSlider;
-    juce::TextButton brakeButton { "Brake" };
-    juce::Label decayTimeLabel;
+    juce::Label titleLabel;
+    juce::Slider brakeSlider;
     
-    BrakeTimer* currentBrakeTimer = nullptr;
-    
-    void applyBrakeEffect();
+    double originalTempoAdjustment = 0.0;
+    bool hasStoredAdjustment = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VinylBrakeComponent)
 };
