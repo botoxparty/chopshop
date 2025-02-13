@@ -41,7 +41,7 @@ private:
     void drawButton(juce::Graphics& g, juce::Point<float> center, float radius, 
                    const juce::String& label, bool isHighlighted);
     
-    juce::TextButton mappingButton {"Controller Mapping"};
+    juce::TextButton mappingButton {"Game Controller"};
     juce::DialogWindow* mappingDialog = nullptr;
     
     std::vector<ControllerMapping> mappings;

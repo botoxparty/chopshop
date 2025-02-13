@@ -76,7 +76,6 @@ void ControllerMappingComponent::drawPS5Controller(juce::Graphics& g)
     // Title
     g.setColour(juce::Colours::white);
     g.setFont(14.0f);  // Smaller font
-    g.drawText("Controller Mapping", bounds.removeFromTop(20), juce::Justification::centred, false);
     
     // Create list layout
     auto listArea = bounds.reduced(10);  // Smaller padding
