@@ -66,5 +66,9 @@ private:
                     
     juce::Colour getButtonColor(int buttonId);
     
+    void drawTouchpad(juce::Graphics& g, juce::Rectangle<float> bounds);
+    void drawAnalogSticks(juce::Graphics& g, juce::Rectangle<float> bounds);
+    void drawDpad(juce::Graphics& g, juce::Rectangle<float> bounds);
+    void drawTriggers(juce::Graphics& g, juce::Rectangle<float> bounds);
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ControllerMappingComponent)
 }; 

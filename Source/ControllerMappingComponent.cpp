@@ -10,7 +10,7 @@ ControllerMappingComponent::ControllerMappingComponent()
         {
             // Create a new instance of ControllerMappingComponent for the dialog
             auto content = std::make_unique<ControllerMappingComponent>();
-            content->setSize(600, 400);
+            content->setSize(400, 400);
             content->removeChildComponent(&content->mappingButton); // Remove the button from the dialog version
             
             juce::DialogWindow::LaunchOptions options;
@@ -22,21 +22,29 @@ ControllerMappingComponent::ControllerMappingComponent()
             options.resizable = false;
             
             mappingDialog = options.launchAsync();
-            mappingDialog->centreWithSize(600, 400);
+            mappingDialog->centreWithSize(400, 400);
             mappingDialog->addComponentListener(new ComponentListener(*this));
         }
     };
 
-    // Initialize default mappings
+    // Initialize default mappings with updated functions
     mappings = {
         {SDL_CONTROLLER_BUTTON_A, "Chop", false},
         {SDL_CONTROLLER_BUTTON_B, "Load Audio", false},
         {SDL_CONTROLLER_BUTTON_X, "Stop", false},
         {SDL_CONTROLLER_BUTTON_Y, "Play/Pause", false},
-        {SDL_CONTROLLER_AXIS_LEFTX, "Crossfader", true}
+        {SDL_CONTROLLER_BUTTON_DPAD_UP, "Reverb", false},
+        {SDL_CONTROLLER_BUTTON_DPAD_RIGHT, "Delay", false},
+        {SDL_CONTROLLER_BUTTON_DPAD_DOWN, "Flanger", false},
+        {SDL_CONTROLLER_BUTTON_LEFTSHOULDER, "Vinyl Brake", false},
+        {SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, "Screw", false},
+        {SDL_CONTROLLER_AXIS_LEFTX, "Crossfader", true},
+        {SDL_CONTROLLER_AXIS_RIGHTX, "Phaser Rate", true},
+        {SDL_CONTROLLER_AXIS_RIGHTY, "Phaser Depth", true},
+        {SDL_CONTROLLER_AXIS_TRIGGERRIGHT, "Vinyl Brake", true}
     };
 
-    // Initialize button positions
+    // Initialize button positions with updated layout
     buttonPositions = {
         {{300, 250}, 15, "Cross", SDL_CONTROLLER_BUTTON_A},
         {{340, 210}, 15, "Circle", SDL_CONTROLLER_BUTTON_B},
@@ -58,94 +66,112 @@ void ControllerMappingComponent::paint(juce::Graphics& g)
 
 void ControllerMappingComponent::drawPS5Controller(juce::Graphics& g)
 {
-    // Draw controller body
+    auto bounds = getLocalBounds().toFloat().reduced(10);  // Reduced padding
+    
+    // Draw background
     g.setColour(juce::Colours::darkgrey);
-    auto bounds = getLocalBounds().toFloat().reduced(20);
-    g.fillRoundedRectangle(bounds, 10.0f);
+    g.fillRoundedRectangle(bounds, 5.0f);  // Smaller corner radius
     
-    g.setColour(juce::Colours::grey);
-    g.drawRoundedRectangle(bounds, 10.0f, 2.0f);
+    // Title
+    g.setColour(juce::Colours::white);
+    g.setFont(14.0f);  // Smaller font
+    g.drawText("Controller Mapping", bounds.removeFromTop(20), juce::Justification::centred, false);
+    
+    // Create list layout
+    auto listArea = bounds.reduced(10);  // Smaller padding
+    float rowHeight = 20.0f;  // Smaller row height
+    float currentY = listArea.getY();
+    
+    g.setFont(12.0f);  // Smaller font for list
+    
+    // Helper lambda for drawing rows
+    auto drawRow = [&](const juce::String& control, const juce::String& action) {
+        g.drawText(control, listArea.getX(), currentY, listArea.getWidth() * 0.4f, rowHeight, 
+                  juce::Justification::left, false);
+        g.drawText(action, listArea.getX() + listArea.getWidth() * 0.4f, currentY, 
+                  listArea.getWidth() * 0.6f, rowHeight, juce::Justification::left, false);
+        currentY += rowHeight;
+    };
+    
+    // Draw headers
+    g.setColour(juce::Colours::yellow);
+    drawRow("Control", "Action");
+    
+    // Draw mappings
+    g.setColour(juce::Colours::white);
+    for (const auto& mapping : mappings)
+    {
+        juce::String controlName;
+        
+        if (mapping.isAxis)
+        {
+            switch (mapping.buttonId)
+            {
+                case SDL_CONTROLLER_AXIS_LEFTX: controlName = "Left Stick X"; break;
+                case SDL_CONTROLLER_AXIS_RIGHTX: controlName = "Right Stick X"; break;
+                case SDL_CONTROLLER_AXIS_RIGHTY: controlName = "Right Stick Y"; break;
+                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: controlName = "R2"; break;
+                default: controlName = "Unknown Axis"; break;
+            }
+        }
+        else
+        {
+            switch (mapping.buttonId)
+            {
+                case SDL_CONTROLLER_BUTTON_A: controlName = "Cross (A)"; break;
+                case SDL_CONTROLLER_BUTTON_B: controlName = "Circle (B)"; break;
+                case SDL_CONTROLLER_BUTTON_X: controlName = "Square (X)"; break;
+                case SDL_CONTROLLER_BUTTON_Y: controlName = "Triangle (Y)"; break;
+                case SDL_CONTROLLER_BUTTON_DPAD_UP: controlName = "D-Pad Up"; break;
+                case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: controlName = "D-Pad Right"; break;
+                case SDL_CONTROLLER_BUTTON_DPAD_DOWN: controlName = "D-Pad Down"; break;
+                case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: controlName = "L1"; break;
+                case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: controlName = "R1"; break;
+                default: controlName = "Unknown Button"; break;
+            }
+        }
+        
+        drawRow(controlName, mapping.actionName);
+    }
+}
 
-    // Draw face buttons
-    const float buttonRadius = 15.0f;
-    const float buttonSpacing = 40.0f;
-    const float centerX = bounds.getCentreX();
-    const float centerY = bounds.getCentreY() + 50.0f;
-
-    // Cross button (A)
-    drawButton(g, {centerX, centerY + buttonSpacing}, buttonRadius, "X", 
-               SDL_CONTROLLER_BUTTON_A, "Chop");
-
-    // Circle button (B)
-    drawButton(g, {centerX + buttonSpacing, centerY}, buttonRadius, "O", 
-               SDL_CONTROLLER_BUTTON_B, "Load");
-
-    // Square button (X)
-    drawButton(g, {centerX - buttonSpacing, centerY}, buttonRadius, "[]", 
-               SDL_CONTROLLER_BUTTON_X, "Stop");
-
-    // Triangle button (Y)
-    drawButton(g, {centerX, centerY - buttonSpacing}, buttonRadius, "/\\", 
-               SDL_CONTROLLER_BUTTON_Y, "Play");
-
-    // Draw D-pad
-    const float dpadSize = 80.0f;
-    const float dpadX = centerX - 100.0f;
-    const float dpadY = centerY + 50.0f;
+void ControllerMappingComponent::drawTouchpad(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    const float touchpadWidth = bounds.getWidth() * 0.4f;
+    const float touchpadHeight = bounds.getHeight() * 0.6f;
+    auto touchpadBounds = juce::Rectangle<float>(
+        bounds.getCentreX() - touchpadWidth / 2,
+        bounds.getCentreY() - touchpadHeight / 2,
+        touchpadWidth,
+        touchpadHeight
+    );
+    
     g.setColour(juce::Colours::darkgrey);
-    g.fillRoundedRectangle(dpadX - dpadSize/2, dpadY - dpadSize/2, dpadSize, dpadSize, 5.0f);
-
-    // Draw analog sticks
-    const float stickRadius = 25.0f;
-    g.setColour(juce::Colours::black);
-    g.fillEllipse(centerX - 120.0f - stickRadius, centerY - stickRadius, stickRadius * 2, stickRadius * 2);
-    g.fillEllipse(centerX + 80.0f - stickRadius, centerY - stickRadius, stickRadius * 2, stickRadius * 2);
-
-    // Draw shoulder buttons
-    const float shoulderWidth = 60.0f;
-    const float shoulderHeight = 20.0f;
-    g.setColour(juce::Colours::darkgrey);
+    g.fillRoundedRectangle(touchpadBounds, 5.0f);
     
-    // L1/R1
-    g.fillRoundedRectangle(bounds.getX() + 20, bounds.getY() + 20, shoulderWidth, shoulderHeight, 5.0f);
-    g.fillRoundedRectangle(bounds.getRight() - shoulderWidth - 20, bounds.getY() + 20, shoulderWidth, shoulderHeight, 5.0f);
-    
-    // L2/R2
-    g.fillRoundedRectangle(bounds.getX() + 20, bounds.getY(), shoulderWidth, shoulderHeight, 5.0f);
-    g.fillRoundedRectangle(bounds.getRight() - shoulderWidth - 20, bounds.getY(), shoulderWidth, shoulderHeight, 5.0f);
-
-    // Draw touchpad
-    const float touchpadWidth = 120.0f;
-    const float touchpadHeight = 60.0f;
-    const float touchpadX = bounds.getCentreX() - touchpadWidth / 2;
-    const float touchpadY = bounds.getCentreY() - 20;
-    
-    g.setColour(juce::Colours::darkgrey);
-    g.fillRoundedRectangle(touchpadX, touchpadY, touchpadWidth, touchpadHeight, 5.0f);
-    
-    // Draw touchpad mapping text
     g.setColour(juce::Colours::white);
     g.setFont(12.0f);
-    g.drawText("Phaser Controls:", 
-               touchpadX, touchpadY - 20, 
-               touchpadWidth, 20, 
+    g.drawText("Phaser Controls:", touchpadBounds.removeFromTop(20), 
                juce::Justification::centred);
-               
     g.drawText("X: Depth | Y: Rate | Diagonal: Feedback",
-               touchpadX, touchpadY + touchpadHeight, 
-               touchpadWidth, 20, 
+               touchpadBounds.removeFromBottom(20), 
                juce::Justification::centred);
+}
 
-    // Draw labels
-    g.setColour(juce::Colours::white);
-    g.setFont(16.0f);
-    auto labelBounds = bounds.removeFromTop(30).toNearestInt();
-    g.drawText("Controller Mapping", labelBounds, juce::Justification::centred, false);
+void ControllerMappingComponent::drawAnalogSticks(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    const float stickRadius = bounds.getHeight() * 0.3f;
     
-    // Draw instructions
-    g.setFont(12.0f);
-    auto instructionBounds = bounds.removeFromBottom(30).toNearestInt();
-    g.drawText("Click a button to remap its function", instructionBounds, juce::Justification::centred, false);
+    // Left stick
+    g.setColour(juce::Colours::black);
+    g.fillEllipse(bounds.getX() + bounds.getWidth() * 0.25f - stickRadius,
+                  bounds.getCentreY() - stickRadius,
+                  stickRadius * 2, stickRadius * 2);
+                  
+    // Right stick
+    g.fillEllipse(bounds.getX() + bounds.getWidth() * 0.75f - stickRadius,
+                  bounds.getCentreY() - stickRadius,
+                  stickRadius * 2, stickRadius * 2);
 }
 
 void ControllerMappingComponent::drawButton(juce::Graphics& g, 
@@ -211,4 +237,46 @@ public:
     
 private:
     ControllerMappingComponent& owner_;
-}; 
+};
+
+void ControllerMappingComponent::drawDpad(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    const float dpadSize = bounds.getHeight() * 0.6f;
+    const float buttonSize = dpadSize / 3.0f;
+    
+    // Calculate center position for D-pad
+    float centerX = bounds.getCentreX();
+    float centerY = bounds.getCentreY();
+    
+    // Draw D-pad buttons
+    drawButton(g, {centerX, centerY - buttonSize}, buttonSize/2, "^", 
+               SDL_CONTROLLER_BUTTON_DPAD_UP, "Reverb");
+    drawButton(g, {centerX + buttonSize, centerY}, buttonSize/2, ">", 
+               SDL_CONTROLLER_BUTTON_DPAD_RIGHT, "Delay");
+    drawButton(g, {centerX, centerY + buttonSize}, buttonSize/2, "v", 
+               SDL_CONTROLLER_BUTTON_DPAD_DOWN, "Flanger");
+}
+
+void ControllerMappingComponent::drawTriggers(juce::Graphics& g, juce::Rectangle<float> bounds)
+{
+    const float triggerWidth = bounds.getWidth() * 0.15f;
+    const float triggerHeight = bounds.getHeight() * 0.3f;
+    
+    // Draw right trigger
+    auto rightTriggerBounds = juce::Rectangle<float>(
+        bounds.getRight() - triggerWidth - 10,
+        bounds.getY(),
+        triggerWidth,
+        triggerHeight
+    );
+    
+    g.setColour(juce::Colours::darkgrey);
+    g.fillRoundedRectangle(rightTriggerBounds, 5.0f);
+    
+    g.setColour(juce::Colours::white);
+    g.setFont(12.0f);
+    g.drawText("R2", rightTriggerBounds.removeFromTop(20), 
+               juce::Justification::centred);
+    g.drawText("Vinyl Brake", rightTriggerBounds.removeFromBottom(20), 
+               juce::Justification::centred);
+} 
