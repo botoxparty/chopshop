@@ -38,7 +38,8 @@ ControllerMappingComponent::ControllerMappingComponent()
         {SDL_CONTROLLER_BUTTON_DPAD_DOWN, "Flanger", false},
         {SDL_CONTROLLER_BUTTON_LEFTSHOULDER, "Vinyl Brake", false},
         {SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, "Screw", false},
-        {SDL_CONTROLLER_AXIS_LEFTX, "Crossfader", true},
+        {SDL_CONTROLLER_AXIS_LEFTX, "Flanger Rate", true},
+        {SDL_CONTROLLER_AXIS_LEFTY, "Flanger Depth", true},
         {SDL_CONTROLLER_AXIS_RIGHTX, "Phaser Rate", true},
         {SDL_CONTROLLER_AXIS_RIGHTY, "Phaser Depth", true},
         {SDL_CONTROLLER_AXIS_TRIGGERRIGHT, "Vinyl Brake", true}

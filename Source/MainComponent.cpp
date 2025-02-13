@@ -569,21 +569,64 @@ void MainComponent::gamepadButtonReleased(int buttonId)
 
 void MainComponent::gamepadAxisMoved(int axisId, float value)
 {
-    // Handle right trigger for vinyl brake
-    if (axisId == SDL_CONTROLLER_AXIS_TRIGGERRIGHT)
+    static float rightX = 0.0f;
+    static float rightY = 0.0f;
+    static float leftX = 0.0f;
+    static float leftY = 0.0f;
+
+    switch (axisId)
     {
-        if (vinylBrakeComponent)
-        {
-            if (value < 0.01f && vinylBrakeComponent->getBrakeValue() > 0.0f)
+        case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+            if (vinylBrakeComponent)
             {
-                // Trigger is released and brake was active
-                vinylBrakeComponent->startSpringAnimation();
+                if (value < 0.01f && vinylBrakeComponent->getBrakeValue() > 0.0f)
+                    vinylBrakeComponent->startSpringAnimation();
+                else
+                    vinylBrakeComponent->setBrakeValue(value);
             }
-            else
-            {
-                vinylBrakeComponent->setBrakeValue(value);
+            break;
+            
+        case SDL_CONTROLLER_AXIS_LEFTX:
+            leftX = value;
+            if (flangerComponent) {
+                flangerComponent->setSpeed(value * 10.0f);
+                // Calculate width based on stick distance from center
+                float distance = std::sqrt(leftX * leftX + leftY * leftY);
+                float normalizedDistance = distance / std::sqrt(2.0f);
+                float curvedWidth = normalizedDistance * normalizedDistance;
+                flangerComponent->setWidth(juce::jlimit(0.0f, 0.99f, curvedWidth));
             }
-        }
+            break;
+            
+        case SDL_CONTROLLER_AXIS_LEFTY:
+            leftY = value;
+            if (flangerComponent) {
+                flangerComponent->setDepth(value * 10.0f);
+                // Calculate width based on stick distance from center
+                float distance = std::sqrt(leftX * leftX + leftY * leftY);
+                float normalizedDistance = distance / std::sqrt(2.0f);
+                float curvedWidth = normalizedDistance * normalizedDistance;
+                flangerComponent->setWidth(juce::jlimit(0.0f, 0.99f, curvedWidth));
+            }
+            break;
+            
+        case SDL_CONTROLLER_AXIS_RIGHTX:
+            rightX = value;
+            if (phaserComponent) {
+                phaserComponent->setRate(value * 10.0f);
+                float distance = std::sqrt(rightX * rightX + rightY * rightY);
+                phaserComponent->setFeedback(juce::jlimit(0.0f, 0.99f, distance));
+            }
+            break;
+            
+        case SDL_CONTROLLER_AXIS_RIGHTY:
+            rightY = value;
+            if (phaserComponent) {
+                phaserComponent->setDepth(value * 10.0f);
+                float distance = std::sqrt(rightX * rightX + rightY * rightY);
+                phaserComponent->setFeedback(juce::jlimit(0.0f, 0.99f, distance));
+            }
+            break;
     }
 }
 

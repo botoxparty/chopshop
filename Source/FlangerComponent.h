@@ -17,6 +17,10 @@ class FlangerComponent : public BaseEffectComponent
 public:
     explicit FlangerComponent(tracktion_engine::Edit&);
     void resized() override;
+    void setDepth(float value);
+    void setSpeed(float value);
+    void setWidth(float value);
+    void setMix(float value);
 
 private:
     juce::Slider depthSlider;

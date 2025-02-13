@@ -114,3 +114,23 @@ void FlangerComponent::resized()
     
     grid.performLayout(bounds.toNearestInt());
 }
+
+void FlangerComponent::setDepth(float value)
+{
+    depthSlider.setValue(value, juce::sendNotification);
+}
+
+void FlangerComponent::setSpeed(float value)
+{
+    speedSlider.setValue(value, juce::sendNotification);
+}
+
+void FlangerComponent::setWidth(float value)
+{
+    widthSlider.setValue(value, juce::sendNotification);
+}
+
+void FlangerComponent::setMix(float value)
+{
+    mixSlider.setValue(value, juce::sendNotification);
+}

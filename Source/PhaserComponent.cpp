@@ -95,7 +95,7 @@ void PhaserComponent::setDepth(float value)
 void PhaserComponent::setRate(float value)
 {
     DBG("Setting rate: " + juce::String(value));
-    rateSlider.setValue(value, juce::sendNotification);
+    rateSlider.setValue(value * 10.0f, juce::sendNotification);
 }
 
 void PhaserComponent::setFeedback(float value)

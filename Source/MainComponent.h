@@ -83,24 +83,24 @@ public:
 
     void gamepadTouchpadMoved(float x, float y, bool touched) override
     {
-        if (phaserComponent && touched)
-        {
-            // Scale x to depth range (0-1)
-            float depth = x;
-            phaserComponent->setDepth(depth);
+        // if (phaserComponent && touched)
+        // {
+        //     // Scale x to depth range (0-1)
+        //     float depth = x;
+        //     phaserComponent->setDepth(depth);
             
-            // Scale y to rate range (0-10)
-            float rate = y * 10.0f;
-            phaserComponent->setRate(rate);
+        //     // Scale y to rate range (0-10)
+        //     float rate = y * 10.0f;
+        //     phaserComponent->setRate(rate);
             
-            // Scale diagonal to feedback range (0-0.99)
-            float feedback = (x + y) / 2.0f * 0.99f;
-            phaserComponent->setFeedback(feedback);
+        //     // Scale diagonal to feedback range (0-0.99)
+        //     float feedback = (x + y) / 2.0f * 0.99f;
+        //     phaserComponent->setFeedback(feedback);
             
-            DBG("Touchpad - Depth: " + juce::String(depth) + 
-                " Rate: " + juce::String(rate) + 
-                " Feedback: " + juce::String(feedback));
-        }
+        //     DBG("Touchpad - Depth: " + juce::String(depth) + 
+        //         " Rate: " + juce::String(rate) + 
+        //         " Feedback: " + juce::String(feedback));
+        // }
     }
 
 private:
