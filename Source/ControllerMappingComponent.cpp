@@ -18,7 +18,7 @@ ControllerMappingComponent::ControllerMappingComponent()
             options.dialogTitle = "Controller Mapping";
             options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
             options.escapeKeyTriggersCloseButton = true;
-            options.useNativeTitleBar = false;
+            options.useNativeTitleBar = true;
             options.resizable = false;
             
             mappingDialog = options.launchAsync();

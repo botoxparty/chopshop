@@ -66,7 +66,7 @@ public:
                               juce::Colours::black,
                               DocumentWindow::allButtons)
         {
-            setUsingNativeTitleBar (false);
+            setUsingNativeTitleBar (true);
             setContentOwned (new MainComponent(), true);
 
             #if JUCE_IOS || JUCE_ANDROID
