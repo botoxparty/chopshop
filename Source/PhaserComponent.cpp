@@ -84,4 +84,22 @@ void PhaserComponent::resized()
     };
     
     grid.performLayout(bounds.toNearestInt());
+}
+
+void PhaserComponent::setDepth(float value)
+{
+    DBG("Setting depth: " + juce::String(value));
+    depthSlider.setValue(value * 10.0f, juce::sendNotification);
+}
+
+void PhaserComponent::setRate(float value)
+{
+    DBG("Setting rate: " + juce::String(value));
+    rateSlider.setValue(value, juce::sendNotification);
+}
+
+void PhaserComponent::setFeedback(float value)
+{
+    DBG("Setting feedback: " + juce::String(value));
+    feedbackSlider.setValue(value, juce::sendNotification);
 } 

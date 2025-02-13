@@ -114,6 +114,28 @@ void ControllerMappingComponent::drawPS5Controller(juce::Graphics& g)
     g.fillRoundedRectangle(bounds.getX() + 20, bounds.getY(), shoulderWidth, shoulderHeight, 5.0f);
     g.fillRoundedRectangle(bounds.getRight() - shoulderWidth - 20, bounds.getY(), shoulderWidth, shoulderHeight, 5.0f);
 
+    // Draw touchpad
+    const float touchpadWidth = 120.0f;
+    const float touchpadHeight = 60.0f;
+    const float touchpadX = bounds.getCentreX() - touchpadWidth / 2;
+    const float touchpadY = bounds.getCentreY() - 20;
+    
+    g.setColour(juce::Colours::darkgrey);
+    g.fillRoundedRectangle(touchpadX, touchpadY, touchpadWidth, touchpadHeight, 5.0f);
+    
+    // Draw touchpad mapping text
+    g.setColour(juce::Colours::white);
+    g.setFont(12.0f);
+    g.drawText("Phaser Controls:", 
+               touchpadX, touchpadY - 20, 
+               touchpadWidth, 20, 
+               juce::Justification::centred);
+               
+    g.drawText("X: Depth | Y: Rate | Diagonal: Feedback",
+               touchpadX, touchpadY + touchpadHeight, 
+               touchpadWidth, 20, 
+               juce::Justification::centred);
+
     // Draw labels
     g.setColour(juce::Colours::white);
     g.setFont(16.0f);

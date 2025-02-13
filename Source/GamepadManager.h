@@ -13,6 +13,7 @@ public:
         virtual void gamepadButtonPressed(int buttonId) {}
         virtual void gamepadButtonReleased(int buttonId) {}
         virtual void gamepadAxisMoved(int axisId, float value) {}
+        virtual void gamepadTouchpadMoved(float x, float y, bool touched) {}
     };
 
     GamepadManager();

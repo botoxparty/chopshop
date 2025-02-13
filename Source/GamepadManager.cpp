@@ -4,7 +4,7 @@ GamepadManager::GamepadManager()
 {
     DBG("Initializing GamepadManager...");
     
-    if (SDL_Init(SDL_INIT_GAMECONTROLLER) < 0) 
+    if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK) < 0) 
     {
         DBG("SDL could not initialize! SDL Error: " << SDL_GetError());
         return;
@@ -29,6 +29,10 @@ GamepadManager::GamepadManager()
             {
                 DBG("Successfully opened controller: " << SDL_GameControllerName(gameController));
                 DBG("Controller mapping: " << SDL_GameControllerMapping(gameController));
+                
+                // Enable touchpad support for PS5 controller
+                SDL_GameControllerSetSensorEnabled(gameController, SDL_SENSOR_ACCEL, SDL_TRUE);
+                SDL_GameControllerSetSensorEnabled(gameController, SDL_SENSOR_GYRO, SDL_TRUE);
                 break;
             }
             else
@@ -80,6 +84,22 @@ void GamepadManager::handleGamepadEvents()
     {
         switch (event.type)
         {
+            case SDL_CONTROLLERTOUCHPADMOTION:
+                DBG("Touchpad event received: x=" + juce::String(event.ctouchpad.x) + 
+                    " y=" + juce::String(event.ctouchpad.y) + 
+                    " finger=" + juce::String(event.ctouchpad.finger));
+                    
+                if (event.ctouchpad.touchpad == 0)  // PS5 main touchpad
+                {
+                    // Raw values are already in 0-1 range, no need to normalize
+                    float x = event.ctouchpad.x;
+                    float y = event.ctouchpad.y;
+                    listeners.call([&](Listener& l) { 
+                        l.gamepadTouchpadMoved(x, y, true);  // Always send touched=true for motion events
+                    });
+                }
+                break;
+
             case SDL_CONTROLLERBUTTONDOWN:
                 listeners.call([&](Listener& l) { l.gamepadButtonPressed(event.cbutton.button); });
                 break;

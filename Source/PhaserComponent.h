@@ -7,6 +7,9 @@ class PhaserComponent : public BaseEffectComponent
 public:
     explicit PhaserComponent(tracktion_engine::Edit&);
     void resized() override;
+    void setDepth(float value);
+    void setRate(float value);
+    void setFeedback(float value);
 
 private:
     juce::Slider depthSlider;
