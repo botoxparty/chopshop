@@ -37,7 +37,7 @@ MainComponent::MainComponent()
     // Set initial position
     edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
 
-    setSize(1024, 768);
+    setSize(1024, 900);
 
     playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
     stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
@@ -107,6 +107,9 @@ MainComponent::MainComponent()
 
     delayComponent = std::make_unique<DelayComponent>(edit);
     addAndMakeVisible(*delayComponent);
+
+    phaserComponent = std::make_unique<PhaserComponent>(edit);
+    addAndMakeVisible(*phaserComponent);
 
     updateButtonStates();
 
@@ -181,6 +184,9 @@ MainComponent::MainComponent()
     {
         updateTempo();
     };
+
+    // Create plugin rack after all effects are initialized
+    createPluginRack();
 
     controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
     addAndMakeVisible(*controllerMappingComponent);
@@ -279,6 +285,7 @@ void MainComponent::resized()
     column3.items.add(juce::FlexItem(*reverbComponent).withFlex(1.0f).withMinHeight(120).withMargin(5));
     column3.items.add(juce::FlexItem(*delayComponent).withFlex(1.0f).withMinHeight(120).withMargin(5));
     column3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMinHeight(120).withMargin(5));
+    column3.items.add(juce::FlexItem(*phaserComponent).withFlex(1.0f).withMinHeight(120).withMargin(5));
 
     // Add columns to main box
     mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));
@@ -613,4 +620,28 @@ void MainComponent::createVinylBrakeComponent()
     };
     
     addAndMakeVisible(*vinylBrakeComponent);
+}
+
+void MainComponent::createPluginRack()
+{
+    if (auto masterTrack = edit.getMasterTrack())
+    {
+        tracktion_engine::Plugin::Array plugins;
+
+        if(reverbComponent)
+            plugins.add(reverbComponent->getPlugin());
+        if(delayComponent)
+            plugins.add(delayComponent->getPlugin());
+        if(flangerComponent)
+            plugins.add(flangerComponent->getPlugin());
+        if(phaserComponent)
+            plugins.add(phaserComponent->getPlugin());
+            
+
+        // Create the rack type with proper channel connections
+        if (auto rack = tracktion_engine::RackType::createTypeToWrapPlugins(plugins, edit))
+        {
+            masterTrack->pluginList.insertPlugin(tracktion_engine::RackInstance::create(*rack), 0);
+        }
+    }
 }

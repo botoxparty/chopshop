@@ -130,11 +130,6 @@ void BaseEffectComponent::bindSliderToParameter(juce::Slider& slider, tracktion_
 
 tracktion_engine::Plugin::Ptr BaseEffectComponent::createPlugin(const juce::String& xmlType)
 {
-    if (auto track = edit.getMasterTrack())
-    {
-        auto plugin = edit.getPluginCache().createNewPlugin(xmlType, {});
-        track->pluginList.insertPlugin(plugin.get(), 0, nullptr);
-        return plugin;
-    }
-    return {};
+    auto plugin = edit.getPluginCache().createNewPlugin(xmlType, {});
+    return plugin;
 }

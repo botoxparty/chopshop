@@ -14,6 +14,7 @@
 #include "ChopComponent.h"
 #include "ScrewComponent.h"
 #include "ControllerMappingComponent.h"
+#include "PhaserComponent.h"
 
 // Add this line to enable console output
 #define JUCE_DEBUG 1
@@ -136,7 +137,7 @@ private:
     std::unique_ptr<DelayComponent> delayComponent;
     std::unique_ptr<ChopComponent> chopComponent;
     std::unique_ptr<ScrewComponent> screwComponent;
-
+    std::unique_ptr<PhaserComponent> phaserComponent;
     bool isTrackLoaded()
     {
         if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
@@ -164,6 +165,8 @@ private:
     std::unique_ptr<ControllerMappingComponent> controllerMappingComponent;
 
     void createVinylBrakeComponent();
+
+    void createPluginRack();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

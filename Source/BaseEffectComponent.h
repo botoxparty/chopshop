@@ -45,6 +45,7 @@ public:
     }
     
     void setMixParameterId(const juce::String& id) { mixParameterId = id; }
+    tracktion_engine::Plugin::Ptr getPlugin() const { return plugin; }
     
 protected:
     void bindSliderToParameter(juce::Slider& slider, tracktion_engine::AutomatableParameter& param);
@@ -61,6 +62,7 @@ protected:
 private:
     void drawScrew(juce::Graphics& g, float x, float y);
     juce::Random random;
+
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BaseEffectComponent)
 };
