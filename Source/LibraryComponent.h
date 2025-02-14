@@ -58,13 +58,16 @@ private:
     void removeFromPlaylist(int index);
     void loadPlaylist();
     void savePlaylist();
+    void showBpmEditorWindow(int rowIndex);
     
     const juce::Colour matrixGreen { 0xFF00FF41 };  // Bright matrix green
     const juce::Colour darkWire { 0xFF003B00 };     // Dark green for backgrounds
     const juce::Colour black { 0xFF000000 };        // Pure black
 
-    juce::TextButton addFileButton{"Add Files"};
-    juce::TextButton removeFileButton{"Remove"};
+    juce::TextButton addFileButton{"Add File"};
+    juce::TextButton removeFileButton{"Remove File"};
+    juce::TextButton editBpmButton{"Edit BPM"};
+    
     std::unique_ptr<juce::TableListBox> playlistTable;
     
     std::vector<PlaylistEntry> playlist;

@@ -26,6 +26,13 @@ LibraryComponent::LibraryComponent()
     removeFileButton.setColour(juce::TextButton::textColourOnId, matrixGreen);
     addAndMakeVisible(removeFileButton);
     
+    // Set up edit BPM button
+    editBpmButton.setButtonText("Edit BPM");
+    editBpmButton.setColour(juce::TextButton::buttonColourId, black);
+    editBpmButton.setColour(juce::TextButton::textColourOffId, matrixGreen);
+    editBpmButton.setColour(juce::TextButton::textColourOnId, matrixGreen);
+    addAndMakeVisible(editBpmButton);
+    
     // Set up playlist table
     playlistTable = std::make_unique<juce::TableListBox>();
     playlistTable->setModel(this);
@@ -64,6 +71,13 @@ LibraryComponent::LibraryComponent()
         }
     };
     
+    editBpmButton.onClick = [this]() {
+        auto selectedRow = playlistTable->getSelectedRow();
+        if (selectedRow >= 0) {
+            showBpmEditorWindow(selectedRow);
+        }
+    };
+    
     // Load existing playlist
     loadPlaylist();
 }
@@ -92,6 +106,7 @@ void LibraryComponent::resized()
     // Add buttons at the bottom
     addFileButton.setBounds(buttonArea.removeFromLeft(100).reduced(2));
     removeFileButton.setBounds(buttonArea.removeFromLeft(100).reduced(2));
+    editBpmButton.setBounds(buttonArea.removeFromLeft(100).reduced(2));
 }
 
 // TableListBoxModel implementations
@@ -271,3 +286,62 @@ void LibraryComponent::selectionChanged() {}
 void LibraryComponent::fileClicked(const juce::File& file, const juce::MouseEvent& e) {}
 void LibraryComponent::fileDoubleClicked(const juce::File& file) {}
 void LibraryComponent::browserRootChanged(const juce::File& newRoot) {}
+
+void LibraryComponent::showBpmEditorWindow(int rowIndex)
+{
+    if (rowIndex < 0 || rowIndex >= playlist.size())
+        return;
+
+    auto& entry = playlist[rowIndex];
+    
+    juce::DialogWindow::LaunchOptions options;
+    
+    auto content = std::make_unique<juce::Component>();
+    content->setSize(200, 150);
+    
+    auto editor = new juce::TextEditor();
+    editor->setBounds(50, 20, 100, 24);
+    editor->setText(juce::String(entry.bpm, 1));
+    editor->setInputRestrictions(6, "0123456789.");
+    content->addAndMakeVisible(editor);
+    
+    auto halfButton = new juce::TextButton("1/2x");
+    halfButton->setBounds(30, 60, 60, 24);
+    halfButton->onClick = [editor] {
+        double currentValue = editor->getText().getDoubleValue();
+        editor->setText(juce::String(currentValue * 0.5, 1));
+    };
+    content->addAndMakeVisible(halfButton);
+    
+    auto doubleButton = new juce::TextButton("2x");
+    doubleButton->setBounds(110, 60, 60, 24);
+    doubleButton->onClick = [editor] {
+        double currentValue = editor->getText().getDoubleValue();
+        editor->setText(juce::String(currentValue * 2.0, 1));
+    };
+    content->addAndMakeVisible(doubleButton);
+    
+    auto okButton = new juce::TextButton("OK");
+    okButton->setBounds(50, 100, 100, 24);
+    okButton->onClick = [this, rowIndex, editor]() {
+        float newBpm = editor->getText().getFloatValue();
+        DBG("New BPM: " + juce::String(newBpm));
+        if (newBpm > 0) {
+            playlist[rowIndex].bpm = newBpm;
+            playlistTable->updateContent();
+            savePlaylist();
+        }
+        if (auto* dw = juce::Component::getCurrentlyModalComponent())
+            dw->exitModalState(0);
+    };
+    content->addAndMakeVisible(okButton);
+    
+    options.content.setOwned(content.release());
+    options.dialogTitle = "Edit BPM";
+    options.dialogBackgroundColour = juce::Colours::darkgrey;
+    options.escapeKeyTriggersCloseButton = true;
+    options.useNativeTitleBar = true;
+    options.resizable = false;
+    
+    options.launchAsync();
+}
