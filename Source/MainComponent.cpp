@@ -502,10 +502,10 @@ void MainComponent::gamepadButtonPressed(int buttonId)
         chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
         break;
     case SDL_CONTROLLER_BUTTON_B: // Circle
-        loadAudioFile();
+        // loadAudioFile();
         break;
     case SDL_CONTROLLER_BUTTON_X: // Square
-        stop();
+        // stop();
         break;
     case SDL_CONTROLLER_BUTTON_Y: // Triangle
         play();
@@ -615,7 +615,7 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
             if (phaserComponent) {
                 phaserComponent->setRate(value * 10.0f);
                 float distance = std::sqrt(rightX * rightX + rightY * rightY);
-                phaserComponent->setFeedback(juce::jlimit(0.0f, 0.99f, distance));
+                phaserComponent->setFeedback(juce::jlimit(0.0f, 0.70f, distance));
             }
             break;
             
