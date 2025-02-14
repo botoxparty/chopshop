@@ -42,6 +42,7 @@ public:
     void paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected) override;
     void cellDoubleClicked(int rowNumber, int columnId, const juce::MouseEvent&) override;
     void cellClicked(int rowNumber, int columnId, const juce::MouseEvent& event) override;
+    void sortOrderChanged(int newSortColumnId, bool isForwards) override;
 
     std::function<void(const juce::File&)> onFileSelected;
 
@@ -73,6 +74,9 @@ private:
     std::vector<PlaylistEntry> playlist;
     
     std::shared_ptr<juce::FileChooser> fileChooser;
+    
+    int sortedColumnId = 0;  // 0 means unsorted
+    bool sortedForward = true;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LibraryComponent)
 };

@@ -44,6 +44,9 @@ LibraryComponent::LibraryComponent()
     playlistTable->setColour(juce::ListBox::textColourId, matrixGreen);
     addAndMakeVisible(playlistTable.get());
     
+    // Enable sorting
+    playlistTable->getHeader().setSortColumnId(1, true); // Default sort by name
+    
     // Set up button callbacks
     addFileButton.onClick = [this]() {
         fileChooser = std::make_shared<juce::FileChooser>(
@@ -209,6 +212,7 @@ void LibraryComponent::addToPlaylist(const juce::File& file)
     }
     
     playlist.push_back(entry);
+    
     playlistTable->updateContent();
     savePlaylist();
 }
@@ -361,3 +365,27 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     
     options.launchAsync();
 }
+
+void LibraryComponent::sortOrderChanged(int newSortColumnId, bool isForwards)
+{
+    if (newSortColumnId != sortedColumnId || isForwards != sortedForward)
+    {
+        sortedColumnId = newSortColumnId;
+        sortedForward = isForwards;
+        
+        std::sort(playlist.begin(), playlist.end(), 
+            [this](const PlaylistEntry& a, const PlaylistEntry& b) {
+                if (sortedColumnId == 1) // Name column
+                    return sortedForward ? 
+                        (a.name.compareNatural(b.name) < 0) : 
+                        (b.name.compareNatural(a.name) < 0);
+                else // BPM column
+                    return sortedForward ? 
+                        (a.bpm < b.bpm) : 
+                        (b.bpm < a.bpm);
+            });
+        
+        playlistTable->updateContent();
+    }
+}   
+
