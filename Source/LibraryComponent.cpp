@@ -299,15 +299,24 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     auto content = std::make_unique<juce::Component>();
     content->setSize(200, 150);
     
+    const auto matrixGreen = juce::Colour(0xFF00FF41);
+    const auto black = juce::Colour(0xFF000000);
+    
     auto editor = new juce::TextEditor();
     editor->setBounds(50, 20, 100, 24);
     editor->setText(juce::String(entry.bpm, 1));
     editor->setInputRestrictions(6, "0123456789.");
+    editor->setColour(juce::TextEditor::backgroundColourId, black);
+    editor->setColour(juce::TextEditor::textColourId, matrixGreen);
+    editor->setColour(juce::TextEditor::outlineColourId, matrixGreen.withAlpha(0.5f));
     content->addAndMakeVisible(editor);
     
     auto halfButton = new juce::TextButton("1/2x");
     halfButton->setBounds(30, 60, 60, 24);
-    halfButton->onClick = [editor] {
+    halfButton->setColour(juce::TextButton::buttonColourId, black);
+    halfButton->setColour(juce::TextButton::textColourOffId, matrixGreen);
+    halfButton->setColour(juce::TextButton::textColourOnId, matrixGreen);
+    halfButton->onClick = [editor]() {
         double currentValue = editor->getText().getDoubleValue();
         editor->setText(juce::String(currentValue * 0.5, 1));
     };
@@ -315,7 +324,10 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     
     auto doubleButton = new juce::TextButton("2x");
     doubleButton->setBounds(110, 60, 60, 24);
-    doubleButton->onClick = [editor] {
+    doubleButton->setColour(juce::TextButton::buttonColourId, black);
+    doubleButton->setColour(juce::TextButton::textColourOffId, matrixGreen);
+    doubleButton->setColour(juce::TextButton::textColourOnId, matrixGreen);
+    doubleButton->onClick = [editor]() {
         double currentValue = editor->getText().getDoubleValue();
         editor->setText(juce::String(currentValue * 2.0, 1));
     };
@@ -323,9 +335,11 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     
     auto okButton = new juce::TextButton("OK");
     okButton->setBounds(50, 100, 100, 24);
+    okButton->setColour(juce::TextButton::buttonColourId, black);
+    okButton->setColour(juce::TextButton::textColourOffId, matrixGreen);
+    okButton->setColour(juce::TextButton::textColourOnId, matrixGreen);
     okButton->onClick = [this, rowIndex, editor]() {
         float newBpm = editor->getText().getFloatValue();
-        DBG("New BPM: " + juce::String(newBpm));
         if (newBpm > 0) {
             playlist[rowIndex].bpm = newBpm;
             playlistTable->updateContent();
@@ -336,9 +350,11 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     };
     content->addAndMakeVisible(okButton);
     
+    content->setColour(juce::ResizableWindow::backgroundColourId, black);
+    
     options.content.setOwned(content.release());
     options.dialogTitle = "Edit BPM";
-    options.dialogBackgroundColour = juce::Colours::darkgrey;
+    options.dialogBackgroundColour = black;
     options.escapeKeyTriggersCloseButton = true;
     options.useNativeTitleBar = true;
     options.resizable = false;
