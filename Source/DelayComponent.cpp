@@ -42,6 +42,10 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     lengthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     lengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
+    feedbackSlider.setDoubleClickReturnValue(true, -30.0);
+    mixSlider.setDoubleClickReturnValue(true, 0.0);
+    lengthSlider.setDoubleClickReturnValue(true, 0.0);
+
     addAndMakeVisible(feedbackLabel);
     addAndMakeVisible(mixLabel);
     addAndMakeVisible(lengthLabel);

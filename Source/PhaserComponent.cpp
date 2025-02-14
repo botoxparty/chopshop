@@ -33,6 +33,10 @@ PhaserComponent::PhaserComponent(tracktion_engine::Edit& edit)
     feedbackSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     feedbackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
+    depthSlider.setDoubleClickReturnValue(true, 0.0);
+    rateSlider.setDoubleClickReturnValue(true, 0.0);
+    feedbackSlider.setDoubleClickReturnValue(true, 0.0);
+
     addAndMakeVisible(depthLabel);
     addAndMakeVisible(rateLabel);
     addAndMakeVisible(feedbackLabel);
