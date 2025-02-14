@@ -67,6 +67,12 @@ FlangerComponent::FlangerComponent(tracktion_engine::Edit &edit)
 
     if (plugin != nullptr)
     {
+               // Initialize all parameters to zero first
+        for (auto param : plugin->getAutomatableParameters())
+        {
+            param->setParameter(0.0f, juce::sendNotification);
+        }
+
         if (auto depthParam = plugin->getAutomatableParameterByID("depth"))
             bindSliderToParameter(depthSlider, *depthParam);
         else

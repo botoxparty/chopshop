@@ -15,21 +15,18 @@ PhaserComponent::PhaserComponent(tracktion_engine::Edit& edit)
     feedbackLabel.setJustificationType(juce::Justification::centred);
     
     // Configure sliders based on the actual plugin parameters
-    // Depth: default 5.0f
+    // Depth: initialize to 0.0f
     depthSlider.setRange(0.0, 10.0, 0.1);
-    depthSlider.setValue(5.0, juce::dontSendNotification);
     depthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     depthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
-    // Rate: default 0.4f
+    // Rate: initialize to 0.0f
     rateSlider.setRange(0.0, 10.0, 0.01);
-    rateSlider.setValue(0.4, juce::dontSendNotification);
     rateSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
-    // Feedback: default 0.7f
+    // Feedback: initialize to 0.0f
     feedbackSlider.setRange(0.0, 0.99, 0.01);
-    feedbackSlider.setValue(0.7, juce::dontSendNotification);
     feedbackSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     feedbackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
@@ -49,15 +46,28 @@ PhaserComponent::PhaserComponent(tracktion_engine::Edit& edit)
     
     if (plugin != nullptr)
     {
+        // Initialize all parameters to zero first
+        for (auto param : plugin->getAutomatableParameters())
+        {
+            param->setParameter(0.0f, juce::sendNotification);
+        }
+
         // Use the correct parameter IDs from the plugin
         if (auto depthParam = plugin->getAutomatableParameterByID("depth"))
+        {
             bindSliderToParameter(depthSlider, *depthParam);
+        }
         
         if (auto rateParam = plugin->getAutomatableParameterByID("rate"))
+        {
             bindSliderToParameter(rateSlider, *rateParam);
+        }
         
         if (auto feedbackParam = plugin->getAutomatableParameterByID("feedback"))
+        {
             bindSliderToParameter(feedbackSlider, *feedbackParam);
+        }
+
     }
 }
 
