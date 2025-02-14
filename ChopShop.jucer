@@ -11,6 +11,7 @@
       </GROUP>
     </GROUP>
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <FILE id="TyW0GI" name="RampedValue.h" compile="0" resource="0" file="Source/RampedValue.h"/>
       <FILE id="jo36CR" name="PhaserComponent.cpp" compile="1" resource="0"
             file="Source/PhaserComponent.cpp"/>
       <FILE id="E8sLyF" name="PhaserComponent.h" compile="0" resource="0"

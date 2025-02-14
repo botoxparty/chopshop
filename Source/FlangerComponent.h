@@ -11,6 +11,7 @@
 #pragma once
 
 #include "BaseEffectComponent.h"
+#include "RampedValue.h"
 
 class FlangerComponent : public BaseEffectComponent
 {
@@ -21,6 +22,7 @@ public:
     void setSpeed(float value);
     void setWidth(float value);
     void setMix(float value);
+    void rampMixLevel(bool rampUp);
 
 private:
     juce::Slider depthSlider;
@@ -32,6 +34,8 @@ private:
     juce::Label speedLabel;
     juce::Label widthLabel;
     juce::Label mixLabel;
+
+    RampedValue mixRamp;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FlangerComponent)
 };

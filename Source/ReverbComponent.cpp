@@ -40,6 +40,10 @@ ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
         if (auto wetParam = plugin->getAutomatableParameterByID("wet level"))
             bindSliderToParameter(reverbWetSlider, *wetParam);
     }
+
+    mixRamp.onValueChange = [this](float value) {
+        reverbWetSlider.setValue(value, juce::sendNotification);
+    };
 }
 
 void ReverbComponent::resized()
@@ -67,4 +71,22 @@ void ReverbComponent::resized()
     };
     
     grid.performLayout(bounds.toNearestInt());
+}
+
+void ReverbComponent::rampMixLevel(bool rampUp)
+{
+    if (rampUp)
+    {
+        storedMixValue = reverbWetSlider.getValue();
+        mixRamp.startRamp(1.0f, 5000);
+    }
+    else
+    {
+        mixRamp.startRamp(storedMixValue, 5000);
+    }
+}
+
+void ReverbComponent::restoreMixLevel()
+{
+    rampMixLevel(false);
 } 

@@ -90,12 +90,17 @@ FlangerComponent::FlangerComponent(tracktion_engine::Edit &edit)
 
         if (auto mixParam = plugin->getAutomatableParameterByID("mix"))
         {   
-            mixParam->setParameter(0.5f, juce::sendNotification);
+            mixParam->setParameter(0.7f, juce::sendNotification);
             bindSliderToParameter(mixSlider, *mixParam);
         }
         else
             DBG("Mix parameter not found");
     }
+
+    // Add to constructor after other slider setup:
+    mixRamp.onValueChange = [this](float value) {
+        mixSlider.setValue(value, juce::sendNotification);
+    };
 }
 
 void FlangerComponent::resized()
@@ -146,4 +151,9 @@ void FlangerComponent::setWidth(float value)
 void FlangerComponent::setMix(float value)
 {
     mixSlider.setValue(value, juce::sendNotification);
+}
+
+void FlangerComponent::rampMixLevel(bool rampUp)
+{
+    mixRamp.startRamp(rampUp ? 1.0f : 0.0f, 100);
 }

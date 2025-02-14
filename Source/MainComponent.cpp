@@ -361,15 +361,23 @@ void MainComponent::handleFileSelection(const juce::File &file)
         {
             // Store current tempo ratio before updating base tempo
             const double currentRatio = screwComponent->getTempo() / baseTempo;
-            
+
             float detectedBPM = libraryComponent->getBPMForFile(file);
             baseTempo = detectedBPM;
             trackOffset = (60.0 / baseTempo) * 1000.0;
             screwComponent->setBaseTempo(baseTempo);
-            
+
             // Apply the previous tempo ratio to the new base tempo
             const double newTempo = baseTempo * currentRatio;
             screwComponent->setTempo(newTempo, juce::sendNotification);
+
+            // Calculate and set delay time to 1/4 note
+            if (delayComponent)
+            {
+                // Calculate quarter note duration in milliseconds
+                double quarterNoteMs = (60.0 / baseTempo) * 1000.0;
+                delayComponent->setDelayTime(quarterNoteMs);
+            }
         }
 
         // Disable auto tempo and pitch for first clip
@@ -412,6 +420,13 @@ void MainComponent::handleFileSelection(const juce::File &file)
     }
 
     updateButtonStates();
+
+    // Auto-play the newly loaded track
+    if (playState != PlayState::Playing)
+    {
+        edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
+        play();
+    }
 }
 
 void MainComponent::updateTempo()
@@ -498,36 +513,32 @@ bool MainComponent::isTempoPercentageActive(double percentage) const
 
 void MainComponent::gamepadButtonPressed(int buttonId)
 {
-    float currentPosition; // Moved outside switch
-
+    float currentPosition;
     switch (buttonId)
     {
-    case SDL_CONTROLLER_BUTTON_A: // Cross
+    case SDL_CONTROLLER_BUTTON_A:
         chopStartTime = juce::Time::getMillisecondCounterHiRes();
         currentPosition = chopComponent->getCrossfaderValue();
         chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
         break;
-    case SDL_CONTROLLER_BUTTON_B: // Circle
-        // loadAudioFile();
-        break;
-    case SDL_CONTROLLER_BUTTON_X: // Square
-        // stop();
-        break;
-    case SDL_CONTROLLER_BUTTON_Y: // Triangle
-        play();
-        break;
     case SDL_CONTROLLER_BUTTON_DPAD_UP:
+    {
         if (reverbComponent)
-            reverbComponent->storeAndSetMixLevel(1.0f);
+            reverbComponent->rampMixLevel(true);
         break;
+    }
     case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+    {
         if (delayComponent)
-            delayComponent->storeAndSetMixLevel(1.0f);
+            delayComponent->rampMixLevel(true);
         break;
+    }
     case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+    {
         if (flangerComponent)
-            flangerComponent->storeAndSetMixLevel(1.0f);
+            flangerComponent->rampMixLevel(true);
         break;
+    }
     }
 }
 
@@ -555,19 +566,19 @@ void MainComponent::gamepadButtonReleased(int buttonId)
     case SDL_CONTROLLER_BUTTON_DPAD_UP:
     {
         if (reverbComponent)
-            reverbComponent->restoreMixLevel();
+            reverbComponent->rampMixLevel(false);
         break;
     }
     case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
     {
         if (delayComponent)
-            delayComponent->restoreMixLevel();
+            delayComponent->rampMixLevel(false);
         break;
     }
     case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
     {
         if (flangerComponent)
-            flangerComponent->restoreMixLevel();
+            flangerComponent->rampMixLevel(false);
         break;
     }
     }
@@ -582,57 +593,61 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
 
     switch (axisId)
     {
-        case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
-            if (vinylBrakeComponent)
-            {
-                if (value < 0.01f && vinylBrakeComponent->getBrakeValue() > 0.0f)
-                    vinylBrakeComponent->startSpringAnimation();
-                else
-                    vinylBrakeComponent->setBrakeValue(value);
-            }
-            break;
-            
-        case SDL_CONTROLLER_AXIS_LEFTX:
-            leftX = value;
-            if (flangerComponent) {
-                flangerComponent->setSpeed(value * 10.0f);
-                // Calculate width based on stick distance from center
-                float distance = std::sqrt(leftX * leftX + leftY * leftY);
-                float normalizedDistance = distance / std::sqrt(2.0f);
-                float curvedWidth = normalizedDistance * normalizedDistance;
-                flangerComponent->setWidth(juce::jlimit(0.0f, 0.99f, curvedWidth));
-            }
-            break;
-            
-        case SDL_CONTROLLER_AXIS_LEFTY:
-            leftY = value;
-            if (flangerComponent) {
-                flangerComponent->setDepth(value * 10.0f);
-                // Calculate width based on stick distance from center
-                float distance = std::sqrt(leftX * leftX + leftY * leftY);
-                float normalizedDistance = distance / std::sqrt(2.0f);
-                float curvedWidth = normalizedDistance * normalizedDistance;
-                flangerComponent->setWidth(juce::jlimit(0.0f, 0.99f, curvedWidth));
-            }
-            break;
-            
-        case SDL_CONTROLLER_AXIS_RIGHTX:
-            rightX = value;
-            if (phaserComponent) {
-                phaserComponent->setRate(value * 10.0f);
-                float distance = std::sqrt(rightX * rightX + rightY * rightY);
-                phaserComponent->setFeedback(juce::jlimit(0.0f, 0.70f, distance));
-            }
-            break;
-            
-        case SDL_CONTROLLER_AXIS_RIGHTY:
-            rightY = value;
-            if (phaserComponent) {
-                phaserComponent->setDepth(value * 10.0f);
-                float distance = std::sqrt(rightX * rightX + rightY * rightY);
-                phaserComponent->setFeedback(juce::jlimit(0.0f, 0.70f, distance));
-            }
-            break;
+    case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+        if (vinylBrakeComponent)
+        {
+            if (value < 0.01f && vinylBrakeComponent->getBrakeValue() > 0.0f)
+                vinylBrakeComponent->startSpringAnimation();
+            else
+                vinylBrakeComponent->setBrakeValue(value);
+        }
+        break;
+
+    case SDL_CONTROLLER_AXIS_LEFTX:
+        leftX = value;
+        if (flangerComponent)
+        {
+            flangerComponent->setSpeed(value * 10.0f);
+            // Calculate width based on stick distance from center
+            float distance = std::sqrt(leftX * leftX + leftY * leftY);
+            float normalizedDistance = distance / std::sqrt(2.0f);
+            float curvedWidth = normalizedDistance * normalizedDistance;
+            flangerComponent->setWidth(juce::jlimit(0.0f, 0.99f, curvedWidth));
+        }
+        break;
+
+    case SDL_CONTROLLER_AXIS_LEFTY:
+        leftY = value;
+        if (flangerComponent)
+        {
+            flangerComponent->setDepth(value * 10.0f);
+            // Calculate width based on stick distance from center
+            float distance = std::sqrt(leftX * leftX + leftY * leftY);
+            float normalizedDistance = distance / std::sqrt(2.0f);
+            float curvedWidth = normalizedDistance * normalizedDistance;
+            flangerComponent->setWidth(juce::jlimit(0.0f, 0.99f, curvedWidth));
+        }
+        break;
+
+    case SDL_CONTROLLER_AXIS_RIGHTX:
+        rightX = value;
+        if (phaserComponent)
+        {
+            phaserComponent->setRate(value * 10.0f);
+            float distance = std::sqrt(rightX * rightX + rightY * rightY);
+            phaserComponent->setFeedback(juce::jlimit(0.0f, 0.70f, distance));
+        }
+        break;
+
+    case SDL_CONTROLLER_AXIS_RIGHTY:
+        rightY = value;
+        if (phaserComponent)
+        {
+            phaserComponent->setDepth(value * 10.0f);
+            float distance = std::sqrt(rightX * rightX + rightY * rightY);
+            phaserComponent->setFeedback(juce::jlimit(0.0f, 0.70f, distance));
+        }
+        break;
     }
 }
 
@@ -659,15 +674,16 @@ void MainComponent::updatePositionLabel()
 void MainComponent::createVinylBrakeComponent()
 {
     vinylBrakeComponent = std::make_unique<VinylBrakeComponent>(edit);
-    
+
     // Set up the callback to get current tempo adjustment
-    vinylBrakeComponent->getCurrentTempoAdjustment = [this]() {
+    vinylBrakeComponent->getCurrentTempoAdjustment = [this]()
+    {
         // Get the current tempo ratio from the screw component
         double ratio = screwComponent->getTempo() / baseTempo;
         // Convert to plus/minus proportion (same as updateTempo())
         return ratio - 1.0;
     };
-    
+
     addAndMakeVisible(*vinylBrakeComponent);
 }
 
@@ -677,15 +693,14 @@ void MainComponent::createPluginRack()
     {
         tracktion_engine::Plugin::Array plugins;
 
-        if(reverbComponent)
+        if (reverbComponent)
             plugins.add(reverbComponent->getPlugin());
-        if(delayComponent)
+        if (delayComponent)
             plugins.add(delayComponent->getPlugin());
-        if(flangerComponent)
+        if (flangerComponent)
             plugins.add(flangerComponent->getPlugin());
-        if(phaserComponent)
+        if (phaserComponent)
             plugins.add(phaserComponent->getPlugin());
-            
 
         // Create the rack type with proper channel connections
         if (auto rack = tracktion_engine::RackType::createTypeToWrapPlugins(plugins, edit))

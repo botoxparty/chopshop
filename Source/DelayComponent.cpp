@@ -76,6 +76,12 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
         else
             DBG("Length parameter not found");
     }
+
+    // Add to constructor after other slider setup:
+    mixRamp.onValueChange = [this](float value) {
+        DBG("Mix ramp value: " + juce::String(value));
+        mixSlider.setValue(value, juce::sendNotification);
+    };
 }
 
 void DelayComponent::resized()
@@ -105,4 +111,28 @@ void DelayComponent::resized()
     };
     
     grid.performLayout(bounds.toNearestInt());
+}
+
+void DelayComponent::setDelayTime(double milliseconds)
+{
+    if (plugin != nullptr)
+    {
+        if (auto lengthParam = plugin->getAutomatableParameterByID("length"))
+            lengthParam->setParameter(static_cast<float>(milliseconds), juce::sendNotification);
+        else
+            DBG("Length parameter not found");
+    }
+}
+
+void DelayComponent::rampMixLevel(bool rampUp)
+{
+    if (rampUp)
+    {
+        storedMixValue = mixSlider.getValue();
+        mixRamp.startRamp(1.0f, 5000);
+    }
+    else
+    {
+        mixRamp.startRamp(storedMixValue, 5000);
+    }
 }
