@@ -359,11 +359,17 @@ void MainComponent::handleFileSelection(const juce::File &file)
         std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
         if (reader)
         {
+            // Store current tempo ratio before updating base tempo
+            const double currentRatio = screwComponent->getTempo() / baseTempo;
+            
             float detectedBPM = libraryComponent->getBPMForFile(file);
             baseTempo = detectedBPM;
             trackOffset = (60.0 / baseTempo) * 1000.0;
             screwComponent->setBaseTempo(baseTempo);
-            screwComponent->setTempo(baseTempo, juce::sendNotification);
+            
+            // Apply the previous tempo ratio to the new base tempo
+            const double newTempo = baseTempo * currentRatio;
+            screwComponent->setTempo(newTempo, juce::sendNotification);
         }
 
         // Disable auto tempo and pitch for first clip
@@ -624,7 +630,7 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
             if (phaserComponent) {
                 phaserComponent->setDepth(value * 10.0f);
                 float distance = std::sqrt(rightX * rightX + rightY * rightY);
-                phaserComponent->setFeedback(juce::jlimit(0.0f, 0.99f, distance));
+                phaserComponent->setFeedback(juce::jlimit(0.0f, 0.70f, distance));
             }
             break;
     }

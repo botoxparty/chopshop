@@ -89,7 +89,10 @@ FlangerComponent::FlangerComponent(tracktion_engine::Edit &edit)
             DBG("Width parameter not found");
 
         if (auto mixParam = plugin->getAutomatableParameterByID("mix"))
+        {   
+            mixParam->setParameter(0.5f, juce::sendNotification);
             bindSliderToParameter(mixSlider, *mixParam);
+        }
         else
             DBG("Mix parameter not found");
     }
