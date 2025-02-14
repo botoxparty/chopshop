@@ -183,6 +183,8 @@ MainComponent::MainComponent()
     screwComponent->onTempoChanged = [this](double tempo)
     {
         updateTempo();
+        if (delayComponent)
+            delayComponent->setTempo(tempo);
     };
 
     // Create plugin rack after all effects are initialized

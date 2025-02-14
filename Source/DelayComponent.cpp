@@ -13,22 +13,22 @@
 DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
-    setMixParameterId("mix proportion"); // Set the correct parameter ID for delay
+    setMixParameterId("mix proportion");
     mixSlider.setComponentID("mix proportion");
     titleLabel.setText("Delay", juce::dontSendNotification);
+    
     // Configure labels
     feedbackLabel.setText("Feedback", juce::dontSendNotification);
     mixLabel.setText("Mix", juce::dontSendNotification);
-    lengthLabel.setText("Delay Time", juce::dontSendNotification);
+    noteValueLabel.setText("Note Value", juce::dontSendNotification);
     
     feedbackLabel.setJustificationType(juce::Justification::centred);
     mixLabel.setJustificationType(juce::Justification::centred);
-    lengthLabel.setJustificationType(juce::Justification::centred);
+    noteValueLabel.setJustificationType(juce::Justification::centred);
     
     // Configure sliders
     feedbackSlider.setTextValueSuffix(" dB");
     feedbackSlider.setNumDecimalPlacesToDisplay(1);
-    // In your effect components (DelayComponent, ReverbComponent, etc.), modify the slider style:
     feedbackSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     feedbackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
@@ -37,21 +37,25 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     mixSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     mixSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
     
-    lengthSlider.setTextValueSuffix(" ms");
-    lengthSlider.setNumDecimalPlacesToDisplay(0);
-    lengthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    lengthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+    // Configure note value combo box
+    noteValueBox.addItem("1/16", 1);
+    noteValueBox.addItem("1/8", 2);
+    noteValueBox.addItem("1/4", 3);
+    noteValueBox.addItem("1/2", 4);
+    noteValueBox.addItem("1", 5);
+    noteValueBox.setSelectedId(3); // Default to 1/4 note
+    
+    noteValueBox.onChange = [this] { updateDelayTimeFromNote(); };
     
     feedbackSlider.setDoubleClickReturnValue(true, -30.0);
     mixSlider.setDoubleClickReturnValue(true, 0.0);
-    lengthSlider.setDoubleClickReturnValue(true, 0.0);
 
     addAndMakeVisible(feedbackLabel);
     addAndMakeVisible(mixLabel);
-    addAndMakeVisible(lengthLabel);
+    addAndMakeVisible(noteValueLabel);
     addAndMakeVisible(feedbackSlider);
     addAndMakeVisible(mixSlider);
-    addAndMakeVisible(lengthSlider);
+    addAndMakeVisible(noteValueBox);
 
     // Create and setup plugin
     plugin = createPlugin(tracktion_engine::DelayPlugin::xmlTypeName);
@@ -60,26 +64,20 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     {
         if (auto feedbackParam = plugin->getAutomatableParameterByID("feedback"))
             bindSliderToParameter(feedbackSlider, *feedbackParam);
-        else
-            DBG("Feedback parameter not found");
             
         if (auto mixParam = plugin->getAutomatableParameterByID("mix proportion"))
         {
             bindSliderToParameter(mixSlider, *mixParam);
-            mixParam->setParameter(0.0f, juce::sendNotification); // Set mix to 0% by default
+            mixParam->setParameter(0.0f, juce::sendNotification);
         }
-        else
-            DBG("Mix parameter not found");
             
         if (auto lengthParam = plugin->getAutomatableParameterByID("length"))
-            bindSliderToParameter(lengthSlider, *lengthParam);
-        else
-            DBG("Length parameter not found");
+        {
+            updateDelayTimeFromNote();
+        }
     }
 
-    // Add to constructor after other slider setup:
     mixRamp.onValueChange = [this](float value) {
-        DBG("Mix ramp value: " + juce::String(value));
         mixSlider.setValue(value, juce::sendNotification);
     };
 }
@@ -104,10 +102,10 @@ void DelayComponent::resized()
     grid.items = {
         juce::GridItem(feedbackLabel),
         juce::GridItem(mixLabel),
-        juce::GridItem(lengthLabel),
+        juce::GridItem(noteValueLabel),
         juce::GridItem(feedbackSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
         juce::GridItem(mixSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(lengthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
+        juce::GridItem(noteValueBox).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
     };
     
     grid.performLayout(bounds.toNearestInt());
@@ -135,4 +133,25 @@ void DelayComponent::rampMixLevel(bool rampUp)
     {
         mixRamp.startRamp(storedMixValue, 5000);
     }
+}
+
+void DelayComponent::updateDelayTimeFromNote()
+{
+    if (plugin == nullptr)
+        return;
+
+    double beatDuration = 60.0 / tempo * 1000.0; // Convert to milliseconds
+    double delayTime = 0.0;
+    
+    switch (noteValueBox.getSelectedId())
+    {
+        case 1: delayTime = beatDuration * 0.25; break;  // 1/16 note
+        case 2: delayTime = beatDuration * 0.5; break;   // 1/8 note
+        case 3: delayTime = beatDuration; break;         // 1/4 note
+        case 4: delayTime = beatDuration * 2.0; break;   // 1/2 note
+        case 5: delayTime = beatDuration * 4.0; break;   // whole note
+    }
+    
+    if (auto lengthParam = plugin->getAutomatableParameterByID("length"))
+        lengthParam->setParameter(static_cast<float>(delayTime), juce::sendNotification);
 }
