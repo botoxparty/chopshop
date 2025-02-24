@@ -124,8 +124,8 @@ void BaseEffectComponent::bindSliderToParameter(juce::Slider& slider, tracktion_
         param.setParameter(static_cast<float>(slider.getValue()), juce::sendNotification);
     };
     
-    slider.onDragStart = [&param] { param.beginParameterChangeGesture(); };
-    slider.onDragEnd = [&param] { param.endParameterChangeGesture(); };
+    slider.onDragStart = [&param] { param.parameterChangeGestureBegin(); };
+    slider.onDragEnd = [&param] { param.parameterChangeGestureEnd(); };
 }
 
 tracktion_engine::Plugin::Ptr BaseEffectComponent::createPlugin(const juce::String& xmlType)

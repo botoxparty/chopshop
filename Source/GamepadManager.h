@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 class GamepadManager : private juce::Timer
 {
@@ -26,7 +26,7 @@ private:
     void timerCallback() override;
     void handleGamepadEvents();
 
-    SDL_GameController* gameController = nullptr;
+    SDL_Gamepad* gamepad = nullptr;
     juce::ListenerList<Listener> listeners;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GamepadManager)

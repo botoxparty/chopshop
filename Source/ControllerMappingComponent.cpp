@@ -29,28 +29,28 @@ ControllerMappingComponent::ControllerMappingComponent()
 
     // Initialize default mappings with updated functions
     mappings = {
-        {SDL_CONTROLLER_BUTTON_A, "Chop", false},
-        {SDL_CONTROLLER_BUTTON_B, "Load Audio", false},
-        {SDL_CONTROLLER_BUTTON_X, "Stop", false},
-        {SDL_CONTROLLER_BUTTON_Y, "Play/Pause", false},
-        {SDL_CONTROLLER_BUTTON_DPAD_UP, "Reverb", false},
-        {SDL_CONTROLLER_BUTTON_DPAD_RIGHT, "Delay", false},
-        {SDL_CONTROLLER_BUTTON_DPAD_DOWN, "Flanger", false},
-        {SDL_CONTROLLER_BUTTON_LEFTSHOULDER, "Vinyl Brake", false},
-        {SDL_CONTROLLER_BUTTON_RIGHTSHOULDER, "Screw", false},
-        {SDL_CONTROLLER_AXIS_LEFTX, "Flanger Rate", true},
-        {SDL_CONTROLLER_AXIS_LEFTY, "Flanger Depth", true},
-        {SDL_CONTROLLER_AXIS_RIGHTX, "Phaser Rate", true},
-        {SDL_CONTROLLER_AXIS_RIGHTY, "Phaser Depth", true},
-        {SDL_CONTROLLER_AXIS_TRIGGERRIGHT, "Vinyl Brake", true}
+        {SDL_GAMEPAD_BUTTON_SOUTH, "Chop", false},
+        {SDL_GAMEPAD_BUTTON_EAST, "Load Audio", false},
+        {SDL_GAMEPAD_BUTTON_WEST, "Stop", false},
+        {SDL_GAMEPAD_BUTTON_NORTH, "Play/Pause", false},
+        {SDL_GAMEPAD_BUTTON_DPAD_UP, "Reverb", false},
+        {SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "Delay", false},
+        {SDL_GAMEPAD_BUTTON_DPAD_DOWN, "Flanger", false},
+        {SDL_GAMEPAD_BUTTON_LEFT_SHOULDER, "Vinyl Brake", false},
+        {SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER, "Screw", false},
+        {SDL_GAMEPAD_AXIS_LEFTX, "Flanger Rate", true},
+        {SDL_GAMEPAD_AXIS_LEFTY, "Flanger Depth", true},
+        {SDL_GAMEPAD_AXIS_RIGHTX, "Phaser Rate", true},
+        {SDL_GAMEPAD_AXIS_RIGHTY, "Phaser Depth", true},
+        {SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, "Vinyl Brake", true}
     };
 
     // Initialize button positions with updated layout
     buttonPositions = {
-        {{300, 250}, 15, "Cross", SDL_CONTROLLER_BUTTON_A},
-        {{340, 210}, 15, "Circle", SDL_CONTROLLER_BUTTON_B},
-        {{260, 210}, 15, "Square", SDL_CONTROLLER_BUTTON_X},
-        {{300, 170}, 15, "Triangle", SDL_CONTROLLER_BUTTON_Y}
+        {{300, 250}, 15, "Cross", SDL_GAMEPAD_BUTTON_SOUTH},
+        {{340, 210}, 15, "Circle", SDL_GAMEPAD_BUTTON_EAST},
+        {{260, 210}, 15, "Square", SDL_GAMEPAD_BUTTON_WEST},
+        {{300, 170}, 15, "Triangle", SDL_GAMEPAD_BUTTON_NORTH}
     };
 }
 
@@ -107,10 +107,10 @@ void ControllerMappingComponent::drawPS5Controller(juce::Graphics& g)
         {
             switch (mapping.buttonId)
             {
-                case SDL_CONTROLLER_AXIS_LEFTX: controlName = "Left Stick X"; break;
-                case SDL_CONTROLLER_AXIS_RIGHTX: controlName = "Right Stick X"; break;
-                case SDL_CONTROLLER_AXIS_RIGHTY: controlName = "Right Stick Y"; break;
-                case SDL_CONTROLLER_AXIS_TRIGGERRIGHT: controlName = "R2"; break;
+                case SDL_GAMEPAD_AXIS_LEFTX: controlName = "Left Stick X"; break;
+                case SDL_GAMEPAD_AXIS_RIGHTX: controlName = "Right Stick X"; break;
+                case SDL_GAMEPAD_AXIS_RIGHTY: controlName = "Right Stick Y"; break;
+                case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER: controlName = "R2"; break;
                 default: controlName = "Unknown Axis"; break;
             }
         }
@@ -118,15 +118,15 @@ void ControllerMappingComponent::drawPS5Controller(juce::Graphics& g)
         {
             switch (mapping.buttonId)
             {
-                case SDL_CONTROLLER_BUTTON_A: controlName = "Cross (A)"; break;
-                case SDL_CONTROLLER_BUTTON_B: controlName = "Circle (B)"; break;
-                case SDL_CONTROLLER_BUTTON_X: controlName = "Square (X)"; break;
-                case SDL_CONTROLLER_BUTTON_Y: controlName = "Triangle (Y)"; break;
-                case SDL_CONTROLLER_BUTTON_DPAD_UP: controlName = "D-Pad Up"; break;
-                case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: controlName = "D-Pad Right"; break;
-                case SDL_CONTROLLER_BUTTON_DPAD_DOWN: controlName = "D-Pad Down"; break;
-                case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: controlName = "L1"; break;
-                case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: controlName = "R1"; break;
+                case SDL_GAMEPAD_BUTTON_SOUTH: controlName = "Cross (A)"; break;
+                case SDL_GAMEPAD_BUTTON_EAST: controlName = "Circle (B)"; break;
+                case SDL_GAMEPAD_BUTTON_WEST: controlName = "Square (X)"; break;
+                case SDL_GAMEPAD_BUTTON_NORTH: controlName = "Triangle (Y)"; break;
+                case SDL_GAMEPAD_BUTTON_DPAD_UP: controlName = "D-Pad Up"; break;
+                case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: controlName = "D-Pad Right"; break;
+                case SDL_GAMEPAD_BUTTON_DPAD_DOWN: controlName = "D-Pad Down"; break;
+                case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: controlName = "L1"; break;
+                case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: controlName = "R1"; break;
                 default: controlName = "Unknown Button"; break;
             }
         }
@@ -209,10 +209,10 @@ juce::Colour ControllerMappingComponent::getButtonColor(int buttonId)
 {
     switch (buttonId)
     {
-        case SDL_CONTROLLER_BUTTON_A: return juce::Colours::lightblue;   // Cross
-        case SDL_CONTROLLER_BUTTON_B: return juce::Colours::red;         // Circle
-        case SDL_CONTROLLER_BUTTON_X: return juce::Colours::pink;        // Square
-        case SDL_CONTROLLER_BUTTON_Y: return juce::Colours::green;       // Triangle
+        case SDL_GAMEPAD_BUTTON_SOUTH: return juce::Colours::lightblue;   // Cross
+        case SDL_GAMEPAD_BUTTON_EAST: return juce::Colours::red;         // Circle
+        case SDL_GAMEPAD_BUTTON_WEST: return juce::Colours::pink;        // Square
+        case SDL_GAMEPAD_BUTTON_NORTH: return juce::Colours::green;       // Triangle
         default: return juce::Colours::grey;
     }
 }
@@ -250,11 +250,11 @@ void ControllerMappingComponent::drawDpad(juce::Graphics& g, juce::Rectangle<flo
     
     // Draw D-pad buttons
     drawButton(g, {centerX, centerY - buttonSize}, buttonSize/2, "^", 
-               SDL_CONTROLLER_BUTTON_DPAD_UP, "Reverb");
+               SDL_GAMEPAD_BUTTON_DPAD_UP, "Reverb");
     drawButton(g, {centerX + buttonSize, centerY}, buttonSize/2, ">", 
-               SDL_CONTROLLER_BUTTON_DPAD_RIGHT, "Delay");
+               SDL_GAMEPAD_BUTTON_DPAD_RIGHT, "Delay");
     drawButton(g, {centerX, centerY + buttonSize}, buttonSize/2, "v", 
-               SDL_CONTROLLER_BUTTON_DPAD_DOWN, "Flanger");
+               SDL_GAMEPAD_BUTTON_DPAD_DOWN, "Flanger");
 }
 
 void ControllerMappingComponent::drawTriggers(juce::Graphics& g, juce::Rectangle<float> bounds)

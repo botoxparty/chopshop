@@ -4,7 +4,7 @@ GamepadManager::GamepadManager()
 {
     DBG("Initializing GamepadManager...");
     
-    if (SDL_Init(SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK) < 0) 
+    if (SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK) < 0) 
     {
         DBG("SDL could not initialize! SDL Error: " << SDL_GetError());
         return;
@@ -12,27 +12,28 @@ GamepadManager::GamepadManager()
     DBG("SDL initialized successfully");
 
     // Log number of joysticks detected
-    int numJoysticks = SDL_NumJoysticks();
-    DBG("Number of joysticks detected: " << numJoysticks);
+    int count = 0;
+    SDL_JoystickID* joysticks = SDL_GetJoysticks(&count);
+    DBG("Number of joysticks detected: " << count);
 
     // Open the first available controller
-    for (int i = 0; i < numJoysticks; i++) 
+    for (int i = 0; i < count; i++) 
     {
         DBG("Checking joystick " << i);
         
-        if (SDL_IsGameController(i)) 
+        if (SDL_IsGamepad(i)) 
         {
-            DBG("Joystick " << i << " is a game controller");
-            gameController = SDL_GameControllerOpen(i);
+            DBG("Joystick " << i << " is a gamepad");
+            gamepad = SDL_OpenGamepad(i);
             
-            if (gameController) 
+            if (gamepad) 
             {
-                DBG("Successfully opened controller: " << SDL_GameControllerName(gameController));
-                DBG("Controller mapping: " << SDL_GameControllerMapping(gameController));
+                DBG("Successfully opened gamepad: " << SDL_GetGamepadName(gamepad));
+                DBG("Gamepad mapping: " << SDL_GetGamepadMapping(gamepad));
                 
                 // Enable touchpad support for PS5 controller
-                SDL_GameControllerSetSensorEnabled(gameController, SDL_SENSOR_ACCEL, SDL_TRUE);
-                SDL_GameControllerSetSensorEnabled(gameController, SDL_SENSOR_GYRO, SDL_TRUE);
+                SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_ACCEL, true);
+                SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_GYRO, true);
                 break;
             }
             else
@@ -46,9 +47,9 @@ GamepadManager::GamepadManager()
         }
     }
 
-    if (!gameController)
+    if (!gamepad)
     {
-        DBG("No game controllers found or connected");
+        DBG("No game pads found or connected");
     }
 
     startTimerHz(60);
@@ -56,8 +57,8 @@ GamepadManager::GamepadManager()
 
 GamepadManager::~GamepadManager()
 {
-    if (gameController)
-        SDL_GameControllerClose(gameController);
+    if (gamepad)
+        SDL_CloseGamepad(gamepad);
     
     SDL_Quit();
 }
@@ -84,33 +85,33 @@ void GamepadManager::handleGamepadEvents()
     {
         switch (event.type)
         {
-            case SDL_CONTROLLERTOUCHPADMOTION:
-                DBG("Touchpad event received: x=" + juce::String(event.ctouchpad.x) + 
-                    " y=" + juce::String(event.ctouchpad.y) + 
-                    " finger=" + juce::String(event.ctouchpad.finger));
+            case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION:
+                DBG("Touchpad event received: x=" + juce::String(event.gtouchpad.x) + 
+                    " y=" + juce::String(event.gtouchpad.y) + 
+                    " finger=" + juce::String(event.gtouchpad.finger));
                     
-                if (event.ctouchpad.touchpad == 0)  // PS5 main touchpad
+                if (event.gtouchpad.touchpad == 0)  // PS5 main touchpad
                 {
                     // Raw values are already in 0-1 range, no need to normalize
-                    float x = event.ctouchpad.x;
-                    float y = event.ctouchpad.y;
+                    float x = event.gtouchpad.x;
+                    float y = event.gtouchpad.y;
                     listeners.call([&](Listener& l) { 
                         l.gamepadTouchpadMoved(x, y, true);  // Always send touched=true for motion events
                     });
                 }
                 break;
 
-            case SDL_CONTROLLERBUTTONDOWN:
-                listeners.call([&](Listener& l) { l.gamepadButtonPressed(event.cbutton.button); });
+            case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+                listeners.call([&](Listener& l) { l.gamepadButtonPressed(event.gbutton.button); });
                 break;
 
-            case SDL_CONTROLLERBUTTONUP:
-                listeners.call([&](Listener& l) { l.gamepadButtonReleased(event.cbutton.button); });
+            case SDL_EVENT_GAMEPAD_BUTTON_UP:
+                listeners.call([&](Listener& l) { l.gamepadButtonReleased(event.gbutton.button); });
                 break;
 
-            case SDL_CONTROLLERAXISMOTION:
-                float value = event.caxis.value / 32767.0f; // Normalize to -1.0 to 1.0
-                listeners.call([&](Listener& l) { l.gamepadAxisMoved(event.caxis.axis, value); });
+            case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+                float value = event.gaxis.value / 32767.0f; // Normalize to -1.0 to 1.0
+                listeners.call([&](Listener& l) { l.gamepadAxisMoved(event.gaxis.axis, value); });
                 break;
         }
     }

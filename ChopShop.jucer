@@ -102,13 +102,22 @@
   </MODULES>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1"/>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX" extraLinkerFlags="-lSDL2 -laubio"
-               smallIcon="ZV5Is2" bigIcon="ZV5Is2">
+    <XCODE_MAC targetFolder="Builds/MacOSX" 
+               extraLinkerFlags="-lSDL3" 
+               smallIcon="ZV5Is2"
+               bigIcon="ZV5Is2" 
+               extraDLLs="/usr/local/lib/libSDL3.0.dylib"
+               frameworkSearchPaths="/usr/local/lib"
+               postbuildCommand="cp /usr/local/lib/libSDL3.0.dylib &quot;$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/MacOS/&quot;&#10;install_name_tool -add_rpath @executable_path &quot;$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/MacOS/$PRODUCT_NAME&quot;&#10;install_name_tool -change @rpath/libSDL3.0.dylib @executable_path/libSDL3.0.dylib &quot;$TARGET_BUILD_DIR/$PRODUCT_NAME.app/Contents/MacOS/$PRODUCT_NAME&quot;">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" targetName="ChopShop" headerPath="/opt/homebrew/include"
-                       libraryPath="/opt/homebrew/lib" extraLinkerFlags="-laubio"/>
-        <CONFIGURATION isDebug="0" name="Release" targetName="ChopShop" headerPath="/opt/homebrew/include"
-                       libraryPath="/opt/homebrew/lib" extraLinkerFlags="-laubio"/>
+        <CONFIGURATION isDebug="1" name="Debug" 
+                      targetName="ChopShop" 
+                      headerPath="/usr/local/include"
+                      libraryPath="/usr/local/lib"/>
+        <CONFIGURATION isDebug="0" name="Release" 
+                      targetName="ChopShop" 
+                      headerPath="/usr/local/include"
+                      libraryPath="/usr/local/lib"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="JUCE/modules"/>

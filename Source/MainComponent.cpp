@@ -521,24 +521,24 @@ void MainComponent::gamepadButtonPressed(int buttonId)
     float currentPosition;
     switch (buttonId)
     {
-    case SDL_CONTROLLER_BUTTON_A:
+    case SDL_GAMEPAD_BUTTON_SOUTH:
         chopStartTime = juce::Time::getMillisecondCounterHiRes();
         currentPosition = chopComponent->getCrossfaderValue();
         chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
         break;
-    case SDL_CONTROLLER_BUTTON_DPAD_UP:
+    case SDL_GAMEPAD_BUTTON_DPAD_UP:
     {
         if (reverbComponent)
             reverbComponent->rampMixLevel(true);
         break;
     }
-    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
     {
         if (delayComponent)
             delayComponent->rampMixLevel(true);
         break;
     }
-    case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+    case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
     {
         if (flangerComponent)
             flangerComponent->rampMixLevel(true);
@@ -551,7 +551,7 @@ void MainComponent::gamepadButtonReleased(int buttonId)
 {
     switch (buttonId)
     {
-    case SDL_CONTROLLER_BUTTON_A: // Cross
+    case SDL_GAMEPAD_BUTTON_SOUTH: // Cross
     {
         double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
         double minimumTime = trackOffset;
@@ -568,19 +568,19 @@ void MainComponent::gamepadButtonReleased(int buttonId)
         }
         break;
     }
-    case SDL_CONTROLLER_BUTTON_DPAD_UP:
+    case SDL_GAMEPAD_BUTTON_DPAD_UP:
     {
         if (reverbComponent)
             reverbComponent->rampMixLevel(false);
         break;
     }
-    case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
     {
         if (delayComponent)
             delayComponent->rampMixLevel(false);
         break;
     }
-    case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+    case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
     {
         if (flangerComponent)
             flangerComponent->rampMixLevel(false);
@@ -598,7 +598,7 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
 
     switch (axisId)
     {
-    case SDL_CONTROLLER_AXIS_TRIGGERRIGHT:
+    case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER:
         if (vinylBrakeComponent)
         {
             if (value < 0.01f && vinylBrakeComponent->getBrakeValue() > 0.0f)
@@ -608,7 +608,7 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
         }
         break;
 
-    case SDL_CONTROLLER_AXIS_LEFTX:
+    case SDL_GAMEPAD_AXIS_LEFTX:
         leftX = value;
         if (flangerComponent)
         {
@@ -621,7 +621,7 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
         }
         break;
 
-    case SDL_CONTROLLER_AXIS_LEFTY:
+    case SDL_GAMEPAD_AXIS_LEFTY:
         leftY = value;
         if (flangerComponent)
         {
@@ -634,7 +634,7 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
         }
         break;
 
-    case SDL_CONTROLLER_AXIS_RIGHTX:
+    case SDL_GAMEPAD_AXIS_RIGHTX:
         rightX = value;
         if (phaserComponent)
         {
@@ -644,7 +644,7 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
         }
         break;
 
-    case SDL_CONTROLLER_AXIS_RIGHTY:
+    case SDL_GAMEPAD_AXIS_RIGHTY:
         rightY = value;
         if (phaserComponent)
         {
