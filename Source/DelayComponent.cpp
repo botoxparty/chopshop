@@ -58,7 +58,7 @@ DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
     addAndMakeVisible(noteValueBox);
 
     // Create and setup plugin
-    plugin = createPlugin(tracktion_engine::DelayPlugin::xmlTypeName);
+    plugin = createPlugin(AutoDelayPlugin::xmlTypeName);
     
     if (plugin != nullptr)
     {

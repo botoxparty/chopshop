@@ -11,6 +11,7 @@
 #pragma once
 
 #include "BaseEffectComponent.h"
+#include "Plugins/FlangerPlugin.h"
 #include "RampedValue.h"
 
 class FlangerComponent : public BaseEffectComponent

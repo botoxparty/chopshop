@@ -11,6 +11,13 @@
       </GROUP>
     </GROUP>
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <GROUP id="{8BC56AD0-812F-447A-E393-5258DE03285D}" name="Plugins">
+        <FILE id="h0jxKF" name="AutoDelayPlugin.h" compile="0" resource="0"
+              file="Source/Plugins/AutoDelayPlugin.h"/>
+        <FILE id="wM3s6V" name="AutoPhaserPlugin.h" compile="0" resource="0"
+              file="Source/Plugins/AutoPhaserPlugin.h"/>
+        <FILE id="G25ffg" name="FlangerPlugin.h" compile="0" resource="0" file="Source/Plugins/FlangerPlugin.h"/>
+      </GROUP>
       <FILE id="TyW0GI" name="RampedValue.h" compile="0" resource="0" file="Source/RampedValue.h"/>
       <FILE id="jo36CR" name="PhaserComponent.cpp" compile="1" resource="0"
             file="Source/PhaserComponent.cpp"/>

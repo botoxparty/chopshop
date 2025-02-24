@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BaseEffectComponent.h"
+#include "Plugins/AutoPhaserPlugin.h"
 
 class PhaserComponent : public BaseEffectComponent
 {

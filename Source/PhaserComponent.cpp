@@ -42,7 +42,7 @@ PhaserComponent::PhaserComponent(tracktion_engine::Edit& edit)
     addAndMakeVisible(feedbackSlider);
 
     // Create and setup plugin
-    plugin = createPlugin(tracktion_engine::PhaserPlugin::xmlTypeName);
+    plugin = createPlugin(AutoPhaserPlugin::xmlTypeName);
     
     if (plugin != nullptr)
     {

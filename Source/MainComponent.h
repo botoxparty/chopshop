@@ -15,6 +15,9 @@
 #include "ScrewComponent.h"
 #include "ControllerMappingComponent.h"
 #include "PhaserComponent.h"
+#include "Plugins/FlangerPlugin.h"
+#include "Plugins/AutoDelayPlugin.h"
+#include "Plugins/AutoPhaserPlugin.h"
 
 // Add this line to enable console output
 #define JUCE_DEBUG 1

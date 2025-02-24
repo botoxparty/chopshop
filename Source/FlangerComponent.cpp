@@ -63,7 +63,7 @@ FlangerComponent::FlangerComponent(tracktion_engine::Edit &edit)
     addAndMakeVisible(mixSlider);
 
     // Create and setup plugin
-    plugin = createPlugin(tracktion_engine::ChorusPlugin::xmlTypeName);
+    plugin = createPlugin(FlangerPlugin::xmlTypeName);
 
     if (plugin != nullptr)
     {

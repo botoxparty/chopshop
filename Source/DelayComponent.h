@@ -11,6 +11,7 @@
 #pragma once
 
 #include "BaseEffectComponent.h"
+#include "Plugins/AutoDelayPlugin.h"
 #include "RampedValue.h"
 
 class DelayComponent : public BaseEffectComponent

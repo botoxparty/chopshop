@@ -18,6 +18,9 @@ MainComponent::MainComponent()
 
     // Register our custom plugins with the engine
     engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
+    engine.getPluginManager().createBuiltInType<FlangerPlugin>();
+    engine.getPluginManager().createBuiltInType<AutoDelayPlugin>();
+    engine.getPluginManager().createBuiltInType<AutoPhaserPlugin>();
 
     addAndMakeVisible(saveButton);
     addAndMakeVisible(playButton);
@@ -437,7 +440,7 @@ void MainComponent::updateTempo()
     // Convert ratio to plus/minus proportion (e.g., 1.5 becomes 0.5, 0.5 becomes -0.5)
     const double plusOrMinusProportion = ratio - 1.0;
 
-    edit.getTransport().getCurrentPlaybackContext()->setTempoAdjustment(plusOrMinusProportion);
+    // edit.getTransport().getCurrentPlaybackContext()->setTempoAdjustment(plusOrMinusProportion);
 }
 
 te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
