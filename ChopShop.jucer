@@ -82,7 +82,6 @@
     <FILE id="ZV5Is2" name="screw-icon.png" compile="0" resource="1" file="Source/screw-icon.png"/>
   </MAINGROUP>
   <MODULES>
-    <MODULE id="ea_soundtouch" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
@@ -112,24 +111,23 @@
                        libraryPath="/opt/homebrew/lib" extraLinkerFlags="-laubio"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path="../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../../../../Applications/JUCE/modules"/>
-        <MODULEPATH id="tracktion_engine" path="../tracktion_engine/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../tracktion_engine/modules/juce/modules"/>
-        <MODULEPATH id="juce_audio_basics" path="../tracktion_engine/modules/juce/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../tracktion_engine/modules/juce/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../tracktion_engine/modules/juce/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../tracktion_engine/modules/juce/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../tracktion_engine/modules/juce/modules"/>
-        <MODULEPATH id="juce_dsp" path="../tracktion_engine/modules/juce/modules"/>
-        <MODULEPATH id="juce_osc" path="../tracktion_engine/modules/juce/modules"/>
-        <MODULEPATH id="tracktion_graph" path="../tracktion_engine/modules"/>
-        <MODULEPATH id="tracktion_core" path="../tracktion_engine/modules"/>
-        <MODULEPATH id="ea_soundtouch" path="../../Downloads/JUCE_SoundTouch-main"/>
-        <MODULEPATH id="juce_opengl" path="../tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="juce_core" path="JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="JUCE/modules"/>
+        <MODULEPATH id="tracktion_engine" path="tracktion_engine/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="juce_dsp" path="tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="juce_osc" path="tracktion_engine/modules/juce/modules"/>
+        <MODULEPATH id="tracktion_graph" path="tracktion_engine/modules"/>
+        <MODULEPATH id="tracktion_core" path="tracktion_engine/modules"/>
+        <MODULEPATH id="juce_opengl" path="tracktion_engine/modules/juce/modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
   </EXPORTFORMATS>
