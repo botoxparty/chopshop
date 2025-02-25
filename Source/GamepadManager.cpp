@@ -4,7 +4,7 @@ GamepadManager::GamepadManager()
 {
     DBG("Initializing GamepadManager...");
     
-    if (SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK) < 0) 
+    if (SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_JOYSTICK) == false) 
     {
         DBG("SDL could not initialize! SDL Error: " << SDL_GetError());
         return;
@@ -13,7 +13,7 @@ GamepadManager::GamepadManager()
 
     // Log number of joysticks detected
     int count = 0;
-    SDL_JoystickID* joysticks = SDL_GetJoysticks(&count);
+    SDL_GetJoysticks(&count);
     DBG("Number of joysticks detected: " << count);
 
     // Open the first available controller

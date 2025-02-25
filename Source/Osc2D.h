@@ -47,7 +47,7 @@ public:
         // Setup GUI Overlay Label: Status of Shaders, compiler errors, etc.
         addAndMakeVisible (statusLabel);
         statusLabel.setJustificationType (Justification::topLeft);
-        statusLabel.setFont (Font (14.0f));
+        statusLabel.setFont (FontOptions(14.0f));
     }
     
     ~Oscilloscope2D()

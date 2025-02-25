@@ -42,9 +42,9 @@ public:
     void resized() override;
 
     // GameControllerListener overrides
-    void gamepadButtonPressed(int buttonId);
-    void gamepadButtonReleased(int buttonId);
-    void gamepadAxisMoved(int axisId, float newValue);
+    void gamepadButtonPressed(int buttonId) override;
+    void gamepadButtonReleased(int buttonId) override;
+    void gamepadAxisMoved(int axisId, float newValue) override;
     // Toggles playback state and updates UI
     void play();
     void stop();
@@ -54,10 +54,17 @@ public:
 
     void timerCallback() override
     {
-        updatePositionLabel();
+        // Check if we're shutting down
+    if (chopComponent == nullptr)
+    {
         stopTimer();
-        float currentPosition = chopComponent->getCrossfaderValue();
-        chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+        return;
+    }
+    
+    updatePositionLabel();
+    stopTimer();
+    float currentPosition = chopComponent->getCrossfaderValue();
+    chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
     }
 
     void changeListenerCallback(juce::ChangeBroadcaster*) override
@@ -191,6 +198,8 @@ private:
     void createVinylBrakeComponent();
 
     void createPluginRack();
+
+    void releaseResources();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

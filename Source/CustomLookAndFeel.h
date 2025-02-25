@@ -14,7 +14,7 @@ public:
 
         // Winamp-inspired colors
         const auto displayColor = juce::Colour(0xFF00FF41);    // Classic Winamp green
-        const auto metalGrey = juce::Colour(0xFF2A2A2A);      // Dark metallic
+        // const auto metalGrey = juce::Colour(0xFF2A2A2A);      // Dark metallic
         const auto metalLight = juce::Colour(0xFF3D3D3D);     // Light metallic
         const auto accentColor = juce::Colour(0xFF484848);    // Accent grey
         const auto backgroundColor = juce::Colour(0xFF000000); // Background grey
@@ -341,7 +341,7 @@ public:
         static auto typeface = juce::Typeface::createSystemTypefaceFor(
             BinaryData::AudiowideRegular_ttf,
             BinaryData::AudiowideRegular_ttfSize);
-        return juce::Font(typeface);
+        return juce::Font(juce::FontOptions(typeface));
     }
 
     juce::Typeface::Ptr getTypefaceForFont(const juce::Font &f) override

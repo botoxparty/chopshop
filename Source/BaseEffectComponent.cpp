@@ -14,7 +14,7 @@ BaseEffectComponent::BaseEffectComponent(tracktion_engine::Edit& e)
     : edit(e)
 {
     // Configure title label
-    titleLabel.setFont(juce::Font(16.0f, juce::Font::bold));
+    titleLabel.setFont(juce::FontOptions(16.0f).withStyle("Bold"));
     titleLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(titleLabel);
     

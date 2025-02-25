@@ -9,7 +9,7 @@ public:
     explicit ReverbComponent(tracktion_engine::Edit&);
     void resized() override;
     void rampMixLevel(bool rampUp);
-    void restoreMixLevel();
+    void restoreMixLevel() override;
 
 private:
     juce::Slider reverbRoomSizeSlider;

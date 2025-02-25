@@ -7,12 +7,12 @@ MainComponent::MainComponent()
     // Add this near the start of the constructor, before other component setup
     currentTrackLabel.setJustificationType(juce::Justification::centred);
     currentTrackLabel.setText("No Track Loaded", juce::dontSendNotification);
-    currentTrackLabel.setFont(juce::Font(16.0f));
+    currentTrackLabel.setFont(juce::FontOptions(16.0f));
     currentTrackLabel.setMinimumHorizontalScale(1.0f);
     addAndMakeVisible(currentTrackLabel);
 
     positionLabel.setJustificationType(juce::Justification::centred);
-    positionLabel.setFont(juce::Font(16.0f));
+    positionLabel.setFont(juce::FontOptions(16.0f));
     positionLabel.setMinimumHorizontalScale(1.0f);
     addAndMakeVisible(positionLabel);
 
@@ -200,8 +200,40 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
-    if (auto *oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin *>(oscilloscopePlugin.get()))
+    // Stop any timers first
+    stopTimer();
+    
+    // Remove oscilloscope listener before nullifying the plugin
+    if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
         oscPlugin->removeListener(this);
+    
+    // Remove gamepad listener and reset gamepad manager
+    if (gamepadManager)
+        gamepadManager->removeListener(this);
+    
+    // Clear all component pointers in reverse order of creation
+    // Start with UI components that might reference other components
+    controllerMappingComponent = nullptr;
+    libraryComponent = nullptr;
+    
+    // Clear effect components that might reference plugins
+    phaserComponent = nullptr;
+    delayComponent = nullptr;
+    flangerComponent = nullptr;
+    screwComponent = nullptr;
+    chopComponent = nullptr;
+    reverbComponent = nullptr;
+    vinylBrakeComponent = nullptr;
+    
+    // Clear visualization components
+    oscilloscopeComponent = nullptr;
+    thumbnail = nullptr;
+    
+    // Clear plugin references last
+    oscilloscopePlugin = nullptr;
+    
+    // Clear gamepad manager last
+    gamepadManager = nullptr;
 }
 
 //==============================================================================
@@ -713,4 +745,20 @@ void MainComponent::createPluginRack()
             masterTrack->pluginList.insertPlugin(tracktion_engine::RackInstance::create(*rack), 0);
         }
     }
+}
+
+void MainComponent::releaseResources()
+{
+    // Stop any active timers
+    stopTimer();
+    
+    // Stop playback if active
+    if (edit.getTransport().isPlaying())
+        edit.getTransport().stop(true, false);
+    
+    // Release any plugin resources
+    if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
+        oscPlugin->removeListener(this);
+    
+    oscilloscopePlugin = nullptr;
 }

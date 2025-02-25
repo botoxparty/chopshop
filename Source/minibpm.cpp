@@ -59,7 +59,7 @@
  *   return its corresponding tempo.
  */
 
-#include "MiniBpm.h"
+#include "minibpm.h"
 
 #include <vector>
 #include <map>
@@ -496,7 +496,7 @@ public:
         m_candidates.clear();
 
         double hopsPerSec = m_inputSampleRate / m_stepSize;
-        int dfLength = m_lfdf.size();
+        int dfLength = static_cast<int>(m_lfdf.size());
 
         // We have no use for any lag beyond 4 bars at minimum bpm
         double barPM = m_minbpm / (4 * m_beatsPerBar);

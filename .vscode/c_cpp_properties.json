@@ -3,9 +3,7 @@
         {
             "name": "Mac",
             "includePath": [
-                "${workspaceFolder}/**",
                 "${workspaceFolder}/Source/**",
-                "/opt/homebrew/include",
                 "${workspaceFolder}/JuceLibraryCode/**",
                 "${workspaceFolder}/JUCE/modules/**",
                 "${workspaceFolder}/tracktion_engine/modules/**"

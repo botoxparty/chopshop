@@ -34,7 +34,6 @@ VinylBrakeComponent::VinylBrakeComponent(tracktion_engine::Edit& edit)
 
 void VinylBrakeComponent::resized()
 {
-    auto bounds = getLocalBounds();
     BaseEffectComponent::resized(); // This will handle the title label
     
     // Get the effective area for the slider (area below title)
