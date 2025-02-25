@@ -1,4 +1,5 @@
 #include "MainComponent.h"
+#include "ChopComponent.h"
 #include <algorithm>
 
 #define JUCE_USE_DIRECTWRITE 0 // Fix drawing of Monospace fonts in Code Editor!
@@ -6,6 +7,9 @@
 //==============================================================================
 MainComponent::MainComponent()
 {
+    // Create a global command manager
+    commandManager = std::make_unique<juce::ApplicationCommandManager>();
+    
     // Add this near the start of the constructor, before other component setup
     controlBarComponent = std::make_unique<ControlBarComponent>(edit);
     addAndMakeVisible(*controlBarComponent);
@@ -52,9 +56,20 @@ MainComponent::MainComponent()
             startRecording();
     };
 
+    // Create ChopComponent and pass the command manager
     chopComponent = std::make_unique<ChopComponent>(edit);
     addAndMakeVisible(*chopComponent);
+    
+    // Set the command manager for the ChopComponent
+    chopComponent->setCommandManager(commandManager.get());
 
+    // Register all commands with the command manager
+    commandManager->registerAllCommandsForTarget(this);
+    
+    // Add key mappings to the top level component
+    addKeyListener(commandManager->getKeyMappings());
+
+    // Restore the mouse handlers
     chopComponent->onChopButtonPressed = [this]()
     {
         chopStartTime = juce::Time::getMillisecondCounterHiRes();
@@ -186,12 +201,18 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
+    // Remove key listener before destroying command manager
+    removeKeyListener(commandManager->getKeyMappings());
+    
     // Call releaseResources first to ensure proper cleanup
     releaseResources();
     
     // Additional cleanup if needed
     LookAndFeel::setDefaultLookAndFeel(nullptr);
     customLookAndFeel = nullptr;
+    
+    // Clear command manager last
+    commandManager = nullptr;
 }
 
 //==============================================================================

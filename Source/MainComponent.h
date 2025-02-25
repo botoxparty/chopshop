@@ -31,7 +31,8 @@ class MainComponent : public juce::Component,
                       public juce::Timer,
                       public GamepadManager::Listener,
                       public juce::ChangeListener,
-                      public tracktion_engine::OscilloscopePlugin::Listener
+                      public tracktion_engine::OscilloscopePlugin::Listener,
+                      public juce::ApplicationCommandTarget
 {
 public:
     //==============================================================================
@@ -119,6 +120,27 @@ public:
         // }
     }
 
+    // Add these required methods from ApplicationCommandTarget
+    juce::ApplicationCommandTarget* getNextCommandTarget() override
+    {
+        return chopComponent.get();
+    }
+    
+    void getAllCommands(juce::Array<juce::CommandID>& commands) override
+    {
+        // Add any commands your main component handles
+    }
+    
+    void getCommandInfo(juce::CommandID commandID, juce::ApplicationCommandInfo& result) override
+    {
+        // Provide info for your commands
+    }
+    
+    bool perform(const juce::ApplicationCommandTarget::InvocationInfo& info) override
+    {
+        return false; // Return true if you handle the command
+    }
+
 private:
     //==============================================================================
     tracktion_engine::Engine engine{ProjectInfo::projectName};
@@ -200,6 +222,9 @@ private:
     void releaseResources();
 
     std::unique_ptr<ControlBarComponent> controlBarComponent;
+
+    // Add this line to declare the command manager
+    std::unique_ptr<juce::ApplicationCommandManager> commandManager;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
