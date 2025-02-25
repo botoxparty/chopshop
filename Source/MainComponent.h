@@ -17,6 +17,7 @@
 #include "Plugins/FlangerPlugin.h"
 #include "Plugins/AutoDelayPlugin.h"
 #include "Plugins/AutoPhaserPlugin.h"
+#include "ControlBarComponent.h"
 
 // Add this line to enable console output
 #define JUCE_DEBUG 1
@@ -138,8 +139,7 @@ private:
     PlayState playState{PlayState::Stopped};
 
     juce::TextButton saveButton{"Save"};
-    juce::TextButton playButton{"Play"};
-    juce::TextButton stopButton{"Stop"};
+    juce::TextButton recordButton{"Record"};
 
     void handleFileSelection(const juce::File &file);
 
@@ -147,8 +147,6 @@ private:
     void setTrackVolume(int trackIndex, float volume);
 
     std::unique_ptr<Thumbnail> thumbnail;
-
-    juce::TextButton recordButton{"Record"};
 
     void armTrack(int trackIndex, bool arm);
     void startRecording();
@@ -158,8 +156,6 @@ private:
 
     double chopStartTime = 0.0;
     double chopReleaseDelay = 0.0;
-
-    juce::Label currentTrackLabel{"Track Label", "No Track Loaded"};
 
     te::VolumeAndPanPlugin *volumeAndPan1 = nullptr;
     te::VolumeAndPanPlugin *volumeAndPan2 = nullptr;
@@ -185,12 +181,8 @@ private:
     void updateButtonStates()
     {
         bool trackLoaded = isTrackLoaded();
-        playButton.setEnabled(trackLoaded);
-        stopButton.setEnabled(trackLoaded);
         recordButton.setEnabled(trackLoaded);
     }
-
-    juce::Label positionLabel{"Position Label", "00:00:00.000 | 1|1|000"};
 
     void updatePositionLabel();
 
@@ -206,6 +198,8 @@ private:
     void createPluginRack();
 
     void releaseResources();
+
+    std::unique_ptr<ControlBarComponent> controlBarComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

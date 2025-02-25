@@ -11,6 +11,10 @@
       </GROUP>
     </GROUP>
     <GROUP id="{9255122A-D282-83EF-DEEE-AA95F82E74BD}" name="Source">
+      <FILE id="lZlQHq" name="ControlBarComponent.cpp" compile="1" resource="0"
+            file="Source/ControlBarComponent.cpp"/>
+      <FILE id="EHldTc" name="ControlBarComponent.h" compile="0" resource="0"
+            file="Source/ControlBarComponent.h"/>
       <GROUP id="{8BC56AD0-812F-447A-E393-5258DE03285D}" name="Plugins">
         <FILE id="h0jxKF" name="AutoDelayPlugin.h" compile="0" resource="0"
               file="Source/Plugins/AutoDelayPlugin.h"/>
@@ -110,7 +114,7 @@
         <CONFIGURATION isDebug="1" name="Debug" targetName="ChopShop" headerPath="/usr/local/include"
                        libraryPath="/usr/local/lib"/>
         <CONFIGURATION isDebug="0" name="Release" targetName="ChopShop" headerPath="/usr/local/include"
-                       libraryPath="/usr/local/lib" osxArchitecture="Native" binaryPath="~/Downloads/"/>
+                       libraryPath="/usr/local/lib" osxArchitecture="Native"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="JUCE/modules"/>

@@ -344,6 +344,14 @@ public:
         return juce::Font(juce::FontOptions(typeface));
     }
 
+    static const juce::Font getMonospaceFont()
+    {
+        static auto typeface = juce::Typeface::createSystemTypefaceFor(
+            BinaryData::JetBrainsMonoVariableFont_wght_ttf,
+            BinaryData::JetBrainsMonoVariableFont_wght_ttfSize);
+        return juce::Font(juce::FontOptions(typeface));
+    }
+
     juce::Typeface::Ptr getTypefaceForFont(const juce::Font &f) override
     {
         return getCustomFont().getTypefacePtr();

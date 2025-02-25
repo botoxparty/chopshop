@@ -1,20 +1,18 @@
 #include "MainComponent.h"
 #include <algorithm>
 
+#define JUCE_USE_DIRECTWRITE 0 // Fix drawing of Monospace fonts in Code Editor!
+
 //==============================================================================
 MainComponent::MainComponent()
 {
     // Add this near the start of the constructor, before other component setup
-    currentTrackLabel.setJustificationType(juce::Justification::centred);
-    currentTrackLabel.setText("No Track Loaded", juce::dontSendNotification);
-    currentTrackLabel.setFont(juce::FontOptions(16.0f));
-    currentTrackLabel.setMinimumHorizontalScale(1.0f);
-    addAndMakeVisible(currentTrackLabel);
+    controlBarComponent = std::make_unique<ControlBarComponent>(edit);
+    addAndMakeVisible(*controlBarComponent);
 
-    positionLabel.setJustificationType(juce::Justification::centred);
-    positionLabel.setFont(juce::FontOptions(16.0f));
-    positionLabel.setMinimumHorizontalScale(1.0f);
-    addAndMakeVisible(positionLabel);
+    // Set up callbacks for the control bar
+    controlBarComponent->onPlayButtonClicked = [this] { play(); };
+    controlBarComponent->onStopButtonClicked = [this] { stop(); };
 
     // Register our custom plugins with the engine
     engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
@@ -23,8 +21,6 @@ MainComponent::MainComponent()
     engine.getPluginManager().createBuiltInType<AutoPhaserPlugin>();
 
     addAndMakeVisible(saveButton);
-    addAndMakeVisible(playButton);
-    addAndMakeVisible(stopButton);
     addAndMakeVisible(recordButton);
     addAndMakeVisible(audioSettingsButton);
 
@@ -41,14 +37,6 @@ MainComponent::MainComponent()
     edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
 
     setSize(1024, 900);
-
-    playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-    stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-
-    playButton.onClick = [this]
-    { play(); };
-    stopButton.onClick = [this]
-    { stop(); };
 
     // Setup reverb control
     reverbComponent = std::make_unique<ReverbComponent>(edit);
@@ -92,8 +80,6 @@ MainComponent::MainComponent()
     };
 
     getLookAndFeel().setDefaultSansSerifTypefaceName("Arial");
-
-    addAndMakeVisible(currentTrackLabel);
 
     // Add the button callback
     audioSettingsButton.onClick = [this]
@@ -238,35 +224,8 @@ void MainComponent::resized()
     visualizerBox.items.add(juce::FlexItem(*thumbnail).withFlex(0.3f).withMargin(5));
     mainColumn.items.add(juce::FlexItem(visualizerBox).withFlex(1.0f));
 
-    // Row 2: Control Bar
-    juce::FlexBox controlBarBox;
-    controlBarBox.flexDirection = juce::FlexBox::Direction::row;
-    controlBarBox.justifyContent = juce::FlexBox::JustifyContent::flexStart;
-    controlBarBox.alignItems = juce::FlexBox::AlignItems::center;
-
-    // Track label with border - modified to take full width
-    juce::FlexBox trackLabelBox;
-    trackLabelBox.flexDirection = juce::FlexBox::Direction::row;
-    trackLabelBox.items.add(juce::FlexItem(currentTrackLabel).withFlex(1.0f).withHeight(30).withMargin(2));
-
-    juce::FlexBox positionLabelBox;
-    positionLabelBox.flexDirection = juce::FlexBox::Direction::row;
-    positionLabelBox.items.add(juce::FlexItem(positionLabel).withWidth(200).withHeight(30).withMargin(2));
-
-    // Transport controls
-    juce::FlexBox transportBox;
-    transportBox.flexDirection = juce::FlexBox::Direction::row;
-    transportBox.items.add(juce::FlexItem(playButton).withWidth(80).withHeight(30).withMargin(2));
-    transportBox.items.add(juce::FlexItem(stopButton).withWidth(80).withHeight(30).withMargin(2));
-    transportBox.items.add(juce::FlexItem(recordButton).withWidth(80).withHeight(30).withMargin(2));
-
-    // Modified to make trackLabelBox take remaining space
-    controlBarBox.items.add(juce::FlexItem(trackLabelBox).withFlex(1.0f));
-    controlBarBox.items.add(juce::FlexItem(positionLabelBox).withWidth(200));
-    controlBarBox.items.add(juce::FlexItem(transportBox).withWidth(260));
-
-    // Add control bar to main column
-    mainColumn.items.add(juce::FlexItem(controlBarBox).withHeight(40).withMargin(5));
+    // Row 2: Control Bar - now just add the component directly
+    mainColumn.items.add(juce::FlexItem(*controlBarComponent).withHeight(50).withMargin(5));
 
     // Row 3: Main Box (remaining space)
     juce::FlexBox mainBox;
@@ -314,9 +273,8 @@ void MainComponent::play()
 
     // Update button states based on transport state
     const bool isPlaying = edit.getTransport().isPlaying();
-    stopButton.setToggleState(!isPlaying, juce::NotificationType::dontSendNotification);
-    playButton.setToggleState(isPlaying, juce::NotificationType::dontSendNotification);
-    playButton.setButtonText(isPlaying ? "Pause" : "Play");
+    controlBarComponent->setPlayButtonState(isPlaying);
+    controlBarComponent->setStopButtonState(!isPlaying);
     playState = isPlaying ? PlayState::Playing : PlayState::Stopped;
 }
 
@@ -329,9 +287,8 @@ void MainComponent::stop()
     edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
 
     playState = PlayState::Stopped;
-    stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-    playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-    playButton.setButtonText("Play");
+    controlBarComponent->setPlayButtonState(false);
+    controlBarComponent->setStopButtonState(true);
 
     updateButtonStates();
 }
@@ -357,9 +314,9 @@ void MainComponent::handleFileSelection(const juce::File &file)
 
         // Reset play/pause/stop button states
         playState = PlayState::Stopped;
-        stopButton.setToggleState(true, juce::NotificationType::dontSendNotification);
-        playButton.setToggleState(false, juce::NotificationType::dontSendNotification);
-        playButton.setButtonText("Play");
+        controlBarComponent->setPlayButtonState(false);
+        controlBarComponent->setStopButtonState(true);
+        controlBarComponent->setTrackName(file.getFileNameWithoutExtension());
 
         // Load audio file and get samples
         juce::AudioFormatManager formatManager;
@@ -399,7 +356,6 @@ void MainComponent::handleFileSelection(const juce::File &file)
         auto loopedClip = EngineHelpers::loopAroundClip(*clip1);
         edit.getTransport().stop(false, false); // Stop playback after loop setup
         thumbnail->setFile(loopedClip->getPlaybackFile());
-        currentTrackLabel.setText(file.getFileNameWithoutExtension(), juce::dontSendNotification);
 
         // Create second track and load the same file
         if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
@@ -662,22 +618,8 @@ void MainComponent::gamepadAxisMoved(int axisId, float value)
 
 void MainComponent::updatePositionLabel()
 {
-    auto &transport = edit.getTransport();
-    auto position = transport.getPosition();
-
-    // Get time position
-    auto timeString = PlayHeadHelpers::timeToTimecodeString(position.inSeconds());
-
-    // Get beat position
-    auto &tempoSequence = edit.tempoSequence;
-    auto beatPosition = tempoSequence.toBarsAndBeats(position);
-    auto quarterNotes = beatPosition.getTotalBars() * 4.0; // Convert bars to quarter notes
-    auto beatString = PlayHeadHelpers::quarterNotePositionToBarsBeatsString(
-        quarterNotes,
-        tempoSequence.getTimeSigAt(position).numerator,
-        tempoSequence.getTimeSigAt(position).denominator);
-
-    positionLabel.setText(timeString + " | " + beatString, juce::dontSendNotification);
+    if (controlBarComponent)
+        controlBarComponent->updatePositionLabel();
 }
 
 void MainComponent::createVinylBrakeComponent()
@@ -764,4 +706,7 @@ void MainComponent::releaseResources()
     if (gamepadManager)
         gamepadManager->removeListener(this);
     gamepadManager = nullptr;
+
+    controlBarComponent = nullptr;
 }
+
