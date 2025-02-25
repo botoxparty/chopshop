@@ -55,6 +55,8 @@ public:
         // Turn off OpenGL
         openGLContext.setContinuousRepainting (false);
         openGLContext.detach();
+
+        stop();
         
         // Detach ringBuffer
         ringBuffer = nullptr;

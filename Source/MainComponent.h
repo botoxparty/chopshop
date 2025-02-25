@@ -55,16 +55,22 @@ public:
     void timerCallback() override
     {
         // Check if we're shutting down
-    if (chopComponent == nullptr)
-    {
-        stopTimer();
-        return;
-    }
-    
-    updatePositionLabel();
-    stopTimer();
-    float currentPosition = chopComponent->getCrossfaderValue();
-    chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+        if (chopComponent == nullptr)
+        {
+            stopTimer();
+            return;
+        }
+        
+        updatePositionLabel();
+        
+        // Only manipulate the crossfader if we're handling a chop release
+        if (chopReleaseDelay > 0)
+        {
+            stopTimer();
+            float currentPosition = chopComponent->getCrossfaderValue();
+            chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+            chopReleaseDelay = 0;
+        }
     }
 
     void changeListenerCallback(juce::ChangeBroadcaster*) override
@@ -191,7 +197,7 @@ private:
     std::unique_ptr<Component> oscilloscopeComponent;
 
     // Add a member to hold the plugin reference
-    std::shared_ptr<tracktion_engine::Plugin> oscilloscopePlugin;
+    tracktion_engine::Plugin::Ptr oscilloscopePlugin;
 
     std::unique_ptr<ControllerMappingComponent> controllerMappingComponent;
 

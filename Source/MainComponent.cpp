@@ -153,7 +153,7 @@ MainComponent::MainComponent()
         // Register our custom plugins with the engine
         engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
 
-        oscilloscopePlugin = std::shared_ptr<tracktion_engine::Plugin>(masterTrack->pluginList.insertPlugin(tracktion_engine::OscilloscopePlugin::create(), -1).get());
+        oscilloscopePlugin = masterTrack->pluginList.insertPlugin(tracktion_engine::OscilloscopePlugin::create(), -1);
         if (oscilloscopePlugin != nullptr)
         {
             DBG("Created oscilloscope plugin");
@@ -200,40 +200,12 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
-    // Stop any timers first
-    stopTimer();
+    // Call releaseResources first to ensure proper cleanup
+    releaseResources();
     
-    // Remove oscilloscope listener before nullifying the plugin
-    if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
-        oscPlugin->removeListener(this);
-    
-    // Remove gamepad listener and reset gamepad manager
-    if (gamepadManager)
-        gamepadManager->removeListener(this);
-    
-    // Clear all component pointers in reverse order of creation
-    // Start with UI components that might reference other components
-    controllerMappingComponent = nullptr;
-    libraryComponent = nullptr;
-    
-    // Clear effect components that might reference plugins
-    phaserComponent = nullptr;
-    delayComponent = nullptr;
-    flangerComponent = nullptr;
-    screwComponent = nullptr;
-    chopComponent = nullptr;
-    reverbComponent = nullptr;
-    vinylBrakeComponent = nullptr;
-    
-    // Clear visualization components
-    oscilloscopeComponent = nullptr;
-    thumbnail = nullptr;
-    
-    // Clear plugin references last
-    oscilloscopePlugin = nullptr;
-    
-    // Clear gamepad manager last
-    gamepadManager = nullptr;
+    // Additional cleanup if needed
+    LookAndFeel::setDefaultLookAndFeel(nullptr);
+    customLookAndFeel = nullptr;
 }
 
 //==============================================================================
@@ -756,9 +728,40 @@ void MainComponent::releaseResources()
     if (edit.getTransport().isPlaying())
         edit.getTransport().stop(true, false);
     
-    // Release any plugin resources
-    if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
-        oscPlugin->removeListener(this);
+    // Debug reference counting
+    if (oscilloscopePlugin != nullptr)
+    {
+        DBG("Oscilloscope plugin reference count: " + 
+            juce::String(oscilloscopePlugin->getReferenceCount()));
+    }
     
+    // Remove oscilloscope listener
+    if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
+    {
+        oscPlugin->removeListener(this);
+        DBG("Removed oscilloscope listener");
+    }
+    
+    // Clear all component pointers in a specific order
+    oscilloscopeComponent = nullptr;
+    thumbnail = nullptr;
+    
+    controllerMappingComponent = nullptr;
+    libraryComponent = nullptr;
+    
+    phaserComponent = nullptr;
+    delayComponent = nullptr;
+    flangerComponent = nullptr;
+    screwComponent = nullptr;
+    chopComponent = nullptr;
+    reverbComponent = nullptr;
+    vinylBrakeComponent = nullptr;
+    
+    // Release plugin reference
     oscilloscopePlugin = nullptr;
+    
+    // Clear gamepad manager
+    if (gamepadManager)
+        gamepadManager->removeListener(this);
+    gamepadManager = nullptr;
 }
