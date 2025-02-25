@@ -46,6 +46,8 @@ private:
     };
     
     SpringSlider brakeSlider;
+
+    void setSpeed(float value);
     
     double originalTempoAdjustment = 0.0;
     bool hasStoredAdjustment = false;

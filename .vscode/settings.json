@@ -74,5 +74,6 @@
     "atomic": "cpp",
     "random": "cpp",
     "thread": "cpp"
-  }
+  },
+  "cmake.ignoreCMakeListsMissing": true
 }

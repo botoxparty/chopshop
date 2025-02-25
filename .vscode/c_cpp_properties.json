@@ -4,15 +4,25 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/opt/homebrew/include"
+                "${workspaceFolder}/Source/**",
+                "/opt/homebrew/include",
+                "${workspaceFolder}/JuceLibraryCode/**",
+                "${workspaceFolder}/JUCE/modules/**",
+                "${workspaceFolder}/tracktion_engine/modules/**"
             ],
             "defines": [],
             "macFrameworkPath": [],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c11",
             "cppStandard": "c++20",
-            "intelliSenseMode": "macos-clang-x64"
+            "intelliSenseMode": "macos-clang-arm64",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
-  }
+}

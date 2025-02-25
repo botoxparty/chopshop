@@ -61,10 +61,25 @@ void VinylBrakeComponent::sliderValueChanged(juce::Slider* slider)
             
             if (!isSpringAnimating)  // Only update directly if not animating
             {
-                const double plusOrMinusProportion = originalTempoAdjustment - value;
-                context->setTempoAdjustment(plusOrMinusProportion);
+                // Apply brake effect by subtracting from the original adjustment
+                DBG("Setting tempo adjustment to: " + juce::String(originalTempoAdjustment - value));
+                setSpeed(originalTempoAdjustment - value);
             }
         }
+    }
+}
+
+void VinylBrakeComponent::setSpeed(float value)
+{
+    auto& transport = edit.getTransport();
+    auto context = transport.getCurrentPlaybackContext();
+    if (context != nullptr)
+    {
+        // Convert to percentage and clamp between -100 and 100
+        float compensationValue = value * 100.0f;
+        compensationValue = juce::jlimit(-95.0f, 95.0f, compensationValue);
+        DBG("Setting speed compensation to: " + juce::String(compensationValue));
+        context->setSpeedCompensation(compensationValue);
     }
 }
 
@@ -72,6 +87,13 @@ void VinylBrakeComponent::startSpringAnimation()
 {
     if (!isSpringAnimating)
     {
+        // Make sure we have the latest tempo adjustment before starting animation
+        if (!hasStoredAdjustment && getCurrentTempoAdjustment)
+        {
+            originalTempoAdjustment = getCurrentTempoAdjustment();
+            hasStoredAdjustment = true;
+        }
+        
         isSpringAnimating = true;
         springStartValue = brakeSlider.getValue();
         springStartTime = juce::Time::getMillisecondCounterHiRes();
@@ -95,14 +117,8 @@ void VinylBrakeComponent::timerCallback()
         // Update slider and tempo
         brakeSlider.setValue(currentSpringValue, juce::dontSendNotification);
         
-        auto& transport = edit.getTransport();
-        auto context = transport.getCurrentPlaybackContext();
-        
-        if (context != nullptr)
-        {
-            const double plusOrMinusProportion = originalTempoAdjustment - currentSpringValue;
-            context->setTempoAdjustment(plusOrMinusProportion);
-        }
+        setSpeed(originalTempoAdjustment - currentSpringValue);
+
         
         // Stop animation when complete
         if (progress >= 1.0)
@@ -111,12 +127,8 @@ void VinylBrakeComponent::timerCallback()
             currentSpringValue = 0.0;
             brakeSlider.setValue(0.0, juce::dontSendNotification);
             stopTimer();
-            
-            if (context != nullptr)
-            {
-                context->setTempoAdjustment(originalTempoAdjustment);
-                hasStoredAdjustment = false;
-            }
+            setSpeed(originalTempoAdjustment);
+            hasStoredAdjustment = false;
         }
     }
 }

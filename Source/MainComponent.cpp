@@ -440,7 +440,7 @@ void MainComponent::updateTempo()
     // Convert ratio to plus/minus proportion (e.g., 1.5 becomes 0.5, 0.5 becomes -0.5)
     const double plusOrMinusProportion = ratio - 1.0;
 
-    // edit.getTransport().getCurrentPlaybackContext()->setTempoAdjustment(plusOrMinusProportion);
+    edit.getTransport().getCurrentPlaybackContext()->setSpeedCompensation(plusOrMinusProportion * 100.0);
 }
 
 te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
