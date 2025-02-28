@@ -120,7 +120,7 @@ jobs:
             cd vendor/SDL3
             mkdir -p build
             cd build
-            cmake .. -DSDL_STATIC=OFF -DSDL_SHARED=ON
+            cmake .. -DSDL_STATIC=OFF -DSDL_SHARED=ON -DHAVE_GAMEINPUT_H=0
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
             # Add SDL3 to path for the main build
@@ -161,8 +161,17 @@ jobs:
             lipo -create arm64/install/lib/libSDL3.dylib x86_64/install/lib/libSDL3.dylib -output universal/lib/libSDL3.dylib
             cp -R arm64/install/include/* universal/include/
             
-            # Add the local SDL3 installation to the path for the main build
-            echo "SDL3_DIR=$(pwd)/universal" >> $GITHUB_ENV
+            # Copy all SDL3 CMake configuration files to the universal directory
+            mkdir -p universal/lib/cmake/SDL3
+            cp -R arm64/install/lib/cmake/SDL3/* universal/lib/cmake/SDL3/
+            
+            # Set the SDL3_DIR to point to the directory containing SDL3Config.cmake
+            echo "SDL3_DIR=$(pwd)/universal/lib/cmake/SDL3" >> $GITHUB_ENV
+            
+            # List the files to verify they're there
+            echo "Contents of SDL3 cmake directory:"
+            ls -la universal/lib/cmake/SDL3/
+            
             cd ../../..
           else
             echo "ERROR: SDL3 directory not found in vendor folder."
