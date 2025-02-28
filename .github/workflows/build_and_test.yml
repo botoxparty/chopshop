@@ -304,6 +304,15 @@ jobs:
           name: ${{ env.ARTIFACT_NAME }}.dmg
           path: packaging/${{ env.ARTIFACT_NAME }}.dmg
 
+      - name: Debug - List build artifacts
+        if: ${{ matrix.name == 'Windows' }}
+        run: |
+          echo "Listing build artifacts directory structure:"
+          ls -la "${{ env.BUILD_DIR }}"
+          ls -la "${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts"
+          ls -la "${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}"
+          ls -la "${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/Standalone" || echo "Standalone directory not found"
+
   release:
     if: contains(github.ref, 'tags/v')
     runs-on: ubuntu-latest
