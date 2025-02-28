@@ -173,6 +173,10 @@ target_link_libraries(SharedCode
 # Link the JUCE app target to our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 
+# Link the SDL3 library to the JUCE app target
+target_link_libraries("${PROJECT_NAME}" PRIVATE SDL3::SDL3)
+
+
 # IPP support, comment out to disable
 include(PamplejuceIPP)
 
