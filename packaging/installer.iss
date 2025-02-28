@@ -35,7 +35,7 @@ Type: filesandordirs; Name: "{commoncf64}\VST3\{#ProductName}Data"
 
 ; MSVC adds a .ilk when building the plugin. Let's not include that.
 [Files]
-Source: "..\Builds\{#ProjectName}_artefacts\Release\Standalone\{#ProductName}.exe"; DestDir: "{commonpf64}\{#Publisher}\{#ProductName}"; Flags: ignoreversion; Components: standalone
+Source: "..\Builds\{#ProjectName}_artefacts\Release\{#ProductName}.exe"; DestDir: "{commonpf64}\{#Publisher}\{#ProductName}"; Flags: ignoreversion; Components: standalone
 
 [Icons]
 Name: "{autoprograms}\{#ProductName}"; Filename: "{commonpf64}\{#Publisher}\{#ProductName}\{#ProductName}.exe"; Components: standalone
