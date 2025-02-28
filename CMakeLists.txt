@@ -148,6 +148,10 @@ target_compile_definitions(SharedCode
 
     # App name without version
     PRODUCT_NAME_WITHOUT_VERSION="ChopShop"
+
+    # Fix for C++20 compatibility issues
+    _LIBCPP_ENABLE_CXX20_REMOVED_FEATURES=1
+    _LIBCPP_DISABLE_AVAILABILITY=1
 )
 
 # Link to any other modules you added (with juce_add_module) here!

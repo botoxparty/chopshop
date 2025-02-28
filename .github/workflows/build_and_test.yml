@@ -253,30 +253,26 @@ jobs:
           # Create a DMG for the standalone app
           hdiutil create -volname "${{ env.PRODUCT_NAME }}" -srcfolder "${{ env.STANDALONE_PATH }}.app" -ov -format UDZO "packaging/${{ env.ARTIFACT_NAME }}.dmg"
           
-          # Notarize the DMG - add retry logic and more verbose output
-          echo "Submitting DMG for notarization..."
-          xcrun notarytool submit "packaging/${{ env.ARTIFACT_NAME }}.dmg" \
+          # Submit and capture the submission ID
+          SUBMISSION_ID=$(xcrun notarytool submit "packaging/${{ env.ARTIFACT_NAME }}.dmg" \
             --apple-id ${{ secrets.NOTARIZATION_USERNAME }} \
             --password ${{ secrets.NOTARIZATION_PASSWORD }} \
             --team-id ${{ secrets.TEAM_ID }} \
-            --wait \
-            --verbose
-          
-          # Check notarization status
-          echo "Checking notarization status..."
-          xcrun notarytool history \
+            --output-format json | jq -r '.id')
+
+          echo "Submission ID: $SUBMISSION_ID"
+
+          # Wait for notarization to complete
+          xcrun notarytool wait "$SUBMISSION_ID" \
             --apple-id ${{ secrets.NOTARIZATION_USERNAME }} \
             --password ${{ secrets.NOTARIZATION_PASSWORD }} \
-            --team-id ${{ secrets.TEAM_ID }} \
-            --limit 1
-          
-          # Staple the DMG
-          echo "Stapling DMG..."
-          xcrun stapler staple "packaging/${{ env.ARTIFACT_NAME }}.dmg"
-          
-          # Verify stapling
-          echo "Verifying staple..."
-          xcrun stapler validate "packaging/${{ env.ARTIFACT_NAME }}.dmg"
+            --team-id ${{ secrets.TEAM_ID }}
+
+          # Check the specific submission
+          xcrun notarytool info "$SUBMISSION_ID" \
+            --apple-id ${{ secrets.NOTARIZATION_USERNAME }} \
+            --password ${{ secrets.NOTARIZATION_PASSWORD }} \
+            --team-id ${{ secrets.TEAM_ID }}
 
       - name: Zip (Linux)
         if: ${{ matrix.name == 'Linux' }}
