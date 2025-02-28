@@ -120,8 +120,11 @@ jobs:
             cd vendor/SDL3
             mkdir -p build
             cd build
+            cmake .. -DSDL_STATIC=OFF -DSDL_SHARED=ON
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
+            # Add SDL3 to path for the main build
+            echo "SDL3_DIR=$(pwd)/install" >> $GITHUB_ENV
             cd ../../..
           else
             echo "ERROR: SDL3 directory not found in vendor folder."
@@ -136,25 +139,27 @@ jobs:
             cd vendor/SDL3
             mkdir -p build
             cd build
-            # Configure SDL3 with a local install prefix to avoid permission issues
-            # Fix: Use separate builds for each architecture instead of trying to build universal binary
+            
             # Build for arm64
-            cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
+            mkdir -p arm64
+            cd arm64
+            cmake ../.. -DCMAKE_OSX_ARCHITECTURES="arm64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
-            
-            # Clean build directory for x86_64 build
-            rm -rf CMakeCache.txt CMakeFiles
+            cd ..
             
             # Build for x86_64
-            cmake .. -DCMAKE_OSX_ARCHITECTURES="x86_64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
+            mkdir -p x86_64
+            cd x86_64
+            cmake ../.. -DCMAKE_OSX_ARCHITECTURES="x86_64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
+            cd ..
             
             # Create universal binary using lipo
-            mkdir -p universal/lib
-            lipo -create install/lib/libSDL3.dylib install/lib/libSDL3.dylib -output universal/lib/libSDL3.dylib
-            cp -R install/include universal/
+            mkdir -p universal/lib universal/include
+            lipo -create arm64/install/lib/libSDL3.dylib x86_64/install/lib/libSDL3.dylib -output universal/lib/libSDL3.dylib
+            cp -R arm64/install/include/* universal/include/
             
             # Add the local SDL3 installation to the path for the main build
             echo "SDL3_DIR=$(pwd)/universal" >> $GITHUB_ENV
