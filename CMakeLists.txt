@@ -57,10 +57,10 @@ add_subdirectory(tracktion_engine/modules)
 
 # Create a library for the minibpm module
 add_library(minibpm STATIC
-    Source/minibpm.cpp
-    Source/minibpm.h
+    source/minibpm.cpp
+    source/minibpm.h
 )
-target_include_directories(minibpm PUBLIC Source)
+target_include_directories(minibpm PUBLIC source)
 
 # Add this before juce_add_gui_app
 # Remove the JUCE_GENERATE_JUCE_HEADER_ARGS block
