@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChopShop - Chopped & Screwed Music Production Tool</title>
+    <style>
+        /* Base styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #000000;
+            color: #00FF41; /* Matrix green */
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header styles */
+        header {
+            text-align: center;
+            padding: 40px 0;
+            border-bottom: 1px solid #003B00; /* Dark wire green */
+        }
+
+        h1 {
+            font-size: 48px;
+            margin: 0;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.7);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: normal;
+            margin-top: 10px;
+        }
+
+        /* Feature section */
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin: 40px 0;
+        }
+
+        .feature {
+            flex-basis: 30%;
+            margin-bottom: 30px;
+            background-color: rgba(0, 59, 0, 0.3); /* Dark wire green with transparency */
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #00FF41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        }
+
+        .feature h3 {
+            border-bottom: 1px solid #00FF41;
+            padding-bottom: 10px;
+        }
+
+        /* Screenshot section */
+        .screenshot {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .screenshot img {
+            max-width: 100%;
+            border: 2px solid #00FF41;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
+        }
+
+        /* Call to action */
+        .cta {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        .button {
+            display: inline-block;
+            background-color: #00FF41;
+            color: #000000;
+            padding: 12px 30px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            font-size: 18px;
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #00CC33;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.7);
+            transform: scale(1.05);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #003B00;
+            margin-top: 40px;
+            font-size: 14px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .feature {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ChopShop</h1>
+            <h2>Chopped & Screwed Music Production Studio</h2>
+        </header>
+
+        <div class="screenshot">
+            <h2>Create Authentic Chopped & Screwed Tracks</h2>
+            <img src="app_screenshot.jpg" alt="ChopShop Application Screenshot">
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <h3>Precision Chopping</h3>
+                <p>Create classic chopped beats with our responsive crossfader that provides perfect cuts and transitions. Features customizable chop durations synced to your track's tempo.</p>
+            </div>
+            <div class="feature">
+                <h3>Screw Controls</h3>
+                <p>Slow down and pitch-shift your tracks with precision using our Screw component. Create that authentic Houston sound with vinyl brake effects and precise tempo adjustments.</p>
+            </div>
+            <div class="feature">
+                <h3>DJ Scratcher</h3>
+                <p>Manipulate your tracks in real-time with our virtual turntable controls. Create those signature stutters, stops, and scratches that define the chopped and screwed style.</p>
+            </div>
+            <div class="feature">
+                <h3>Sample Library</h3>
+                <p>Manage your tracks and samples with our built-in library system. Automatically detects BPM and allows for custom organization of your source material.</p>
+            </div>
+            <div class="feature">
+                <h3>Atmospheric Effects</h3>
+                <p>Apply studio-quality effects including reverb, delay, flanger, and phaser to create that spacey, syrupy sound that defines the genre. Each effect is fully customizable.</p>
+            </div>
+            <div class="feature">
+                <h3>Controller Support</h3>
+                <p>Map your favorite MIDI controllers or use gamepad integration for hands-on control of all chopping and screwing functions, just like working with real vinyl.</p>
+            </div>
+        </div>
+
+        <div class="cta">
+            <h2>Ready to Create Your Own Chopped & Screwed Masterpieces?</h2>
+            <a href="download.html" class="button">Download ChopShop</a>
+        </div>
+
+        <footer>
+            <p>ChopShop &copy; 2025. All rights reserved.</p>
+            <p>Built with JUCE and Tracktion Engine.</p>
+            <p>Paying homage to DJ Screw and the Houston chopped and screwed movement.</p>
+        </footer>
+    </div>
+</body>
+</html> 

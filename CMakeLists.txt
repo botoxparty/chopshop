@@ -46,61 +46,42 @@ project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 # On Github Actions, this is done as a part of actions/checkout
 add_subdirectory(JUCE)
 
-# Add CLAP format
-add_subdirectory(modules/clap-juce-extensions EXCLUDE_FROM_ALL)
-
-# Add any other modules you want modules here, before the juce_add_plugin call
+# Add any other modules you want modules here, before the juce_add_gui_app call
 # juce_add_module(modules/my_module)
 
 # This adds the melatonin inspector module
 add_subdirectory (modules/melatonin_inspector)
 
+# Add Tracktion modules
+add_subdirectory(tracktion_engine/modules/tracktion_core)
+add_subdirectory(tracktion_engine/modules/tracktion_engine)
+add_subdirectory(tracktion_engine/modules/tracktion_graph)
+
 # See `docs/CMake API.md` in the JUCE repo for all config options
-juce_add_plugin("${PROJECT_NAME}"
-    # Icons for the standalone app
+juce_add_gui_app("${PROJECT_NAME}"
+    # Icons for the app
     ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/packaging/icon.png"
 
     # Change me!
     COMPANY_NAME "${COMPANY_NAME}"
     BUNDLE_ID "${BUNDLE_ID}"
 
-    # On MacOS, plugin is copied to /Users/yourname/Library/Audio/Plug-Ins/
-    COPY_PLUGIN_AFTER_BUILD TRUE
-
-    # Change me!
-    # A four-character plugin id
-    # First character MUST be uppercase for AU formats
-    PLUGIN_MANUFACTURER_CODE Pamp
-
-    # Change me!
-    # A unique four-character plugin id
-    # Note: this must have at least one upper-case character
-    PLUGIN_CODE P001
-    FORMATS "${FORMATS}"
-
     # The name of your final executable
-    # This is how it's listed in the DAW
     # This can be different from PROJECT_NAME and can have spaces!
-    # You might want to use v${MAJOR_VERSION} here once you go to v2...
     PRODUCT_NAME "${PRODUCT_NAME}")
 
 # This lets us use our code in both the JUCE targets and our Test target
 # Without running into ODR violations
 add_library(SharedCode INTERFACE)
 
-clap_juce_extensions_plugin(TARGET "${PROJECT_NAME}"
-    CLAP_ID "${BUNDLE_ID}"
-    CLAP_FEATURES audio-effect)
-
 # Enable fast math, C++20 and a few other target defaults
 include(SharedCodeDefaults)
 
-
-# Manually list all .h and .cpp files for the plugin
+# Manually list all .h and .cpp files for the app
 # If you are like me, you'll use globs for your sanity.
 # Just ensure you employ CONFIGURE_DEPENDS so the build system picks up changes
 # If you want to appease the CMake gods and avoid globs, manually add files like so:
-# set(SourceFiles Source/PluginEditor.h Source/PluginProcessor.h Source/PluginEditor.cpp Source/PluginProcessor.cpp)
+# set(SourceFiles Source/Main.h Source/Main.cpp Source/MainComponent.h Source/MainComponent.cpp)
 file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/source/*.h")
 target_sources(SharedCode INTERFACE ${SourceFiles})
 
@@ -110,23 +91,24 @@ include(Assets)
 # MacOS only: Cleans up folder and target organization on Xcode.
 include(XcodePrettify)
 
-# This is where you can set preprocessor definitions for JUCE and your plugin
+# This is where you can set preprocessor definitions for JUCE and your app
 target_compile_definitions(SharedCode
     INTERFACE
 
     # JUCE_WEB_BROWSER and JUCE_USE_CURL off by default
-    JUCE_WEB_BROWSER=0  # If you set this to 1, add `NEEDS_WEB_BROWSER TRUE` to the `juce_add_plugin` call
-    JUCE_USE_CURL=0     # If you set this to 1, add `NEEDS_CURL TRUE` to the `juce_add_plugin` call
-    JUCE_VST3_CAN_REPLACE_VST2=0
-
-    # Uncomment if you are paying for a an Indie/Pro license or releasing under GPLv3
-    # JUCE_DISPLAY_SPLASH_SCREEN=0
+    JUCE_WEB_BROWSER=0
+    JUCE_USE_CURL=0
+    JUCE_MODAL_LOOPS_PERMITTED=1
 
     # lets the app known if we're Debug or Release
+    $<$<CONFIG:Debug>:DEBUG=1>
+    $<$<CONFIG:Debug>:_DEBUG=1>
+    $<$<NOT:$<CONFIG:Debug>>:NDEBUG=1>
+    $<$<NOT:$<CONFIG:Debug>>:_NDEBUG=1>
     CMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}"
     VERSION="${CURRENT_VERSION}"
 
-    # JucePlugin_Name is for some reason doesn't use the nicer PRODUCT_NAME
+    # App name without version
     PRODUCT_NAME_WITHOUT_VERSION="ChopShop"
 )
 
@@ -134,31 +116,72 @@ target_compile_definitions(SharedCode
 # Usually JUCE modules must have PRIVATE visibility
 # See https://github.com/juce-framework/JUCE/blob/master/docs/CMake%20API.md#juce_add_module
 # However, with Pamplejuce, you'll link modules to SharedCode with INTERFACE visibility
-# This allows the JUCE plugin targets and the Tests target to link against it
+# This allows the JUCE app target and the Tests target to link against it
 target_link_libraries(SharedCode
     INTERFACE
     Assets
     melatonin_inspector
     juce_audio_utils
+    juce_audio_formats
+    juce_audio_devices
     juce_audio_processors
+    juce_audio_basics
     juce_dsp
     juce_gui_basics
     juce_gui_extra
+    juce_graphics
+    juce_data_structures
+    juce_core
+    juce_events
+    juce_opengl
+    juce_osc
     juce::juce_recommended_config_flags
     juce::juce_recommended_lto_flags
-    juce::juce_recommended_warning_flags)
+    juce::juce_recommended_warning_flags
+    tracktion_core
+    tracktion_engine
+    tracktion_graph)
 
-# Link the JUCE plugin targets our SharedCode target
+# Link the JUCE app target to our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 
 # IPP support, comment out to disable
 include(PamplejuceIPP)
 
 # Everything related to the tests target
-include(Tests)
+# include(Tests)
 
 # A separate target for Benchmarks (keeps the Tests target fast)
-include(Benchmarks)
+# include(Benchmarks)
 
 # Output some config for CI (like our PRODUCT_NAME)
 include(GitHubENV)
+
+# Add this after the SharedCode target is created
+target_compile_features(SharedCode INTERFACE cxx_std_20)
+
+# Add this section to handle SDL3 dependencies
+if(APPLE)
+    find_package(SDL3 REQUIRED)
+    target_link_libraries(SharedCode INTERFACE SDL3::SDL3)
+    
+    # Copy SDL3 dylib to the app bundle
+    add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "/usr/local/lib/libSDL3.0.dylib"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../MacOS/libSDL3.0.dylib"
+        COMMENT "Copying SDL3 library to app bundle")
+        
+    # Fix the install name
+    add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+        COMMAND install_name_tool -change @rpath/libSDL3.0.dylib @executable_path/libSDL3.0.dylib
+        "$<TARGET_FILE:${PROJECT_NAME}>"
+        COMMENT "Fixing SDL3 install name")
+endif()
+
+# Update the Assets section to include your specific files
+juce_add_binary_data(Assets SOURCES
+    Source/Audiowide-Regular.ttf
+    Source/JetBrainsMono-VariableFont_wght.ttf
+    Source/screw-icon.png
+)
