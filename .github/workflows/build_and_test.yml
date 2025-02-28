@@ -253,9 +253,30 @@ jobs:
           # Create a DMG for the standalone app
           hdiutil create -volname "${{ env.PRODUCT_NAME }}" -srcfolder "${{ env.STANDALONE_PATH }}.app" -ov -format UDZO "packaging/${{ env.ARTIFACT_NAME }}.dmg"
           
-          # Notarize the DMG
-          xcrun notarytool submit "packaging/${{ env.ARTIFACT_NAME }}.dmg" --apple-id ${{ secrets.NOTARIZATION_USERNAME }} --password ${{ secrets.NOTARIZATION_PASSWORD }} --team-id ${{ secrets.TEAM_ID }} --wait
+          # Notarize the DMG - add retry logic and more verbose output
+          echo "Submitting DMG for notarization..."
+          xcrun notarytool submit "packaging/${{ env.ARTIFACT_NAME }}.dmg" \
+            --apple-id ${{ secrets.NOTARIZATION_USERNAME }} \
+            --password ${{ secrets.NOTARIZATION_PASSWORD }} \
+            --team-id ${{ secrets.TEAM_ID }} \
+            --wait \
+            --verbose
+          
+          # Check notarization status
+          echo "Checking notarization status..."
+          xcrun notarytool history \
+            --apple-id ${{ secrets.NOTARIZATION_USERNAME }} \
+            --password ${{ secrets.NOTARIZATION_PASSWORD }} \
+            --team-id ${{ secrets.TEAM_ID }} \
+            --limit 1
+          
+          # Staple the DMG
+          echo "Stapling DMG..."
           xcrun stapler staple "packaging/${{ env.ARTIFACT_NAME }}.dmg"
+          
+          # Verify stapling
+          echo "Verifying staple..."
+          xcrun stapler validate "packaging/${{ env.ARTIFACT_NAME }}.dmg"
 
       - name: Zip (Linux)
         if: ${{ matrix.name == 'Linux' }}
@@ -266,7 +287,7 @@ jobs:
         if: ${{ matrix.name == 'Windows' }}
         run: |
           iscc "packaging\installer.iss"
-          mv "packaging\Output\${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
+          mv "packaging\Output\${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}.exe" "${{ env.ARTIFACTS_PATH }}/"
 
       # - name: Codesign with Azure Trusted Signing (Windows)
       #   if: ${{ matrix.name == 'Windows' }}
