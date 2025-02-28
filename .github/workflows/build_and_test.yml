@@ -139,7 +139,7 @@ jobs:
             mkdir -p build
             cd build
             # Configure SDL3 with a local install prefix to avoid permission issues
-            cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
+            cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
             # Add the local SDL3 installation to the path for the main build
