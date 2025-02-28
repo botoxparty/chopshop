@@ -140,30 +140,10 @@ jobs:
             mkdir -p build
             cd build
             
-            # Build for arm64
-            mkdir -p arm64
-            cd arm64
-            cmake ../.. -DCMAKE_OSX_ARCHITECTURES="arm64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install" -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON
+            # Build only for arm64
+            cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install" -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
-            cd ..
-            
-            # Build for x86_64
-            mkdir -p x86_64
-            cd x86_64
-            cmake ../.. -DCMAKE_OSX_ARCHITECTURES="x86_64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install" -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON
-            cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
-            cmake --install . --config ${{ env.BUILD_TYPE }}
-            cd ..
-            
-            # Create universal binary using lipo
-            mkdir -p universal/lib universal/include
-            lipo -create arm64/install/lib/libSDL3.dylib x86_64/install/lib/libSDL3.dylib -output universal/lib/libSDL3.dylib
-            cp -R arm64/install/include/* universal/include/
-            
-            # Copy all SDL3 CMake configuration files to the universal directory
-            mkdir -p universal/lib/cmake/SDL3
-            cp -R arm64/install/lib/cmake/SDL3/* universal/lib/cmake/SDL3/
             
             # Set the SDL3_DIR to point to the directory containing SDL3Config.cmake
             echo "SDL3_DIR=$(pwd)/install/lib/cmake/SDL3" >> $GITHUB_ENV
