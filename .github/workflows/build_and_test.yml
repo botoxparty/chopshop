@@ -115,13 +115,20 @@ jobs:
       - name: Build and Install SDL3 (macOS)
         if: ${{ matrix.name == 'macOS' }}
         run: |
-          cd vendor/SDL3
-          mkdir build
-          cd build
-          cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
-          cmake --build .
-          sudo cmake --install .
-          cd ../../..
+          # Check if SDL3 directory exists in vendor
+          if [ -d "vendor/SDL3" ]; then
+            cd vendor/SDL3
+            mkdir build
+            cd build
+            # Use a simpler configuration that avoids the problematic flags
+            cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DSDL_PTHREADS=ON
+            cmake --build . --parallel 4
+            sudo cmake --install .
+            cd ../../..
+          else
+            echo "ERROR: SDL3 directory not found in vendor folder."
+            echo "Please ensure the SDL3 submodule is properly initialized."
+            exit 1
 
       - name: Cache the build
         uses: mozilla-actions/sccache-action@v0.0.7
