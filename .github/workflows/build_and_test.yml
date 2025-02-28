@@ -112,18 +112,36 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Build and Install SDL3 (macOS)
-        if: ${{ matrix.name == 'macOS' }}
+      - name: Build and Install SDL3 (Windows)
+        if: ${{ matrix.name == 'Windows' }}
         run: |
           # Check if SDL3 directory exists in vendor
           if [ -d "vendor/SDL3" ]; then
             cd vendor/SDL3
-            mkdir build
+            mkdir -p build
             cd build
-            # Use a simpler configuration that avoids the problematic flags
-            cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 -DSDL_PTHREADS=ON
-            cmake --build . --parallel 4
-            sudo cmake --install .
+            # Configure SDL3 with Gaming Input explicitly disabled
+            cmake .. -DSDL_WINDOWS_GAMING_INPUT=OFF
+            cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
+            cmake --install . --config ${{ env.BUILD_TYPE }}
+            cd ../../..
+          else
+            echo "ERROR: SDL3 directory not found in vendor folder."
+            echo "Please ensure the SDL3 submodule is properly initialized."
+            exit 1
+          fi
+
+      - name: Build and Install SDL3 (macOS)
+        if: ${{ matrix.name == 'macOS' }}
+        run: |
+          if [ -d "vendor/SDL3" ]; then
+            cd vendor/SDL3
+            mkdir -p build
+            cd build
+            # Configure SDL3 without the problematic architecture flags
+            cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DSDL_STATIC=OFF -DSDL_SHARED=ON
+            cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
+            cmake --install . --config ${{ env.BUILD_TYPE }}
             cd ../../..
           else
             echo "ERROR: SDL3 directory not found in vendor folder."
