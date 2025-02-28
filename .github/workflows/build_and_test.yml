@@ -40,7 +40,7 @@ jobs:
             extra-flags: -G Ninja
           - name: macOS
             os: macos-14
-            extra-flags: -G Ninja -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+            extra-flags: -G Ninja -DCMAKE_OSX_ARCHITECTURES="arm64"
           - name: Windows
             os: windows-latest
 
@@ -166,11 +166,11 @@ jobs:
             cp -R arm64/install/lib/cmake/SDL3/* universal/lib/cmake/SDL3/
             
             # Set the SDL3_DIR to point to the directory containing SDL3Config.cmake
-            echo "SDL3_DIR=$(pwd)/universal/lib/cmake/SDL3" >> $GITHUB_ENV
+            echo "SDL3_DIR=$(pwd)/install/lib/cmake/SDL3" >> $GITHUB_ENV
             
             # List the files to verify they're there
             echo "Contents of SDL3 cmake directory:"
-            ls -la universal/lib/cmake/SDL3/
+            ls -la install/lib/cmake/SDL3/
             
             cd ../../..
           else
