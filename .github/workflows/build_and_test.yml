@@ -140,7 +140,7 @@ jobs:
             mkdir -p build
             cd build
             
-            # Build only for arm64
+            # Build only for arm64 - disable precompiled headers to avoid architecture issues
             cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install" -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
@@ -173,7 +173,13 @@ jobs:
           dev-id-installer-password: ${{ secrets.DEV_ID_INSTALLER_PASSWORD }}
 
       - name: Configure
-        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DHAVE_GAMEINPUT_H=0 ${{ matrix.extra-flags }} .
+        run: |
+          # For macOS, ensure we're only building for arm64 to match SDL3
+          if [[ "${{ matrix.name }}" == "macOS" ]]; then
+            cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DHAVE_GAMEINPUT_H=0 -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON -DCMAKE_OSX_ARCHITECTURES="arm64" ${{ matrix.extra-flags }} .
+          else
+            cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DHAVE_GAMEINPUT_H=0 -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON ${{ matrix.extra-flags }} .
+          fi
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
