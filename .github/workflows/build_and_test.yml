@@ -120,8 +120,6 @@ jobs:
             cd vendor/SDL3
             mkdir -p build
             cd build
-            # Configure SDL3 with Gaming Input explicitly disabled
-            cmake .. -DSDL_WINDOWS_GAMING_INPUT=OFF
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
             cd ../../..
@@ -165,7 +163,7 @@ jobs:
           dev-id-installer-password: ${{ secrets.DEV_ID_INSTALLER_PASSWORD }}
 
       - name: Configure
-        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ${{ matrix.extra-flags }} -DSDL_WINDOWS_GAMING_INPUT=OFF .
+        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DHAVE_GAMEINPUT_H=0 ${{ matrix.extra-flags }} .
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
