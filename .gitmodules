@@ -14,3 +14,6 @@
 	path = melatonin_inspector
 	url = https://github.com/sudara/melatonin_inspector.git
 	branch = main
+[submodule "vendor/SDL3"]
+	path = vendor/SDL3
+	url = git@github.com:libsdl-org/SDL.git

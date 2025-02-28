@@ -40,6 +40,11 @@ set(FORMATS Standalone AU VST3 AUv3)
 # For simplicity, the name of the CMake project is also the name of the target
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
 
+# set the output directory for built objects.
+# This makes sure that the dynamic library goes into the build directory automatically.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
+
 # JUCE is setup as a submodule in the /JUCE folder
 # Locally, you must run `git submodule update --init --recursive` once
 # and later `git submodule update --remote --merge` to keep it up to date
@@ -54,6 +59,9 @@ add_subdirectory (melatonin_inspector)
 
 # Add Tracktion modules
 add_subdirectory(tracktion_engine/modules)
+
+# Add the SDL3 library
+add_subdirectory(vendor/SDL3 EXCLUDE_FROM_ALL)
 
 # Create a library for the minibpm module
 add_library(minibpm STATIC
