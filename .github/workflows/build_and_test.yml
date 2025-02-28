@@ -268,10 +268,10 @@ jobs:
           iscc "packaging\installer.iss"
           mv "packaging/Output/${{ env.ARTIFACT_NAME }}.exe" "${{ env.ARTIFACTS_PATH }}/"
 
-      - name: Codesign with Azure Trusted Signing (Windows)
-        if: ${{ matrix.name == 'Windows' }}
-        uses: azure/trusted-signing-action@v0.5.0
-        with:
+      # - name: Codesign with Azure Trusted Signing (Windows)
+      #   if: ${{ matrix.name == 'Windows' }}
+      #   uses: azure/trusted-signing-action@v0.5.0
+      #   with:
           # The Azure Active Directory tenant (directory) ID.
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
 
