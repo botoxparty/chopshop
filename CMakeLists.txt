@@ -37,8 +37,14 @@ set(BUNDLE_ID "com.poundingSystems.chopshop")
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
 # set(FORMATS Standalone AU VST3 AUv3)
 
+# Add a version manually
+set(CURRENT_VERSION "1.0.0")
+set(MAJOR_VERSION "1")
+set(MINOR_VERSION "0")
+set(PATCH_VERSION "0")
+
 # For simplicity, the name of the CMake project is also the name of the target
-project(${PROJECT_NAME} VERSION ${CURRENT_VERSION})
+project(${PROJECT_NAME} VERSION ${CURRENT_VERSION} LANGUAGES CXX)
 
 # set the output directory for built objects.
 # This makes sure that the dynamic library goes into the build directory automatically.
@@ -200,9 +206,3 @@ juce_add_binary_data(Assets SOURCES
     source/JetBrainsMono-VariableFont_wght.ttf
     source/screw-icon.png
 )
-
-# Add a version manually instead
-set(CURRENT_VERSION "1.0.0")
-set(MAJOR_VERSION "1")
-set(MINOR_VERSION "0")
-set(PATCH_VERSION "0")
