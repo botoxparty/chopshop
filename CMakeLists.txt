@@ -53,9 +53,21 @@ add_subdirectory(JUCE)
 add_subdirectory (modules/melatonin_inspector)
 
 # Add Tracktion modules
-add_subdirectory(tracktion_engine/modules/tracktion_core)
-add_subdirectory(tracktion_engine/modules/tracktion_engine)
-add_subdirectory(tracktion_engine/modules/tracktion_graph)
+add_subdirectory(modules/tracktion_engine/modules)
+
+# Create a library for the minibpm module
+add_library(minibpm STATIC
+    Source/minibpm.cpp
+    Source/minibpm.h
+)
+target_include_directories(minibpm PUBLIC Source)
+
+# Add this before juce_add_gui_app
+# Remove the JUCE_GENERATE_JUCE_HEADER_ARGS block
+# set(JUCE_GENERATE_JUCE_HEADER_ARGS
+#     JUCE_HEADER_NAME "JuceHeader.h"
+#     JUCE_HEADER_DIR "${CMAKE_CURRENT_BINARY_DIR}/JuceLibraryCode"
+# )
 
 # See `docs/CMake API.md` in the JUCE repo for all config options
 juce_add_gui_app("${PROJECT_NAME}"
@@ -68,7 +80,10 @@ juce_add_gui_app("${PROJECT_NAME}"
 
     # The name of your final executable
     # This can be different from PROJECT_NAME and can have spaces!
-    PRODUCT_NAME "${PRODUCT_NAME}")
+    PRODUCT_NAME "${PRODUCT_NAME}"
+    
+    # Change this from TRUE to FALSE to prevent JUCE from generating the header
+    NEEDS_JUCE_HEADER FALSE)
 
 # This lets us use our code in both the JUCE targets and our Test target
 # Without running into ODR violations
@@ -76,6 +91,10 @@ add_library(SharedCode INTERFACE)
 
 # Enable fast math, C++20 and a few other target defaults
 include(SharedCodeDefaults)
+
+# Add JUCE modules include path to fix JuceHeader.h not found error
+target_include_directories(SharedCode INTERFACE 
+    "${CMAKE_CURRENT_SOURCE_DIR}/Source")
 
 # Manually list all .h and .cpp files for the app
 # If you are like me, you'll use globs for your sanity.
@@ -86,7 +105,7 @@ file(GLOB_RECURSE SourceFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/sou
 target_sources(SharedCode INTERFACE ${SourceFiles})
 
 # Adds a BinaryData target for embedding assets into the binary
-include(Assets)
+# include(Assets)
 
 # MacOS only: Cleans up folder and target organization on Xcode.
 include(XcodePrettify)
@@ -140,7 +159,8 @@ target_link_libraries(SharedCode
     juce::juce_recommended_warning_flags
     tracktion_core
     tracktion_engine
-    tracktion_graph)
+    tracktion_graph
+    minibpm)
 
 # Link the JUCE app target to our SharedCode target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
@@ -185,3 +205,9 @@ juce_add_binary_data(Assets SOURCES
     Source/JetBrainsMono-VariableFont_wght.ttf
     Source/screw-icon.png
 )
+
+# Add a version manually instead
+set(CURRENT_VERSION "1.0.0")
+set(MAJOR_VERSION "1")
+set(MINOR_VERSION "0")
+set(PATCH_VERSION "0")
