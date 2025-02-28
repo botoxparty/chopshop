@@ -94,7 +94,7 @@ include(SharedCodeDefaults)
 
 # Add JUCE modules include path to fix JuceHeader.h not found error
 target_include_directories(SharedCode INTERFACE 
-    "${CMAKE_CURRENT_SOURCE_DIR}/Source")
+    "${CMAKE_CURRENT_SOURCE_DIR}/source")
 
 # Manually list all .h and .cpp files for the app
 # If you are like me, you'll use globs for your sanity.
@@ -201,9 +201,9 @@ endif()
 
 # Update the Assets section to include your specific files
 juce_add_binary_data(Assets SOURCES
-    Source/Audiowide-Regular.ttf
-    Source/JetBrainsMono-VariableFont_wght.ttf
-    Source/screw-icon.png
+    source/Audiowide-Regular.ttf
+    source/JetBrainsMono-VariableFont_wght.ttf
+    source/screw-icon.png
 )
 
 # Add a version manually instead
