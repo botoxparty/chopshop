@@ -87,8 +87,14 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install ninja
-          # Optional: Install LibUSB if you need it for SDL3
-          choco install libusb
+          
+          # Manual installation of libusb
+          mkdir -p C:/libusb
+          curl -L https://github.com/libusb/libusb/releases/download/v1.0.26/libusb-1.0.26-binaries.7z -o libusb.7z
+          7z x libusb.7z -oC:/libusb
+          echo "LIBUSB_DIR=C:/libusb" >> $GITHUB_ENV
+          # Add to PATH so DLLs can be found at runtime
+          echo "C:/libusb/MS64/dll" >> $GITHUB_PATH
 
       - name: Install macOS Deps
         if: ${{ matrix.name == 'macOS' }}
