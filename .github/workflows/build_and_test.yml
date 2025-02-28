@@ -143,7 +143,7 @@ jobs:
             # Build for arm64
             mkdir -p arm64
             cd arm64
-            cmake ../.. -DCMAKE_OSX_ARCHITECTURES="arm64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
+            cmake ../.. -DCMAKE_OSX_ARCHITECTURES="arm64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install" -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
             cd ..
@@ -151,7 +151,7 @@ jobs:
             # Build for x86_64
             mkdir -p x86_64
             cd x86_64
-            cmake ../.. -DCMAKE_OSX_ARCHITECTURES="x86_64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
+            cmake ../.. -DCMAKE_OSX_ARCHITECTURES="x86_64" -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install" -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
             cd ..
