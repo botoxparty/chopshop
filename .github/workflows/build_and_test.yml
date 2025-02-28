@@ -95,9 +95,12 @@ jobs:
           path: C:\Program Files (x86)\Intel
           key: ipp-v6
 
-      - name: Install Ninja (Windows)
+      - name: Install Windows Deps
         if: runner.os == 'Windows'
-        run: choco install ninja
+        run: |
+          choco install ninja
+          # Optional: Install LibUSB if you need it for SDL3
+          choco install libusb
 
       - name: Install macOS Deps
         if: ${{ matrix.name == 'macOS' }}
