@@ -53,6 +53,18 @@ jobs:
         if: runner.os == 'Linux'
         uses: egor-tensin/setup-clang@v1
 
+      # Add this after the "Set up Clang" step and before the "Configure" step
+      - name: Build and Install SDL3 (macOS)
+        if: ${{ matrix.name == 'macOS' }}
+        run: |
+          cd vendor/SDL3
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13
+          cmake --build .
+          sudo cmake --install .
+          cd ../../..
+
       # This also starts up our "fake" display (Xvfb), needed for GUI testing
       - name: Install JUCE's Linux Deps
         if: runner.os == 'Linux'
