@@ -43,8 +43,11 @@ set(MAJOR_VERSION "1")
 set(MINOR_VERSION "0")
 set(PATCH_VERSION "0")
 
+# Add this near the top of your file, before the project() command
+enable_language(C)
+
 # For simplicity, the name of the CMake project is also the name of the target
-project(${PROJECT_NAME} VERSION ${CURRENT_VERSION} LANGUAGES CXX)
+project(${PROJECT_NAME} VERSION ${CURRENT_VERSION} LANGUAGES C CXX)
 
 # set the output directory for built objects.
 # This makes sure that the dynamic library goes into the build directory automatically.
