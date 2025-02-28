@@ -89,6 +89,8 @@ juce_add_gui_app("${PROJECT_NAME}"
     # The name of your final executable
     # This can be different from PROJECT_NAME and can have spaces!
     PRODUCT_NAME "${PRODUCT_NAME}"
+
+    OSX_ARCHITECTURE "arm64"
     
     # Change this from TRUE to FALSE to prevent JUCE from generating the header
     NEEDS_JUCE_HEADER FALSE)
@@ -191,25 +193,6 @@ include(GitHubENV)
 
 # Add this after the SharedCode target is created
 target_compile_features(SharedCode INTERFACE cxx_std_20)
-
-# # Add this section to handle SDL3 dependencies
-# if(APPLE)
-#     find_package(SDL3 REQUIRED)
-#     target_link_libraries(SharedCode INTERFACE SDL3::SDL3)
-    
-#     # Copy SDL3 dylib to the app bundle
-#     add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#         "/usr/local/lib/libSDL3.0.dylib"
-#         "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../MacOS/libSDL3.0.dylib"
-#         COMMENT "Copying SDL3 library to app bundle")
-        
-#     # Fix the install name
-#     add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-#         COMMAND install_name_tool -change @rpath/libSDL3.0.dylib @executable_path/libSDL3.0.dylib
-#         "$<TARGET_FILE:${PROJECT_NAME}>"
-#         COMMENT "Fixing SDL3 install name")
-# endif()
 
 # Update the Assets section to include your specific files
 juce_add_binary_data(Assets SOURCES
