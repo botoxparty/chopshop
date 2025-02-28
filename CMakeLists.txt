@@ -50,10 +50,10 @@ add_subdirectory(JUCE)
 # juce_add_module(modules/my_module)
 
 # This adds the melatonin inspector module
-add_subdirectory (modules/melatonin_inspector)
+add_subdirectory (melatonin_inspector)
 
 # Add Tracktion modules
-add_subdirectory(modules/tracktion_engine/modules)
+add_subdirectory(tracktion_engine/modules)
 
 # Create a library for the minibpm module
 add_library(minibpm STATIC

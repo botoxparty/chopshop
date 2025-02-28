@@ -6,3 +6,11 @@
 	path = cmake
 	url = https://github.com/sudara/cmake-includes.git
 	branch = main
+[submodule "tracktion_engine"]
+	path = tracktion_engine
+	url = https://github.com/Tracktion/tracktion_engine.git
+	branch = develop
+[submodule "melatonin_inspector"]
+	path = melatonin_inspector
+	url = https://github.com/sudara/melatonin_inspector.git
+	branch = main
