@@ -197,21 +197,6 @@ MainComponent::MainComponent()
     controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
     addAndMakeVisible(*controllerMappingComponent);
 
-    scratcherComponent = std::make_unique<ScratcherComponent>(edit);
-    addAndMakeVisible(*scratcherComponent);
-
-    // // Set up callback for scratching state changes
-    // scratcherComponent->onScratchingStateChanged = [this](bool isScratchActive) {
-    //     // When scratching is active, we might want to temporarily disable other effects
-    //     // or adjust the transport behavior
-    //     if (isScratchActive) {
-    //         // Store current playback state to restore later
-    //         // Possibly disable certain controls
-    //     } else {
-    //         // Restore previous state
-    //     }
-    // };
-
     resized();
 }
 
@@ -283,7 +268,6 @@ void MainComponent::resized()
     column2.items.add(juce::FlexItem(*screwComponent).withFlex(0.25f).withMinHeight(100).withMargin(5));
     column2.items.add(juce::FlexItem(*chopComponent).withFlex(0.5f).withMinHeight(200).withMargin(5));
     column2.items.add(juce::FlexItem(*vinylBrakeComponent).withFlex(0.25f).withMinHeight(100).withMargin(5));
-    column2.items.add(juce::FlexItem(*scratcherComponent).withFlex(0.25f).withMinHeight(100).withMargin(5));
 
     // Column 3 (Effects)
     juce::FlexBox column3;
@@ -737,7 +721,6 @@ void MainComponent::releaseResources()
     chopComponent = nullptr;
     reverbComponent = nullptr;
     vinylBrakeComponent = nullptr;
-    scratcherComponent = nullptr;
     
     // Release plugin reference
     oscilloscopePlugin = nullptr;

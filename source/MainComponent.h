@@ -34,8 +34,6 @@ namespace ProjectInfo
 #include "Plugins/AutoDelayPlugin.h"
 #include "Plugins/AutoPhaserPlugin.h"
 #include "ControlBarComponent.h"
-#include "ScratcherComponent.h"
-#include "ScratchAudioNode.h"
 
 
 
@@ -225,8 +223,6 @@ private:
 
     // Add this line to declare the command manager
     std::unique_ptr<juce::ApplicationCommandManager> commandManager;
-
-    std::unique_ptr<ScratcherComponent> scratcherComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
