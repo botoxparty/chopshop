@@ -212,11 +212,11 @@ if(APPLE)
     find_package(SDL3 REQUIRED)
     target_link_libraries(SharedCode INTERFACE SDL3::SDL3)
     
-    # Copy SDL3 dylib to the app bundle
+    # Copy SDL3 dylib to the app bundle - fixed path
     add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "/usr/local/lib/libSDL3.0.dylib"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/../MacOS/libSDL3.0.dylib"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/libSDL3.0.dylib"
         COMMENT "Copying SDL3 library to app bundle")
         
     # Fix the install name
