@@ -15,7 +15,7 @@ public:
     // Add callback for getting parent's tempo adjustment
     std::function<double()> getCurrentTempoAdjustment;
 
-    void setBrakeValue(float value)
+    void setBrakeValue(double value)
     {
         if (!isSpringAnimating)  // Only set value if not currently animating
         {
@@ -23,7 +23,7 @@ public:
         }
     }
 
-    float getBrakeValue() const
+    double getBrakeValue() const
     {
         return brakeSlider.getValue();
     }
@@ -47,7 +47,7 @@ private:
     
     SpringSlider brakeSlider;
 
-    void setSpeed(float value);
+    void setSpeed(double value);
     
     double originalTempoAdjustment = 0.0;
     bool hasStoredAdjustment = false;

@@ -137,8 +137,8 @@ public:
 
             for (int i = 0; i < numLines; ++i)
             {
-                float y = startY + i * lineSpacing;
-                g.drawHorizontalLine (static_cast<int> (y),
+                float lineY = startY + i * lineSpacing;
+                g.drawHorizontalLine (static_cast<int> (lineY),
                     thumbBounds.getX() + 5.0f,
                     thumbBounds.getRight() - 5.0f);
             }
@@ -192,7 +192,7 @@ public:
         }
     }
 
-    void drawLinearSliderThumb (juce::Graphics& g, int x, int y, int width, int height, float sliderPos, float minSliderPos, float maxSliderPos, const juce::Slider::SliderStyle style, juce::Slider& slider) override
+    void drawLinearSliderThumb (juce::Graphics& g, [[maybe_unused]] int x, int y, [[maybe_unused]] int width, int height, float sliderPos, [[maybe_unused]] float minSliderPos, [[maybe_unused]] float maxSliderPos, [[maybe_unused]] const juce::Slider::SliderStyle style, [[maybe_unused]] juce::Slider& slider) override
     {
         if (slider.getName() == "Crossfader")
         {
@@ -225,7 +225,7 @@ public:
         }
     }
 
-    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) override
+    void drawRotarySlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, [[maybe_unused]] juce::Slider& slider) override
     {
         const auto matrixGreen = juce::Colour (0xFF00FF41);
         auto bounds = juce::Rectangle<float> (x, y, width, height);
@@ -265,7 +265,7 @@ public:
         g.fillPath (pointer);
     }
 
-    void drawComboBox (juce::Graphics& g, int width, int height, bool isButtonDown, int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox& box) override
+    void drawComboBox (juce::Graphics& g, int width, int height, [[maybe_unused]] bool isButtonDown, int buttonX, int buttonY, int buttonW, int buttonH, [[maybe_unused]] juce::ComboBox& box) override
     {
         const auto matrixGreen = juce::Colour (0xFF00FF41);
         const auto cornerSize = 3.0f;
@@ -293,7 +293,7 @@ public:
         g.fillPath (path);
     }
 
-    void drawPopupMenuItem (juce::Graphics& g, const juce::Rectangle<int>& area, bool isSeparator, bool isActive, bool isHighlighted, bool isTicked, bool hasSubMenu, const juce::String& text, const juce::String& shortcutKeyText, const juce::Drawable* icon, const juce::Colour* textColour) override
+    void drawPopupMenuItem (juce::Graphics& g, const juce::Rectangle<int>& area, [[maybe_unused]] bool isSeparator, bool isActive, bool isHighlighted, [[maybe_unused]] bool isTicked, [[maybe_unused]] bool hasSubMenu, const juce::String& text, [[maybe_unused]] const juce::String& shortcutKeyText, [[maybe_unused]] const juce::Drawable* icon, [[maybe_unused]] const juce::Colour* textColour) override
     {
         const auto matrixGreen = juce::Colour (0xFF00FF41);
 
@@ -310,7 +310,7 @@ public:
         g.drawFittedText (text, textArea, juce::Justification::centredLeft, 1);
     }
 
-    juce::PopupMenu::Options getOptionsForComboBoxPopupMenu (juce::ComboBox& box, juce::Label& label) override
+    juce::PopupMenu::Options getOptionsForComboBoxPopupMenu (juce::ComboBox& box, [[maybe_unused]] juce::Label& label) override
     {
         return juce::PopupMenu::Options()
             .withTargetComponent (&box)
@@ -336,12 +336,12 @@ public:
         return juce::Font (juce::FontOptions (typeface));
     }
 
-    juce::Typeface::Ptr getTypefaceForFont (const juce::Font& f) override
+    juce::Typeface::Ptr getTypefaceForFont ([[maybe_unused]] const juce::Font& f) override
     {
         return getCustomFont().getTypefacePtr();
     }
 
-    void drawDocumentWindowTitleBar (juce::DocumentWindow& window, juce::Graphics& g, int w, int h, int titleSpaceX, int titleSpaceW, const juce::Image* icon, bool drawTitleTextOnLeft) override
+    void drawDocumentWindowTitleBar (juce::DocumentWindow& window, juce::Graphics& g, int w, int h, [[maybe_unused]] int titleSpaceX, [[maybe_unused]] int titleSpaceW, [[maybe_unused]] const juce::Image* icon, [[maybe_unused]] bool drawTitleTextOnLeft) override
     {
         const auto matrixGreen = juce::Colour (0xFF00FF41);
         const auto metalGrey = juce::Colour (0xFF2A2A2A);

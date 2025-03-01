@@ -1,13 +1,6 @@
 #include "ControllerMappingComponent.h"
 #include "CustomLookAndFeel.h"
 
-namespace {
-    juce::Font getCustomFont()
-    {
-        return juce::Font(16.0f); // Default font as fallback
-    }
-}
-
 ControllerMappingComponent::ControllerMappingComponent()
 {
     addAndMakeVisible(mappingButton);
@@ -267,7 +260,7 @@ class ComponentListener : public juce::ComponentListener
 public:
     ComponentListener(ControllerMappingComponent& owner) : owner_(owner) {}
     
-    void componentBeingDeleted(juce::Component& component) override
+    void componentBeingDeleted(juce::Component&) override
     {
         owner_.mappingDialog = nullptr;
         delete this; // Clean up the listener
@@ -418,16 +411,19 @@ void ControllerMappingComponent::drawMappingsList(juce::Graphics& g, juce::Recta
     
     // Create list layout
     auto listArea = bounds.reduced(10);
-    float rowHeight = 20.0f;
-    float currentY = listArea.getY();
+    int rowHeight = 20;
+    int currentY = static_cast<int>(listArea.getY());
     
     // g.setFont(getCustomFont().withHeight(12.0f));
     
     // Helper lambda for drawing rows
     auto drawRow = [&](const juce::String& control, const juce::String& action) {
         // Draw control name
+
+        int width = static_cast<int>(listArea.getWidth());
+        int x = static_cast<int>(listArea.getX());
         g.setColour(matrixGreen);
-        g.drawText(control, listArea.getX(), currentY, listArea.getWidth() * 0.4f, rowHeight, 
+        g.drawText(control, x, currentY, width, rowHeight, 
                   juce::Justification::left, false);
         
         // Draw action name with a pill background
@@ -454,7 +450,7 @@ void ControllerMappingComponent::drawMappingsList(juce::Graphics& g, juce::Recta
     g.setColour(matrixGreen.brighter(0.2f));
     // Draw mappings (just show a few to avoid cluttering)
     g.setColour(matrixGreen);
-    int count = 0;
+
     for (const auto& mapping : mappings)
     {
         juce::String controlName;
@@ -488,6 +484,5 @@ void ControllerMappingComponent::drawMappingsList(juce::Graphics& g, juce::Recta
         }
         
         drawRow(controlName, mapping.actionName);
-        count++;
     }
 } 

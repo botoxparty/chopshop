@@ -68,15 +68,15 @@ void VinylBrakeComponent::sliderValueChanged(juce::Slider* slider)
     }
 }
 
-void VinylBrakeComponent::setSpeed(float value)
+void VinylBrakeComponent::setSpeed(double value)
 {
     auto& transport = edit.getTransport();
     auto context = transport.getCurrentPlaybackContext();
     if (context != nullptr)
     {
         // Convert to percentage and clamp between -100 and 100
-        float compensationValue = value * 100.0f;
-        compensationValue = juce::jlimit(-95.0f, 95.0f, compensationValue);
+        double compensationValue = value * 100.0;
+        compensationValue = juce::jlimit(-95.0, 95.0, compensationValue);
         DBG("Setting speed compensation to: " + juce::String(compensationValue));
         context->setSpeedCompensation(compensationValue);
     }
