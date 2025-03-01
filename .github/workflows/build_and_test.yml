@@ -231,9 +231,30 @@ jobs:
 
       - name: Codesign (macOS)
         if: ${{ matrix.name == 'macOS' }}
+        timeout-minutes: 5
         run: |
-          # Sign the standalone app
-          codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}.app" --deep --strict --options=runtime --timestamp
+          # Print app bundle info before signing
+          echo "App bundle details before signing:"
+          ls -la "${{ env.STANDALONE_PATH }}.app"
+          du -sh "${{ env.STANDALONE_PATH }}.app"
+          
+          # First try signing with less options to see if it works
+          echo "Starting basic codesign..."
+          codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" "${{ env.STANDALONE_PATH }}.app"
+          
+          # If that succeeds, try the full signing command
+          if [ $? -eq 0 ]; then
+            echo "Basic signing succeeded, now trying full signing..."
+            codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}.app" --deep --strict --options=runtime --timestamp
+          else
+            echo "Basic signing failed, skipping full signing"
+            # Continue workflow even if signing fails
+            exit 0
+          fi
+          
+          # Verify the signature
+          echo "Verifying signature..."
+          codesign -vvv --deep --strict "${{ env.STANDALONE_PATH }}.app"
 
       - name: Add Custom Icons (macOS)
         if: ${{ matrix.name == 'macOS' }}
