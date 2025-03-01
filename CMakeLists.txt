@@ -46,6 +46,12 @@ set(PATCH_VERSION "1")
 # Add this near the top of your file, before the project() command
 enable_language(C)
 
+# Handle version file formatting - generate a header file instead of modifying the version file
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version" VERSION_CONTENT)
+string(STRIP "${VERSION_CONTENT}" VERSION_CONTENT)
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/version.h" "#pragma once\n#define VERSION_STRING \"${VERSION_CONTENT}\"")
+include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+
 # For simplicity, the name of the CMake project is also the name of the target
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION} LANGUAGES C CXX)
 
@@ -209,24 +215,30 @@ target_compile_features(SharedCode INTERFACE cxx_std_20)
 
 # Add this section to handle SDL3 dependencies
 if(APPLE)
-        message(STATUS "Using provided SDL3 library path: ${SDL3_LIBRARY}")
+    # Find the SDL3 library file
+    find_library(SDL3_DYLIB SDL3 PATHS "${CMAKE_BINARY_DIR}/vendor/SDL3" PATH_SUFFIXES "Debug" "Release")
+    
+    if(SDL3_DYLIB)
+        message(STATUS "Found SDL3 library at: ${SDL3_DYLIB}")
         
-        # Get the directory name from the full path
-        get_filename_component(SDL3_LIB_DIR "${SDL3_LIBRARY}" DIRECTORY)
-        get_filename_component(SDL3_LIB_NAME "${SDL3_LIBRARY}" NAME)
+        # Get the library name
+        get_filename_component(SDL3_LIB_NAME "${SDL3_DYLIB}" NAME)
         
-        # Copy SDL3 dylib to the app bundle using the provided path
+        # Copy SDL3 dylib to the app bundle
         add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SDL3_LIBRARY}"
+            "${SDL3_DYLIB}"
             "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${SDL3_LIB_NAME}"
-            COMMENT "Copying SDL3 library from ${SDL3_LIBRARY} to app bundle")
+            COMMENT "Copying SDL3 library to app bundle")
             
         # Fix the install name
         add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
             COMMAND install_name_tool -change @rpath/${SDL3_LIB_NAME} @executable_path/${SDL3_LIB_NAME}
             "$<TARGET_FILE:${PROJECT_NAME}>"
             COMMENT "Fixing SDL3 install name")
+    else()
+        message(WARNING "SDL3 library not found. The application may not run correctly.")
+    endif()
 endif()
 
 # Update the Assets section to include your specific files
