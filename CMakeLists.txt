@@ -38,10 +38,10 @@ set(BUNDLE_ID "com.poundingSystems.chopshop")
 # set(FORMATS Standalone AU VST3 AUv3)
 
 # Add a version manually
-set(CURRENT_VERSION "1.0.0")
-set(MAJOR_VERSION "1")
+set(CURRENT_VERSION "0.0.1")
+set(MAJOR_VERSION "0")
 set(MINOR_VERSION "0")
-set(PATCH_VERSION "0")
+set(PATCH_VERSION "1")
 
 # Add this near the top of your file, before the project() command
 enable_language(C)
