@@ -173,7 +173,7 @@ MainComponent::MainComponent()
         DBG("Oscilloscope component not added to visualizer box");
 
     // Add after other component setup
-    chopComponent->onCrossfaderValueChanged = [this](float value)
+    chopComponent->onCrossfaderValueChanged = [this]([[maybe_unused]] float value)
     {
         updateCrossfader();
     };
@@ -200,17 +200,17 @@ MainComponent::MainComponent()
     scratcherComponent = std::make_unique<ScratcherComponent>(edit);
     addAndMakeVisible(*scratcherComponent);
 
-    // Set up callback for scratching state changes
-    scratcherComponent->onScratchingStateChanged = [this](bool isScratchActive) {
-        // When scratching is active, we might want to temporarily disable other effects
-        // or adjust the transport behavior
-        if (isScratchActive) {
-            // Store current playback state to restore later
-            // Possibly disable certain controls
-        } else {
-            // Restore previous state
-        }
-    };
+    // // Set up callback for scratching state changes
+    // scratcherComponent->onScratchingStateChanged = [this](bool isScratchActive) {
+    //     // When scratching is active, we might want to temporarily disable other effects
+    //     // or adjust the transport behavior
+    //     if (isScratchActive) {
+    //         // Store current playback state to restore later
+    //         // Possibly disable certain controls
+    //     } else {
+    //         // Restore previous state
+    //     }
+    // };
 
     resized();
 }

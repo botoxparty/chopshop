@@ -38,13 +38,13 @@ class Oscilloscope2D :  public Component,
     
 public:
     
-    Oscilloscope2D (RingBuffer<GLfloat> * ringBuffer)
+    Oscilloscope2D (RingBuffer<GLfloat>* bufferToUse)
     : readBuffer (2, RING_BUFFER_READ_SIZE)
     {
         // Sets the OpenGL version to 3.2
         openGLContext.setOpenGLVersionRequired (OpenGLContext::OpenGLVersion::openGL3_2);
         
-        this->ringBuffer = ringBuffer;
+        this->ringBuffer = bufferToUse;
         
         // Attach the OpenGL context but do not start [ see start() ]
         openGLContext.setRenderer(this);
@@ -56,7 +56,7 @@ public:
         statusLabel.setFont (FontOptions(14.0f));
     }
     
-    ~Oscilloscope2D()
+    ~Oscilloscope2D() override
     {
         // Turn off OpenGL
         openGLContext.setContinuousRepainting (false);
@@ -211,12 +211,12 @@ public:
                                                                     // test this
         
         // Setup Vertex Attributes
-        openGLContext.extensions.glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+        openGLContext.extensions.glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
         openGLContext.extensions.glEnableVertexAttribArray (0);
     
         // Draw Vertices
         //glDrawArrays (GL_TRIANGLES, 0, 6); // For just VBO's (Vertex Buffer Objects)
-        glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // For EBO's (Element Buffer Objects) (Indices)
+        glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr); // For EBO's (Element Buffer Objects) (Indices)
         
     
         
@@ -230,9 +230,7 @@ public:
     //==========================================================================
     // JUCE Callbacks
     
-    void paint (Graphics& g) override
-    {
-    }
+    void paint ([[maybe_unused]] Graphics& g) override {}
     
     void resized () override
     {
@@ -310,13 +308,13 @@ private:
     // This class just manages the uniform values that the fragment shader uses.
     struct Uniforms
     {
-        Uniforms (OpenGLContext& openGLContext, OpenGLShaderProgram& shaderProgram)
+        Uniforms (OpenGLContext& glContext, OpenGLShaderProgram& shaderProgram)
         {
-            //projectionMatrix = createUniform (openGLContext, shaderProgram, "projectionMatrix");
-            //viewMatrix       = createUniform (openGLContext, shaderProgram, "viewMatrix");
+            //projectionMatrix = createUniform (glContext, shaderProgram, "projectionMatrix");
+            //viewMatrix       = createUniform (glContext, shaderProgram, "viewMatrix");
             
-            resolution.reset (createUniform (openGLContext, shaderProgram, "resolution"));
-            audioSampleData.reset (createUniform (openGLContext, shaderProgram, "audioSampleData"));
+            resolution.reset (createUniform (glContext, shaderProgram, "resolution"));
+            audioSampleData.reset (createUniform (glContext, shaderProgram, "audioSampleData"));
             
         }
         
@@ -324,11 +322,11 @@ private:
         std::unique_ptr<OpenGLShaderProgram::Uniform> resolution, audioSampleData;
         
     private:
-        static OpenGLShaderProgram::Uniform* createUniform (OpenGLContext& openGLContext,
+        static OpenGLShaderProgram::Uniform* createUniform (OpenGLContext& glContext,
                                                             OpenGLShaderProgram& shaderProgram,
                                                             const char* uniformName)
         {
-            if (openGLContext.extensions.glGetUniformLocation (shaderProgram.getProgramID(), uniformName) < 0)
+            if (glContext.extensions.glGetUniformLocation (shaderProgram.getProgramID(), uniformName) < 0)
                 return nullptr;
             
             return new OpenGLShaderProgram::Uniform (shaderProgram, uniformName);

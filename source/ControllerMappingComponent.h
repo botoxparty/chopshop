@@ -38,7 +38,7 @@ private:
     public:
         ComponentListener(ControllerMappingComponent& owner) : owner_(owner) {}
         
-        void componentBeingDeleted(juce::Component& component) override
+        void componentBeingDeleted([[maybe_unused]] juce::Component& component) override
         {
             owner_.mappingDialog = nullptr;
             delete this;

@@ -33,15 +33,15 @@ public:
     
     /** Initializes the RingBuffer with the specified channels and size.
      
-        @param numChannels  number of channels of audio to store in buffer
-        @param bufferSize   size of the audio buffer
+        @param channelCount number of channels of audio to store in buffer
+        @param size         size of the audio buffer
      */
-    RingBuffer (int numChannels, int bufferSize)
+    RingBuffer (int channelCount, int size)
     {
-        this->bufferSize = bufferSize;
-        this->numChannels = numChannels;
+        this->bufferSize = size;
+        this->numChannels = channelCount;
         
-        audioBuffer = std::make_unique<AudioBuffer<Type>> (numChannels, bufferSize);
+        audioBuffer = std::make_unique<AudioBuffer<Type>> (channelCount, size);
         writePosition = 0;
     }
     

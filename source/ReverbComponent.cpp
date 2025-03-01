@@ -78,11 +78,11 @@ void ReverbComponent::rampMixLevel(bool rampUp)
     if (rampUp)
     {
         storedMixValue = reverbWetSlider.getValue();
-        mixRamp.startRamp(1.0f, 5000);
+        mixRamp.startRamp(1.0);
     }
     else
     {
-        mixRamp.startRamp(storedMixValue, 5000);
+        mixRamp.startRamp(storedMixValue);
     }
 }
 

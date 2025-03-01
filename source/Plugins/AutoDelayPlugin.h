@@ -10,13 +10,13 @@ public:
     AutoDelayPlugin(PluginCreationInfo info)
         : DelayPlugin(info)
     {
-        lengthMs = addParam("length", TRANS("Length"), { 0.0f, 1000.0f },
+        autoLengthMs = addParam("length", TRANS("Length"), { 0.0f, 1000.0f },
                          [] (float value) { return juce::String(value, 1) + " ms"; },
                          [] (const juce::String& s) { return s.getFloatValue(); });
 
         auto um = getUndoManager();
         length.referTo(state, IDs::length, um, 0.0f);
-        lengthMs->attachToCurrentValue(length);
+        autoLengthMs->attachToCurrentValue(length);
     }
 
     ~AutoDelayPlugin() override
@@ -32,10 +32,10 @@ public:
     juce::String getShortName(int) override            { return getName(); }
     juce::String getSelectableDescription() override   { return TRANS("Auto Delay Plugin"); }
 
-    void setLength(float value)    { lengthMs->setParameter(juce::jlimit(0.0f, 1000.0f, value), juce::sendNotification); }
-    float getLength()              { return lengthMs->getCurrentValue(); }
+    void setLength(float value)    { autoLengthMs->setParameter(juce::jlimit(0.0f, 1000.0f, value), juce::sendNotification); }
+    float getLength()              { return autoLengthMs->getCurrentValue(); }
 
-    AutomatableParameter::Ptr lengthMs;
+    AutomatableParameter::Ptr autoLengthMs;
 
 private:
     juce::CachedValue<float> length;

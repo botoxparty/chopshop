@@ -13,10 +13,10 @@ public:
     {
     public:
         virtual ~Listener() = default;
-        virtual void gamepadButtonPressed(int buttonId) {}
-        virtual void gamepadButtonReleased(int buttonId) {}
-        virtual void gamepadAxisMoved(int axisId, float value) {}
-        virtual void gamepadTouchpadMoved(float x, float y, bool touched) {}
+        virtual void gamepadButtonPressed([[maybe_unused]] int buttonId) {}
+        virtual void gamepadButtonReleased([[maybe_unused]] int buttonId) {}
+        virtual void gamepadAxisMoved([[maybe_unused]] int axisId, [[maybe_unused]] float value) {}
+        virtual void gamepadTouchpadMoved([[maybe_unused]] float x, [[maybe_unused]] float y, [[maybe_unused]] bool touched) {}
     };
 
     GamepadManager();

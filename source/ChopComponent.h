@@ -21,7 +21,7 @@ public:
     std::function<void(float)> onCrossfaderValueChanged;
 
     double getChopDurationInMs(double currentTempo) const;
-    float getCrossfaderValue() const { return crossfaderSlider.getValue(); }
+    float getCrossfaderValue() const { return static_cast<float>(crossfaderSlider.getValue()); }
     void setCrossfaderValue(float value) { crossfaderSlider.setValue(value, juce::sendNotification); }
 
     ~ChopComponent() override;
@@ -34,7 +34,7 @@ public:
     void setCommandManager(juce::ApplicationCommandManager* manager);
 
     // Required method from ApplicationCommandManagerListener
-    void applicationCommandInvoked(const juce::ApplicationCommandTarget::InvocationInfo& info) override {}
+    void applicationCommandInvoked([[maybe_unused]] const juce::ApplicationCommandTarget::InvocationInfo& info) override {}
     
     // Required method from ApplicationCommandManagerListener
     void applicationCommandListChanged() override {}

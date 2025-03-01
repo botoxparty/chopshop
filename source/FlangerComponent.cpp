@@ -155,5 +155,5 @@ void FlangerComponent::setMix(float value)
 
 void FlangerComponent::rampMixLevel(bool rampUp)
 {
-    mixRamp.startRamp(rampUp ? 1.0f : 0.0f, 100);
+    mixRamp.startRamp(rampUp ? 1.0 : 0.0);
 }

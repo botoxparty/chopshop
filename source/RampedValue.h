@@ -7,10 +7,10 @@
 class RampedValue : public juce::Timer
 {
 public:
-    RampedValue(float startValue = 0.0f, int rampTimeMs = 500) 
-        : currentValue(startValue), rampDurationMs(rampTimeMs) {}
+    RampedValue(double initialValue = 0.0, int rampLengthMs = 500) 
+        : currentValue(initialValue), rampDurationMs(rampLengthMs) {}
     
-    void startRamp(float targetVal, bool rampUp)
+    void startRamp(double targetVal)
     {
         startValue = currentValue;
         targetValue = targetVal;
@@ -40,12 +40,12 @@ public:
         }
     }
     
-    std::function<void(float)> onValueChange;
+    std::function<void(double)> onValueChange;
     
 private:
-    float startValue = 0.0f;
-    float targetValue = 0.0f;
-    float currentValue = 0.0f;
+    double startValue = 0.0;
+    double targetValue = 0.0;
+    double currentValue = 0.0;
     double startTime = 0.0;
     int rampDurationMs = 100;
     bool isRamping = false;

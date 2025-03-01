@@ -21,10 +21,10 @@ GamepadManager::GamepadManager()
     {
         DBG("Checking joystick " << i);
         
-        if (SDL_IsGamepad(i)) 
+        if (SDL_IsGamepad(static_cast<SDL_JoystickID>(i))) 
         {
             DBG("Joystick " << i << " is a gamepad");
-            gamepad = SDL_OpenGamepad(i);
+            gamepad = SDL_OpenGamepad(static_cast<SDL_JoystickID>(i));
             
             if (gamepad) 
             {

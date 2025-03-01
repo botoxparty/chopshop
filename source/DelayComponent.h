@@ -33,7 +33,7 @@ private:
     juce::Label timeLabel;
 
     RampedValue mixRamp;
-    float storedMixValue = 0.0f;
+    double storedMixValue = 0.0;
     double tempo = 120.0;
 
     void updateDelayTimeFromNote();

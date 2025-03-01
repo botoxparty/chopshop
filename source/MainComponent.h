@@ -118,45 +118,23 @@ public:
         });
     }
 
-    void gamepadTouchpadMoved(float x, float y, bool touched) override
-    {
-        // if (phaserComponent && touched)
-        // {
-        //     // Scale x to depth range (0-1)
-        //     float depth = x;
-        //     phaserComponent->setDepth(depth);
-            
-        //     // Scale y to rate range (0-10)
-        //     float rate = y * 10.0f;
-        //     phaserComponent->setRate(rate);
-            
-        //     // Scale diagonal to feedback range (0-0.99)
-        //     float feedback = (x + y) / 2.0f * 0.99f;
-        //     phaserComponent->setFeedback(feedback);
-            
-        //     DBG("Touchpad - Depth: " + juce::String(depth) + 
-        //         " Rate: " + juce::String(rate) + 
-        //         " Feedback: " + juce::String(feedback));
-        // }
-    }
-
     // Add these required methods from ApplicationCommandTarget
     juce::ApplicationCommandTarget* getNextCommandTarget() override
     {
         return chopComponent.get();
     }
     
-    void getAllCommands(juce::Array<juce::CommandID>& commands) override
+    void getAllCommands([[maybe_unused]] juce::Array<juce::CommandID>& commands) override
     {
         // Add any commands your main component handles
     }
     
-    void getCommandInfo(juce::CommandID commandID, juce::ApplicationCommandInfo& result) override
+    void getCommandInfo([[maybe_unused]] juce::CommandID commandID, [[maybe_unused]] juce::ApplicationCommandInfo& result) override
     {
         // Provide info for your commands
     }
     
-    bool perform(const juce::ApplicationCommandTarget::InvocationInfo& info) override
+    bool perform([[maybe_unused]] const juce::ApplicationCommandTarget::InvocationInfo& info) override
     {
         return false; // Return true if you handle the command
     }
