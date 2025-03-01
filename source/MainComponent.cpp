@@ -32,10 +32,13 @@ MainComponent::MainComponent()
     // // setLookAndFeel(customLookAndFeel.get());
     LookAndFeel::setDefaultLookAndFeel(customLookAndFeel.get());
 
-    // Create and set up thumbnail
+    // Create and set up thumbnail with modern styling
     thumbnail = std::make_unique<Thumbnail>(edit.getTransport());
     addAndMakeVisible(*thumbnail);
     thumbnail->start();
+    thumbnail->setWaveformColor(juce::Colours::lightblue);
+    thumbnail->setCursorColor(juce::Colours::red);
+    thumbnail->setBackgroundColor(juce::Colours::black.withAlpha(0.7f));
 
     // Set initial position
     edit.getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
@@ -241,9 +244,10 @@ void MainComponent::resized()
     juce::FlexBox visualizerBox;
     visualizerBox.flexDirection = juce::FlexBox::Direction::column;
     if (oscilloscopeComponent != nullptr)
-        visualizerBox.items.add(juce::FlexItem(*oscilloscopeComponent).withFlex(0.7f).withMargin(5));
+        visualizerBox.items.add(juce::FlexItem(*oscilloscopeComponent).withFlex(0.6f).withMargin(5));
 
-    visualizerBox.items.add(juce::FlexItem(*thumbnail).withFlex(0.3f).withMargin(5));
+    // Give the thumbnail more space for better visualization
+    visualizerBox.items.add(juce::FlexItem(*thumbnail).withFlex(0.4f).withMargin(5));
     mainColumn.items.add(juce::FlexItem(visualizerBox).withFlex(1.0f));
 
     // Row 2: Control Bar - now just add the component directly
@@ -370,15 +374,21 @@ void MainComponent::handleFileSelection(const juce::File &file)
         }
 
         // Disable auto tempo and pitch for first clip
-        // clip1->setAutoTempo(false);
         clip1->setSyncType(te::Clip::syncBarsBeats);
         clip1->setAutoPitch(false);
-        clip1->setTimeStretchMode(te::TimeStretcher::defaultMode);
+        clip1->setTimeStretchMode(te::TimeStretcher::elastiquePro);
         clip1->setUsesProxy(false);
+        
+        // Apply initial time stretching based on current tempo ratio
+        double ratio = screwComponent->getTempo() / baseTempo;
+        clip1->setSpeedRatio(1.0 / ratio);
 
         auto loopedClip = EngineHelpers::loopAroundClip(*clip1);
         edit.getTransport().stop(false, false); // Stop playback after loop setup
+        
+        // Update the thumbnail with the new audio file
         thumbnail->setFile(loopedClip->getPlaybackFile());
+        thumbnail->setSpeedRatio(ratio);
 
         // Create second track and load the same file
         if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
@@ -392,13 +402,15 @@ void MainComponent::handleFileSelection(const juce::File &file)
                                                      {}},
                                                     false))
             {
-                // Configure second clip
-                // clip2->setAutoTempo(false);
+                // Configure second clip with same time stretching settings
                 clip2->setSyncType(te::Clip::syncBarsBeats);
                 clip2->setAutoPitch(false);
-                clip2->setTimeStretchMode(te::TimeStretcher::defaultMode);
-                clip2->setGainDB(0.0f);
+                clip2->setTimeStretchMode(te::TimeStretcher::elastiquePro);
                 clip2->setUsesProxy(false);
+                clip2->setGainDB(0.0f);
+                
+                // Apply initial time stretching based on current tempo ratio
+                clip2->setSpeedRatio(1.0 / ratio);
             }
         }
 
@@ -419,11 +431,36 @@ void MainComponent::handleFileSelection(const juce::File &file)
 
 void MainComponent::updateTempo()
 {
-    const double ratio = screwComponent->getTempo() / baseTempo;
-    // Convert ratio to plus/minus proportion (e.g., 1.5 becomes 0.5, 0.5 becomes -0.5)
-    const double plusOrMinusProportion = ratio - 1.0;
-
-    edit.getTransport().getCurrentPlaybackContext()->setSpeedCompensation(plusOrMinusProportion * 100.0);
+    const double ratio = baseTempo / screwComponent->getTempo();
+    
+    // Get both clips and apply time stretching
+    auto clip1 = getClip(0);
+    auto clip2 = getClip(1);
+    
+    if (clip1)
+    {
+        // Set the speed ratio which controls time stretching
+        clip1->setSpeedRatio(1.0 / ratio);
+    }
+    
+    if (clip2)
+    {
+        // Set the speed ratio which controls time stretching
+        clip2->setSpeedRatio(1.0 / ratio);
+    }
+    
+    // Update the thumbnail to reflect the speed ratio
+    if (thumbnail)
+    {
+        thumbnail->setSpeedRatio(ratio);
+    }
+    
+    // Update the delay component if it exists
+    if (delayComponent)
+    {
+        double tempo = screwComponent->getTempo();
+        delayComponent->setTempo(tempo);
+    }
 }
 
 te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
@@ -654,7 +691,8 @@ void MainComponent::createVinylBrakeComponent()
     {
         // Get the current tempo ratio from the screw component
         double ratio = screwComponent->getTempo() / baseTempo;
-        // Convert to plus/minus proportion (same as updateTempo())
+        // For time stretching, we just return the ratio - 1.0 as before
+        // This represents the adjustment from the base tempo
         return ratio - 1.0;
     };
 

@@ -70,16 +70,31 @@ void VinylBrakeComponent::sliderValueChanged(juce::Slider* slider)
 
 void VinylBrakeComponent::setSpeed(double value)
 {
+    // Get both clips and apply time stretching
     auto& transport = edit.getTransport();
-    auto context = transport.getCurrentPlaybackContext();
-    if (context != nullptr)
-    {
-        // Convert to percentage and clamp between -100 and 100
-        double compensationValue = value * 100.0;
-        compensationValue = juce::jlimit(-95.0, 95.0, compensationValue);
-        DBG("Setting speed compensation to: " + juce::String(compensationValue));
-        context->setSpeedCompensation(compensationValue);
-    }
+    
+    // Find the clips in the first two tracks
+    tracktion::engine::WaveAudioClip* clip1 = nullptr;
+    tracktion::engine::WaveAudioClip* clip2 = nullptr;
+    
+    if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+        if (!track1->getClips().isEmpty())
+            clip1 = dynamic_cast<tracktion::engine::WaveAudioClip*>(track1->getClips()[0]);
+            
+    if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
+        if (!track2->getClips().isEmpty())
+            clip2 = dynamic_cast<tracktion::engine::WaveAudioClip*>(track2->getClips()[0]);
+    
+    // Calculate the speed ratio based on the brake value
+    // value is the adjustment from original tempo (negative for brake effect)
+    double speedRatio = 1.0 / (1.0 + value);
+    
+    // Apply to both clips
+    if (clip1)
+        clip1->setSpeedRatio(speedRatio);
+        
+    if (clip2)
+        clip2->setSpeedRatio(speedRatio);
 }
 
 void VinylBrakeComponent::startSpringAnimation()

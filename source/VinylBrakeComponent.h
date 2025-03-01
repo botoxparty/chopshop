@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BaseEffectComponent.h"
+#include "Utilities.h"
 
 class VinylBrakeComponent : public BaseEffectComponent,
                            public juce::Slider::Listener,

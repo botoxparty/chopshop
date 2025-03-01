@@ -34,6 +34,7 @@ namespace ProjectInfo
 #include "Plugins/AutoDelayPlugin.h"
 #include "Plugins/AutoPhaserPlugin.h"
 #include "ControlBarComponent.h"
+#include "Thumbnail.h"
 
 
 
