@@ -141,6 +141,9 @@ target_compile_definitions(SharedCode
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_MODAL_LOOPS_PERMITTED=1
+    
+    # Enable logging of deduced tempo
+    LOG_DEDUCED_TEMPO=1
 
     # lets the app known if we're Debug or Release
     $<$<CONFIG:Debug>:DEBUG=1>
