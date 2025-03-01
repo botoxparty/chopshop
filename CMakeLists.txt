@@ -2,7 +2,13 @@ cmake_minimum_required(VERSION 3.25)
 
 # This tells cmake we have goodies in the /cmake folder
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-include (PamplejuceVersion)
+# include (PamplejuceVersion)
+
+# Add a version manually
+set(CURRENT_VERSION "0.0.1")
+set(MAJOR_VERSION "0")
+set(MINOR_VERSION "0")
+set(PATCH_VERSION "1")
 
 # Modern concise way to add dependencies to your project
 include (CPM)
@@ -37,20 +43,10 @@ set(BUNDLE_ID "com.poundingSystems.chopshop")
 # Valid choices: AAX Unity VST VST3 AU AUv3 Standalone
 # set(FORMATS Standalone AU VST3 AUv3)
 
-# Add a version manually
-set(CURRENT_VERSION "0.0.1")
-set(MAJOR_VERSION "0")
-set(MINOR_VERSION "0")
-set(PATCH_VERSION "1")
+
 
 # Add this near the top of your file, before the project() command
 enable_language(C)
-
-# Handle version file formatting - generate a header file instead of modifying the version file
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION_CONTENT)
-string(STRIP "${VERSION_CONTENT}" VERSION_CONTENT)
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/version.h" "#pragma once\n#define VERSION_STRING \"${VERSION_CONTENT}\"")
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 # For simplicity, the name of the CMake project is also the name of the target
 project(${PROJECT_NAME} VERSION ${CURRENT_VERSION} LANGUAGES C CXX)
@@ -254,7 +250,6 @@ if(APPLE)
         message(WARNING "SDL3 library not found. The application may not run correctly.")
     endif()
 endif()
-
 # Update the Assets section to include your specific files
 juce_add_binary_data(Assets 
     SOURCES
@@ -262,3 +257,4 @@ juce_add_binary_data(Assets
         source/JetBrainsMono-VariableFont_wght.ttf
         source/screw-icon.png
 )
+
