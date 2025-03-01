@@ -362,7 +362,12 @@ void MainComponent::handleFileSelection(const juce::File &file)
 
             // Apply the previous tempo ratio to the new base tempo
             const double newTempo = baseTempo * currentRatio;
-            screwComponent->setTempo(newTempo, juce::sendNotification);
+            screwComponent->setTempo(newTempo, juce::dontSendNotification);
+
+            // Initialize the tempo sequence with the base tempo
+            auto tempoSetting = edit.tempoSequence.insertTempo(tracktion::TimePosition::fromSeconds(0.0));
+            if (tempoSetting != nullptr)
+                tempoSetting->setBpm(baseTempo);
 
             // Calculate and set delay time to 1/4 note
             if (delayComponent)
@@ -378,11 +383,11 @@ void MainComponent::handleFileSelection(const juce::File &file)
         clip1->setAutoPitch(false);
         clip1->setTimeStretchMode(te::TimeStretcher::elastiquePro);
         clip1->setUsesProxy(false);
+        clip1->setAutoTempo(true);
         
         // Apply initial time stretching based on current tempo ratio
         double ratio = screwComponent->getTempo() / baseTempo;
-        clip1->setSpeedRatio(1.0 / ratio);
-
+        
         auto loopedClip = EngineHelpers::loopAroundClip(*clip1);
         edit.getTransport().stop(false, false); // Stop playback after loop setup
         
@@ -408,9 +413,13 @@ void MainComponent::handleFileSelection(const juce::File &file)
                 clip2->setTimeStretchMode(te::TimeStretcher::elastiquePro);
                 clip2->setUsesProxy(false);
                 clip2->setGainDB(0.0f);
+                clip2->setAutoTempo(true);
                 
-                // Apply initial time stretching based on current tempo ratio
-                clip2->setSpeedRatio(1.0 / ratio);
+                // Ensure both clips have autoTempo enabled
+                clip1->setAutoTempo(true);
+                
+                // Set initial tempo for both clips
+                updateTempo();
             }
         }
 
@@ -419,7 +428,11 @@ void MainComponent::handleFileSelection(const juce::File &file)
         updateCrossfader();
     }
 
+
     updateButtonStates();
+
+    // Apply the current tempo to the clips
+    updateTempo();
 
     // Auto-play the newly loaded track
     if (playState != PlayState::Playing)
@@ -431,23 +444,16 @@ void MainComponent::handleFileSelection(const juce::File &file)
 
 void MainComponent::updateTempo()
 {
-    const double ratio = baseTempo / screwComponent->getTempo();
+    // Calculate the new BPM based on the current tempo from the screw component
+    double newBpm = screwComponent->getTempo();
     
-    // Get both clips and apply time stretching
-    auto clip1 = getClip(0);
-    auto clip2 = getClip(1);
+    // Insert tempo change at the beginning of the track
+    auto tempoSetting = edit.tempoSequence.insertTempo(tracktion::TimePosition::fromSeconds(0.0));
+    if (tempoSetting != nullptr)
+        tempoSetting->setBpm(newBpm);
     
-    if (clip1)
-    {
-        // Set the speed ratio which controls time stretching
-        clip1->setSpeedRatio(1.0 / ratio);
-    }
-    
-    if (clip2)
-    {
-        // Set the speed ratio which controls time stretching
-        clip2->setSpeedRatio(1.0 / ratio);
-    }
+    // Calculate ratio for thumbnail display
+    const double ratio = baseTempo / newBpm;
     
     // Update the thumbnail to reflect the speed ratio
     if (thumbnail)
@@ -458,8 +464,7 @@ void MainComponent::updateTempo()
     // Update the delay component if it exists
     if (delayComponent)
     {
-        double tempo = screwComponent->getTempo();
-        delayComponent->setTempo(tempo);
+        delayComponent->setTempo(newBpm);
     }
 }
 
