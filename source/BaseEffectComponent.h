@@ -10,12 +10,17 @@
 
 #pragma once
 
-#include <JuceHeader.h>
+
+#include <juce_core/juce_core.h>
+#include <juce_graphics/juce_graphics.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <tracktion_engine/tracktion_engine.h>
+
 
 class BaseEffectComponent : public juce::Component
 {
 public:
-    explicit BaseEffectComponent(tracktion_engine::Edit& edit);
+    explicit BaseEffectComponent(tracktion::engine::Edit& edit);
     ~BaseEffectComponent() override = default;
     
     void paint(juce::Graphics& g) override;
@@ -45,15 +50,15 @@ public:
     }
     
     void setMixParameterId(const juce::String& id) { mixParameterId = id; }
-    tracktion_engine::Plugin::Ptr getPlugin() const { return plugin; }
+    tracktion::engine::Plugin::Ptr getPlugin() const { return plugin; }
     
 protected:
-    void bindSliderToParameter(juce::Slider& slider, tracktion_engine::AutomatableParameter& param);
-    tracktion_engine::Plugin::Ptr createPlugin(const juce::String& xmlType);
+    void bindSliderToParameter(juce::Slider& slider, tracktion::engine::AutomatableParameter& param);
+    tracktion::engine::Plugin::Ptr createPlugin(const juce::String& xmlType);
     juce::Rectangle<float> getEffectiveArea() const;
     
-    tracktion_engine::Edit& edit;
-    tracktion_engine::Plugin::Ptr plugin;
+    tracktion::engine::Edit& edit;
+    tracktion::engine::Plugin::Ptr plugin;
     juce::Label titleLabel;
     
     float storedMixLevel = 0.0f;

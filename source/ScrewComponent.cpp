@@ -1,6 +1,6 @@
 #include "ScrewComponent.h"
 
-ScrewComponent::ScrewComponent(tracktion_engine::Edit& edit)
+ScrewComponent::ScrewComponent(tracktion::engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
     titleLabel.setText("Screw Controls", juce::dontSendNotification);

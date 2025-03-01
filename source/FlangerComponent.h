@@ -17,7 +17,7 @@
 class FlangerComponent : public BaseEffectComponent
 {
 public:
-    explicit FlangerComponent(tracktion_engine::Edit&);
+    explicit FlangerComponent(tracktion::engine::Edit&);
     void resized() override;
     void setDepth(float value);
     void setSpeed(float value);

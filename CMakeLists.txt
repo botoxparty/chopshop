@@ -106,9 +106,7 @@ juce_add_gui_app("${PROJECT_NAME}"
     PRODUCT_NAME "${PRODUCT_NAME}"
 
     OSX_ARCHITECTURE "arm64"
-    
-    # Change this from TRUE to FALSE to prevent JUCE from generating the header
-    NEEDS_JUCE_HEADER FALSE)
+    )
 
 # This lets us use our code in both the JUCE targets and our Test target
 # Without running into ODR violations

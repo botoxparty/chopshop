@@ -1,13 +1,19 @@
 #pragma once
 
-#include <JuceHeader.h>
+
+#include <juce_core/juce_core.h>
+#include <juce_events/juce_events.h>
+#include <juce_graphics/juce_graphics.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <tracktion_engine/tracktion_engine.h>
+
 #include "Utilities.h"
 #include "CustomLookAndFeel.h"
 
 class ControlBarComponent : public juce::Component, private juce::Timer
 {
 public:
-    ControlBarComponent(tracktion_engine::Edit& edit);
+    ControlBarComponent(tracktion::engine::Edit& edit);
     ~ControlBarComponent() override;
 
     void paint(juce::Graphics& g) override;
@@ -34,7 +40,7 @@ private:
     void setupButton(juce::TextButton& button, const juce::String& text, juce::Colour baseColour);
     void timerCallback() override;
     
-    tracktion_engine::Edit& edit;
+    tracktion::engine::Edit& edit;
     
     juce::Label currentTrackLabel;
     juce::Label positionLabel;

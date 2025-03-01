@@ -17,7 +17,7 @@
 class DelayComponent : public BaseEffectComponent
 {
 public:
-    explicit DelayComponent(tracktion_engine::Edit&);
+    explicit DelayComponent(tracktion::engine::Edit&);
     void resized() override;
     void setDelayTime(double milliseconds);
     void rampMixLevel(bool rampUp);

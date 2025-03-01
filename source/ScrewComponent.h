@@ -5,7 +5,7 @@
 class ScrewComponent : public BaseEffectComponent
 {
 public:
-    explicit ScrewComponent(tracktion_engine::Edit&);
+    explicit ScrewComponent(tracktion::engine::Edit&);
     void resized() override;
     
     std::function<void(double)> onTempoChanged;

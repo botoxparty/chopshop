@@ -1,6 +1,9 @@
 #pragma once
 
-#include <JuceHeader.h>
+
+#include <juce_core/juce_core.h>
+#include <juce_events/juce_events.h>
+
 #include <SDL3/SDL.h>
 
 class GamepadManager : private juce::Timer

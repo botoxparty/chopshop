@@ -6,7 +6,7 @@
 class PhaserComponent : public BaseEffectComponent
 {
 public:
-    explicit PhaserComponent(tracktion_engine::Edit&);
+    explicit PhaserComponent(tracktion::engine::Edit&);
     void resized() override;
     void setDepth(float value);
     void setRate(float value);

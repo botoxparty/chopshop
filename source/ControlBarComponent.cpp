@@ -1,6 +1,6 @@
 #include "ControlBarComponent.h"
 
-ControlBarComponent::ControlBarComponent(tracktion_engine::Edit& e)
+ControlBarComponent::ControlBarComponent(tracktion::engine::Edit& e)
     : edit(e)
 {
     // Set up track label

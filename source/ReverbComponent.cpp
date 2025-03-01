@@ -1,6 +1,6 @@
 #include "ReverbComponent.h"
 
-ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
+ReverbComponent::ReverbComponent(tracktion::engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
     setMixParameterId("wet level"); // Set the correct parameter ID for reverb
@@ -30,7 +30,7 @@ ReverbComponent::ReverbComponent(tracktion_engine::Edit& edit)
     addAndMakeVisible(reverbWetSlider);
 
     // Create and setup plugin
-    plugin = createPlugin(tracktion_engine::ReverbPlugin::xmlTypeName);
+    plugin = createPlugin(tracktion::engine::ReverbPlugin::xmlTypeName);
     
     if (plugin != nullptr)
     {

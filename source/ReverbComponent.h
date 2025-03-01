@@ -6,7 +6,7 @@
 class ReverbComponent : public BaseEffectComponent
 {
 public:
-    explicit ReverbComponent(tracktion_engine::Edit&);
+    explicit ReverbComponent(tracktion::engine::Edit&);
     void resized() override;
     void rampMixLevel(bool rampUp);
     void restoreMixLevel() override;

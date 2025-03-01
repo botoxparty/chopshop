@@ -10,7 +10,7 @@
 
 #include "VinylBrakeComponent.h"
 
-VinylBrakeComponent::VinylBrakeComponent(tracktion_engine::Edit& edit)
+VinylBrakeComponent::VinylBrakeComponent(tracktion::engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
     // Use the base class's titleLabel instead of creating a new one

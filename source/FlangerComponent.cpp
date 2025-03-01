@@ -10,7 +10,7 @@
 
 #include "FlangerComponent.h"
 
-FlangerComponent::FlangerComponent(tracktion_engine::Edit &edit)
+FlangerComponent::FlangerComponent(tracktion::engine::Edit &edit)
     : BaseEffectComponent(edit)
 {
     setMixParameterId("mix"); // Set the correct parameter ID for flanger

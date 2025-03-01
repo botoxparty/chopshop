@@ -7,7 +7,7 @@ class VinylBrakeComponent : public BaseEffectComponent,
                            public juce::Timer
 {
 public:
-    explicit VinylBrakeComponent(tracktion_engine::Edit&);
+    explicit VinylBrakeComponent(tracktion::engine::Edit&);
     void resized() override;
     void sliderValueChanged(juce::Slider* slider) override;
     void timerCallback() override;

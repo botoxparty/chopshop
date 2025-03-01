@@ -1,6 +1,6 @@
 #include "PhaserComponent.h"
 
-PhaserComponent::PhaserComponent(tracktion_engine::Edit& edit)
+PhaserComponent::PhaserComponent(tracktion::engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
     titleLabel.setText("Phaser", juce::dontSendNotification);

@@ -1,6 +1,22 @@
 #pragma once
 
-#include <JuceHeader.h>
+
+#include <juce_core/juce_core.h>
+#include <juce_events/juce_events.h>
+#include <juce_graphics/juce_graphics.h>
+#include <juce_gui_basics/juce_gui_basics.h>
+#include <tracktion_engine/tracktion_engine.h>
+
+// Project info that was previously in JuceHeader.h
+namespace ProjectInfo
+{
+    const char* const  projectName    = "ChopShop";
+    const char* const  companyName    = "";
+    const char* const  versionString  = "1.0.0";
+    const int          versionNumber  = 0x10000;
+}
+
+
 #include "Utilities.h"
 #include "CustomLookAndFeel.h"
 #include "ReverbComponent.h"
@@ -35,7 +51,7 @@ class MainComponent : public juce::Component,
                       public juce::Timer,
                       public GamepadManager::Listener,
                       public juce::ChangeListener,
-                      public tracktion_engine::OscilloscopePlugin::Listener,
+                      public tracktion::engine::OscilloscopePlugin::Listener,
                       public juce::ApplicationCommandTarget
 {
 public:
@@ -56,7 +72,7 @@ public:
     void stop();
     void loadAudioFile();
     void updateTempo();
-    tracktion_engine::WaveAudioClip::Ptr getClip(int trackIndex);
+    tracktion::engine::WaveAudioClip::Ptr getClip(int trackIndex);
 
     void timerCallback() override
     {
@@ -89,7 +105,7 @@ public:
         // Create and add the component on the message thread
         juce::MessageManager::callAsync([this]()
         {
-            if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
+            if (auto* oscPlugin = dynamic_cast<tracktion::engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
             {
                 oscilloscopeComponent.reset(oscPlugin->createControlPanel());
                 if (oscilloscopeComponent != nullptr)
@@ -149,8 +165,8 @@ public:
 
 private:
     //==============================================================================
-    tracktion_engine::Engine engine{ProjectInfo::projectName};
-    tracktion_engine::Edit edit{engine, tracktion_engine::Edit::forEditing};
+    tracktion::engine::Engine engine{ProjectInfo::projectName};
+    tracktion::engine::Edit edit{engine, tracktion::engine::Edit::forEditing};
     std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
     juce::TextButton audioSettingsButton{"Audio Settings"};
 
@@ -217,7 +233,7 @@ private:
     std::unique_ptr<Component> oscilloscopeComponent;
 
     // Add a member to hold the plugin reference
-    tracktion_engine::Plugin::Ptr oscilloscopePlugin;
+    tracktion::engine::Plugin::Ptr oscilloscopePlugin;
 
     std::unique_ptr<ControllerMappingComponent> controllerMappingComponent;
 

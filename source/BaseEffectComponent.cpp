@@ -10,7 +10,7 @@
 
 #include "BaseEffectComponent.h"
 
-BaseEffectComponent::BaseEffectComponent(tracktion_engine::Edit& e)
+BaseEffectComponent::BaseEffectComponent(tracktion::engine::Edit& e)
     : edit(e)
 {
     // Configure title label
@@ -115,7 +115,7 @@ void BaseEffectComponent::resized()
     titleLabel.setBounds(bounds.removeFromTop(25));
 }
 
-void BaseEffectComponent::bindSliderToParameter(juce::Slider& slider, tracktion_engine::AutomatableParameter& param)
+void BaseEffectComponent::bindSliderToParameter(juce::Slider& slider, tracktion::engine::AutomatableParameter& param)
 {
     slider.setRange(param.getValueRange().getStart(), param.getValueRange().getEnd(), 0.01);
     slider.setValue(param.getCurrentValue(), juce::dontSendNotification);
@@ -128,7 +128,7 @@ void BaseEffectComponent::bindSliderToParameter(juce::Slider& slider, tracktion_
     slider.onDragEnd = [&param] { param.parameterChangeGestureEnd(); };
 }
 
-tracktion_engine::Plugin::Ptr BaseEffectComponent::createPlugin(const juce::String& xmlType)
+tracktion::engine::Plugin::Ptr BaseEffectComponent::createPlugin(const juce::String& xmlType)
 {
     auto plugin = edit.getPluginCache().createNewPlugin(xmlType, {});
     return plugin;

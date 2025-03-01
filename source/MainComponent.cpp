@@ -19,7 +19,7 @@ MainComponent::MainComponent()
     controlBarComponent->onStopButtonClicked = [this] { stop(); };
 
     // Register our custom plugins with the engine
-    engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
+    engine.getPluginManager().createBuiltInType<tracktion::engine::OscilloscopePlugin>();
     engine.getPluginManager().createBuiltInType<FlangerPlugin>();
     engine.getPluginManager().createBuiltInType<AutoDelayPlugin>();
     engine.getPluginManager().createBuiltInType<AutoPhaserPlugin>();
@@ -152,13 +152,13 @@ MainComponent::MainComponent()
         DBG("Found master track");
 
         // Register our custom plugins with the engine
-        engine.getPluginManager().createBuiltInType<tracktion_engine::OscilloscopePlugin>();
+        engine.getPluginManager().createBuiltInType<tracktion::engine::OscilloscopePlugin>();
 
-        oscilloscopePlugin = masterTrack->pluginList.insertPlugin(tracktion_engine::OscilloscopePlugin::create(), -1);
+        oscilloscopePlugin = masterTrack->pluginList.insertPlugin(tracktion::engine::OscilloscopePlugin::create(), -1);
         if (oscilloscopePlugin != nullptr)
         {
             DBG("Created oscilloscope plugin");
-            if (auto *oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin *>(oscilloscopePlugin.get()))
+            if (auto *oscPlugin = dynamic_cast<tracktion::engine::OscilloscopePlugin *>(oscilloscopePlugin.get()))
             {
                 DBG("Cast to oscilloscope plugin successful");
                 oscPlugin->addListener(this);
@@ -681,7 +681,7 @@ void MainComponent::createPluginRack()
 {
     if (auto masterTrack = edit.getMasterTrack())
     {
-        tracktion_engine::Plugin::Array plugins;
+        tracktion::engine::Plugin::Array plugins;
 
         if (reverbComponent)
             plugins.add(reverbComponent->getPlugin());
@@ -693,9 +693,9 @@ void MainComponent::createPluginRack()
             plugins.add(phaserComponent->getPlugin());
 
         // Create the rack type with proper channel connections
-        if (auto rack = tracktion_engine::RackType::createTypeToWrapPlugins(plugins, edit))
+        if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins(plugins, edit))
         {
-            masterTrack->pluginList.insertPlugin(tracktion_engine::RackInstance::create(*rack), 0);
+            masterTrack->pluginList.insertPlugin(tracktion::engine::RackInstance::create(*rack), 0);
         }
     }
 }
@@ -717,7 +717,7 @@ void MainComponent::releaseResources()
     }
     
     // Remove oscilloscope listener
-    if (auto* oscPlugin = dynamic_cast<tracktion_engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
+    if (auto* oscPlugin = dynamic_cast<tracktion::engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
     {
         oscPlugin->removeListener(this);
         DBG("Removed oscilloscope listener");

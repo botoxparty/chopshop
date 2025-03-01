@@ -1,7 +1,7 @@
 #include "ScratcherComponent.h"
 #include "ScratchAudioNode.h"
 
-ScratcherComponent::ScratcherComponent(tracktion_engine::Edit& edit)
+ScratcherComponent::ScratcherComponent(tracktion::engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
     titleLabel.setText("DJ Scratcher", juce::dontSendNotification);

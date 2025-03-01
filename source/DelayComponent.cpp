@@ -10,7 +10,7 @@
 
 #include "DelayComponent.h"
 
-DelayComponent::DelayComponent(tracktion_engine::Edit& edit)
+DelayComponent::DelayComponent(tracktion::engine::Edit& edit)
     : BaseEffectComponent(edit)
 {
     setMixParameterId("mix proportion");

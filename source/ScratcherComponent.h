@@ -8,7 +8,7 @@ class ScratcherComponent : public BaseEffectComponent,
                            private juce::Timer  // Inherit from Timer directly
 {
 public:
-    explicit ScratcherComponent(tracktion_engine::Edit& edit);
+    explicit ScratcherComponent(tracktion::engine::Edit& edit);
     ~ScratcherComponent() override;
     
     void paint(juce::Graphics& g) override;

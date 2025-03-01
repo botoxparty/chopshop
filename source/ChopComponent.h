@@ -13,7 +13,7 @@ class ChopComponent : public BaseEffectComponent,
                       public juce::ApplicationCommandManagerListener
 {
 public:
-    explicit ChopComponent(tracktion_engine::Edit&);
+    explicit ChopComponent(tracktion::engine::Edit&);
     void resized() override;
     
     std::function<void()> onChopButtonPressed;
