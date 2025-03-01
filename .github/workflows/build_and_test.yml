@@ -148,9 +148,14 @@ jobs:
             # Set the SDL3_DIR to point to the directory containing SDL3Config.cmake
             echo "SDL3_DIR=$(pwd)/install/lib/cmake/SDL3" >> $GITHUB_ENV
             
+            # Also set the SDL3_LIBRARY path for direct access to the dylib
+            echo "SDL3_LIBRARY=$(pwd)/install/lib/libSDL3.0.dylib" >> $GITHUB_ENV
+            
             # List the files to verify they're there
             echo "Contents of SDL3 cmake directory:"
             ls -la install/lib/cmake/SDL3/
+            echo "Contents of SDL3 lib directory:"
+            ls -la install/lib/
             
             cd ../../..
           else
@@ -187,6 +192,7 @@ jobs:
               -DCMAKE_OSX_ARCHITECTURES="arm64" \
               -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 \
               -DCMAKE_CXX_FLAGS="-include cstddef -include stddef.h" \
+              -DSDL3_LIBRARY="${{ env.SDL3_LIBRARY }}" \
               ${{ matrix.extra-flags }} .
           else
             cmake -B ${{ env.BUILD_DIR }} \

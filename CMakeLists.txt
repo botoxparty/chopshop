@@ -209,21 +209,47 @@ target_compile_features(SharedCode INTERFACE cxx_std_20)
 
 # Add this section to handle SDL3 dependencies
 if(APPLE)
-    find_package(SDL3 REQUIRED)
-    target_link_libraries(SharedCode INTERFACE SDL3::SDL3)
-    
-    # Copy SDL3 dylib to the app bundle - fixed path
-    add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "/usr/local/lib/libSDL3.0.dylib"
-        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/libSDL3.0.dylib"
-        COMMENT "Copying SDL3 library to app bundle")
+    # Check if SDL3_LIBRARY is provided (from CI workflow)
+    if(DEFINED SDL3_LIBRARY)
+        message(STATUS "Using provided SDL3 library path: ${SDL3_LIBRARY}")
         
-    # Fix the install name
-    add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-        COMMAND install_name_tool -change @rpath/libSDL3.0.dylib @executable_path/libSDL3.0.dylib
-        "$<TARGET_FILE:${PROJECT_NAME}>"
-        COMMENT "Fixing SDL3 install name")
+        # Get the directory name from the full path
+        get_filename_component(SDL3_LIB_DIR "${SDL3_LIBRARY}" DIRECTORY)
+        get_filename_component(SDL3_LIB_NAME "${SDL3_LIBRARY}" NAME)
+        
+        # Copy SDL3 dylib to the app bundle using the provided path
+        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL3_LIBRARY}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${SDL3_LIB_NAME}"
+            COMMENT "Copying SDL3 library from ${SDL3_LIBRARY} to app bundle")
+            
+        # Fix the install name
+        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+            COMMAND install_name_tool -change @rpath/${SDL3_LIB_NAME} @executable_path/${SDL3_LIB_NAME}
+            "$<TARGET_FILE:${PROJECT_NAME}>"
+            COMMENT "Fixing SDL3 install name")
+    else
+        # Find SDL3 using the normal method
+        find_package(SDL3 REQUIRED)
+        
+        # Try to find the SDL3 library dynamically
+        find_library(SDL3_DYLIB NAMES SDL3 libSDL3 libSDL3.0.dylib REQUIRED)
+        message(STATUS "Found SDL3 library at: ${SDL3_DYLIB}")
+        
+        # Copy SDL3 dylib to the app bundle
+        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL3_DYLIB}"
+            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_NAME:SDL3::SDL3>"
+            COMMENT "Copying SDL3 library to app bundle")
+            
+        # Fix the install name
+        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+            COMMAND install_name_tool -change @rpath/$<TARGET_FILE_NAME:SDL3::SDL3> @executable_path/$<TARGET_FILE_NAME:SDL3::SDL3>
+            "$<TARGET_FILE:${PROJECT_NAME}>"
+            COMMENT "Fixing SDL3 install name")
+    endif()
 endif()
 
 # Update the Assets section to include your specific files
