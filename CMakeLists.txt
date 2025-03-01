@@ -216,8 +216,16 @@ target_compile_features(SharedCode INTERFACE cxx_std_20)
 
 # Add this section to handle SDL3 dependencies
 if(APPLE)
-    # Find the SDL3 library file
-    find_library(SDL3_DYLIB SDL3 PATHS "${CMAKE_BINARY_DIR}/vendor/SDL3" PATH_SUFFIXES "Debug" "Release")
+    # Find the SDL3 library file - look in multiple possible locations
+    find_library(SDL3_DYLIB 
+        NAMES libSDL3.0.dylib SDL3
+        PATHS 
+            "${CMAKE_BINARY_DIR}/vendor/SDL3"
+            "${CMAKE_SOURCE_DIR}/vendor/SDL3/build/install/lib"
+            "$ENV{SDL3_LIBRARY}"  # Use the environment variable if set
+        PATH_SUFFIXES "Debug" "Release"
+        NO_DEFAULT_PATH
+    )
     
     if(SDL3_DYLIB)
         message(STATUS "Found SDL3 library at: ${SDL3_DYLIB}")
@@ -237,6 +245,11 @@ if(APPLE)
             COMMAND install_name_tool -change @rpath/${SDL3_LIB_NAME} @executable_path/${SDL3_LIB_NAME}
             "$<TARGET_FILE:${PROJECT_NAME}>"
             COMMENT "Fixing SDL3 install name")
+            
+        # Also add a debug command to verify the library was copied
+        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
+            COMMAND ls -la "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+            COMMENT "Listing app bundle contents after copying SDL3")
     else()
         message(WARNING "SDL3 library not found. The application may not run correctly.")
     endif()

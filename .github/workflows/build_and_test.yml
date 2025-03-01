@@ -157,6 +157,12 @@ jobs:
             echo "Contents of SDL3 lib directory:"
             ls -la install/lib/
             
+            # Copy the SDL3 library to a location that will be easier to find
+            mkdir -p ../../../Builds/Release/
+            cp install/lib/libSDL3.0.dylib ../../../Builds/Release/
+            echo "Copied SDL3 library to Builds/Release directory"
+            ls -la ../../../Builds/Release/
+            
             cd ../../..
           else
             echo "ERROR: SDL3 directory not found in vendor folder."
@@ -251,6 +257,36 @@ jobs:
 
           # Set custom icon attribute
           SetFile -a C "${{ env.STANDALONE_PATH }}.app"
+          
+      - name: Verify SDL3 in App Bundle (macOS)
+        if: ${{ matrix.name == 'macOS' }}
+        run: |
+          echo "Checking app bundle contents:"
+          ls -la "${{ env.STANDALONE_PATH }}.app/Contents/MacOS/"
+          
+          # Check if the SDL3 library is in the app bundle
+          if [ -f "${{ env.STANDALONE_PATH }}.app/Contents/MacOS/libSDL3.0.dylib" ]; then
+            echo "SDL3 library found in app bundle"
+          else
+            echo "WARNING: SDL3 library not found in app bundle"
+            # Try to copy it manually as a fallback
+            cp "${{ env.SDL3_LIBRARY }}" "${{ env.STANDALONE_PATH }}.app/Contents/MacOS/"
+            echo "Manually copied SDL3 library to app bundle"
+            ls -la "${{ env.STANDALONE_PATH }}.app/Contents/MacOS/"
+          fi
+          
+          # Check the dynamic library dependencies
+          echo "Checking dynamic library dependencies:"
+          otool -L "${{ env.STANDALONE_PATH }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+          
+          # Fix the install name if needed
+          if otool -L "${{ env.STANDALONE_PATH }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}" | grep -q "@rpath/libSDL3.0.dylib"; then
+            echo "Fixing SDL3 install name"
+            install_name_tool -change @rpath/libSDL3.0.dylib @executable_path/libSDL3.0.dylib \
+              "${{ env.STANDALONE_PATH }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+            echo "After fixing install name:"
+            otool -L "${{ env.STANDALONE_PATH }}.app/Contents/MacOS/${{ env.PRODUCT_NAME }}"
+          fi
 
       - name: Create DMG (macOS)
         if: ${{ matrix.name == 'macOS' }}
