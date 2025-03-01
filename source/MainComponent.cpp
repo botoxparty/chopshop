@@ -187,6 +187,23 @@ MainComponent::MainComponent()
             delayComponent->setTempo (tempo);
     };
 
+    // Initialize the scratch component
+    DBG("MainComponent: Creating ScratchComponent");
+    scratchComponent = std::make_unique<ScratchComponent> (edit);
+    DBG("MainComponent: ScratchComponent created, now making visible");
+    addAndMakeVisible (*scratchComponent);
+    DBG("MainComponent: ScratchComponent made visible");
+
+    // // Set up callbacks to get current tempo and base tempo
+    // scratchComponent->getCurrentTempo = [this]() {
+    //     return screwComponent ? screwComponent->getTempo() : 120.0;
+    // };
+    
+    // scratchComponent->getBaseTempo = [this]() {
+    //     return baseTempo;
+    // };
+    DBG("MainComponent: ScratchComponent callbacks set up");
+
     // Create plugin rack after all effects are initialized
     createPluginRack();
 
@@ -264,6 +281,7 @@ void MainComponent::resized()
     column2.flexDirection = juce::FlexBox::Direction::column;
     column2.items.add (juce::FlexItem (*screwComponent).withFlex (0.25f).withMinHeight (100).withMargin (5));
     column2.items.add (juce::FlexItem (*chopComponent).withFlex (0.5f).withMinHeight (200).withMargin (5));
+    column2.items.add (juce::FlexItem (*scratchComponent).withFlex (0.25f).withMinHeight (100).withMargin (5));
     column2.items.add (juce::FlexItem (*vinylBrakeComponent).withFlex (0.25f).withMinHeight (100).withMargin (5));
 
     // Column 3 (Effects)
@@ -618,6 +636,23 @@ void MainComponent::gamepadAxisMoved (int axisId, float value)
             }
             break;
 
+        case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
+            // Use left trigger for scratch effect
+            // if (scratchComponent)
+            // {
+            //     // Apply scratch effect based on trigger value
+            //     // Trigger values are 0 to 1, we'll map to -1 to 1 for scratch speed
+            //     float scratchSpeed = (value > 0.1f) ? (value * 2.0f - 1.0f) : 0.0f;
+            //     scratchComponent->applyScratchEffect(scratchSpeed);
+                
+            //     // If trigger is released, start returning to original tempo
+            //     if (value < 0.1f)
+            //     {
+            //         scratchComponent->startReturnToOriginalTempo();
+            //     }
+            // }
+            break;
+
         case SDL_GAMEPAD_AXIS_LEFTX:
             leftX = value;
             if (flangerComponent)
@@ -745,6 +780,7 @@ void MainComponent::releaseResources()
     flangerComponent = nullptr;
     screwComponent = nullptr;
     chopComponent = nullptr;
+    scratchComponent = nullptr;
     reverbComponent = nullptr;
     vinylBrakeComponent = nullptr;
 

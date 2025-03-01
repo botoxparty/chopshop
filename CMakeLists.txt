@@ -255,6 +255,6 @@ juce_add_binary_data(Assets
     SOURCES
         source/Audiowide-Regular.ttf
         source/JetBrainsMono-VariableFont_wght.ttf
-        source/screw-icon.png
+        Resources/vinyl.png
 )
 

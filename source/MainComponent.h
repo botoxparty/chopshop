@@ -35,6 +35,7 @@ namespace ProjectInfo
 #include "Plugins/AutoPhaserPlugin.h"
 #include "ControlBarComponent.h"
 #include "Thumbnail.h"
+#include "ScratchComponent.h"
 
 
 
@@ -192,6 +193,7 @@ private:
     std::unique_ptr<ChopComponent> chopComponent;
     std::unique_ptr<ScrewComponent> screwComponent;
     std::unique_ptr<PhaserComponent> phaserComponent;
+    std::unique_ptr<ScratchComponent> scratchComponent;
     bool isTrackLoaded()
     {
         if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))

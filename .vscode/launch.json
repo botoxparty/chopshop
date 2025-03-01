@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug ChopShop",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/ChopShop_artefacts/Debug/ChopShop Beta.app/Contents/MacOS/ChopShop Beta",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb",
+            "preLaunchTask": "build",
+            "logging": {
+                "engineLogging": false
+            }
+        }
+    ]
+} 
