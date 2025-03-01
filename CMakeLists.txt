@@ -47,7 +47,7 @@ set(PATCH_VERSION "1")
 enable_language(C)
 
 # Handle version file formatting - generate a header file instead of modifying the version file
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version" VERSION_CONTENT)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" VERSION_CONTENT)
 string(STRIP "${VERSION_CONTENT}" VERSION_CONTENT)
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/version.h" "#pragma once\n#define VERSION_STRING \"${VERSION_CONTENT}\"")
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")

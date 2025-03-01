@@ -203,6 +203,14 @@ jobs:
               -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
               ${{ matrix.extra-flags }} .
           fi
+          
+          # # Ensure version file is properly formatted as a C++ header
+          # if [[ "${{ matrix.name }}" == "macOS" ]]; then
+          #   echo "#define VERSION_STRING \"$(cat version)\"" > version.h
+          #   echo "#pragma once" > version_new
+          #   echo "#define VERSION_STRING \"$(cat version)\"" >> version_new
+          #   mv version_new version
+          # fi
 
       - name: Build
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
