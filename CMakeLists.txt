@@ -209,8 +209,6 @@ target_compile_features(SharedCode INTERFACE cxx_std_20)
 
 # Add this section to handle SDL3 dependencies
 if(APPLE)
-    # Check if SDL3_LIBRARY is provided (from CI workflow)
-    if(DEFINED SDL3_LIBRARY)
         message(STATUS "Using provided SDL3 library path: ${SDL3_LIBRARY}")
         
         # Get the directory name from the full path
@@ -229,32 +227,12 @@ if(APPLE)
             COMMAND install_name_tool -change @rpath/${SDL3_LIB_NAME} @executable_path/${SDL3_LIB_NAME}
             "$<TARGET_FILE:${PROJECT_NAME}>"
             COMMENT "Fixing SDL3 install name")
-    else
-        # Find SDL3 using the normal method
-        find_package(SDL3 REQUIRED)
-        
-        # Try to find the SDL3 library dynamically
-        find_library(SDL3_DYLIB NAMES SDL3 libSDL3 libSDL3.0.dylib REQUIRED)
-        message(STATUS "Found SDL3 library at: ${SDL3_DYLIB}")
-        
-        # Copy SDL3 dylib to the app bundle
-        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${SDL3_DYLIB}"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_NAME:SDL3::SDL3>"
-            COMMENT "Copying SDL3 library to app bundle")
-            
-        # Fix the install name
-        add_custom_command(TARGET "${PROJECT_NAME}" POST_BUILD
-            COMMAND install_name_tool -change @rpath/$<TARGET_FILE_NAME:SDL3::SDL3> @executable_path/$<TARGET_FILE_NAME:SDL3::SDL3>
-            "$<TARGET_FILE:${PROJECT_NAME}>"
-            COMMENT "Fixing SDL3 install name")
-    endif()
 endif()
 
 # Update the Assets section to include your specific files
-juce_add_binary_data(Assets SOURCES
-    source/Audiowide-Regular.ttf
-    source/JetBrainsMono-VariableFont_wght.ttf
-    source/screw-icon.png
+juce_add_binary_data(Assets 
+    SOURCES
+        source/Audiowide-Regular.ttf
+        source/JetBrainsMono-VariableFont_wght.ttf
+        source/screw-icon.png
 )
