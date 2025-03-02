@@ -39,14 +39,12 @@ public:
     {
         // Add your application's shutdown code here..
 
-        mainWindow = nullptr; // (deletes our window)
-
-        // Make sure the main component is deleted first
-        mainWindow->setContentOwned(nullptr, true);
+        // First clear the content
+        if (mainWindow != nullptr)
+            mainWindow->setContentOwned(nullptr, true);
         
-        // Clear any static or global resources
-        juce::DeletedAtShutdown::deleteAll();
-        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
+        // Then destroy the window
+        mainWindow = nullptr; // (deletes our window)
     }
 
     //==============================================================================
