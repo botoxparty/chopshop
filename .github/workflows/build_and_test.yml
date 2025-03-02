@@ -384,29 +384,38 @@ jobs:
           echo "Checking executable directory contents:"
           ls -la "${{ env.ARTIFACTS_PATH }}"
           
+          # Debug: Show the full paths and check if they exist
+          echo "Full artifacts path: ${{ env.ARTIFACTS_PATH }}"
+          echo "Full standalone path: ${{ env.STANDALONE_PATH }}"
+          
+          # Make sure the standalone directory exists
+          mkdir -p "${{ env.STANDALONE_PATH }}"
+          
           # Check if the SDL3 library is in the executable directory
           if [ -f "${{ env.ARTIFACTS_PATH }}/libSDL3.so.0" ]; then
             echo "libSDL3.so.0 found in artifacts directory"
           else
             echo "libSDL3.so.0 not found in artifacts directory, copying it now"
             # Copy from our saved location
-            cp "${{ env.SDL3_LIBRARY }}" "${{ env.ARTIFACTS_PATH }}/"
+            cp "${{ env.SDL3_LIBRARY }}" "${{ env.ARTIFACTS_PATH }}/" || echo "Failed to copy to artifacts path"
             echo "Manually copied libSDL3.so.0 to artifacts directory"
             ls -la "${{ env.ARTIFACTS_PATH }}/"
           fi
           
           # Make sure the SDL3 library is also in the standalone directory
-          if [ ! -f "${{ env.STANDALONE_PATH }}/libSDL3.so.0" ]; then
-            echo "Copying libSDL3.so.0 to standalone directory"
-            cp "${{ env.SDL3_LIBRARY }}" "${{ env.STANDALONE_PATH }}/"
-            echo "Standalone directory contents:"
-            ls -la "${{ env.STANDALONE_PATH }}/"
-          fi
+          echo "Copying libSDL3.so.0 to standalone directory"
+          cp "${{ env.SDL3_LIBRARY }}" "${{ env.STANDALONE_PATH }}/" || echo "Failed to copy to standalone path"
+          echo "Standalone directory contents:"
+          ls -la "${{ env.STANDALONE_PATH }}/"
 
       - name: Verify SDL3 in Executable Directory (Windows)
         if: ${{ matrix.name == 'Windows' }}
         run: |
           echo "Checking executable directory contents:"
+          
+          # Debug: Show the full paths
+          echo "Full artifacts path: ${{ env.ARTIFACTS_PATH }}"
+          echo "Full standalone path: ${{ env.STANDALONE_PATH }}"
           
           # Make sure the directory exists
           mkdir -p "${{ env.STANDALONE_PATH }}"
@@ -424,14 +433,6 @@ jobs:
             cp "Builds/Release/SDL3.dll" "${{ env.STANDALONE_PATH }}/" || echo "Failed to copy SDL3.dll"
             echo "Manually copied SDL3.dll to executable directory"
             ls -la "${{ env.STANDALONE_PATH }}/" || echo "Could not list directory after copy"
-          fi
-          
-          # Debug: Show the full path and check if it exists
-          echo "Full standalone path: ${{ env.STANDALONE_PATH }}"
-          if [ -d "${{ env.STANDALONE_PATH }}" ]; then
-            echo "Directory exists"
-          else
-            echo "Directory does not exist"
           fi
 
       - name: Generate Installer (Windows)
