@@ -415,13 +415,21 @@ jobs:
             echo "Checking RPATH:"
             readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH
             
-            # If RPATH is not set correctly, we can try to fix it
-            if ! readelf -d "${{ env.STANDALONE_PATH }}" | grep -q "RPATH.*\\$ORIGIN"; then
-              echo "Setting RPATH to \$ORIGIN"
-              patchelf --set-rpath '$ORIGIN' "${{ env.STANDALONE_PATH }}"
-              echo "After setting RPATH:"
-              readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH
+            # Install patchelf if not already installed
+            if ! command -v patchelf &> /dev/null; then
+              echo "Installing patchelf..."
+              sudo apt-get update && sudo apt-get install -y patchelf
             fi
+            
+            # Set RPATH to $ORIGIN to look for libraries in the same directory as the executable
+            echo "Setting RPATH to \$ORIGIN"
+            patchelf --set-rpath '$ORIGIN' "${{ env.STANDALONE_PATH }}"
+            echo "After setting RPATH:"
+            readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH
+            
+            # Verify the library dependencies again
+            echo "Checking executable dependencies after RPATH change:"
+            ldd "${{ env.STANDALONE_PATH }}" | grep SDL3
           fi
           
           echo "Final artifacts directory contents:"
@@ -466,15 +474,33 @@ jobs:
       - name: Generate Installer (Windows)
         if: ${{ matrix.name == 'Windows' }}
         run: |
-          # Make sure SDL3.dll is in the directory that will be packaged
-          if [ ! -f "${{ env.STANDALONE_PATH }}/SDL3.dll" ]; then
-            echo "Copying SDL3.dll to executable directory before packaging"
-            cp "Builds/Release/SDL3.dll" "${{ env.STANDALONE_PATH }}/"
+          # Debug: Show the paths we're working with
+          echo "STANDALONE_PATH: ${{ env.STANDALONE_PATH }}"
+          echo "ARTIFACTS_PATH: ${{ env.ARTIFACTS_PATH }}"
+          
+          # Check if SDL3.dll exists in the Builds/Release directory
+          if [ ! -f "Builds/Release/SDL3.dll" ]; then
+            echo "SDL3.dll not found in Builds/Release, trying to find it"
+            find vendor -name "SDL3.dll" -exec cp {} "Builds/Release/" \; || echo "Could not find SDL3.dll in vendor"
+            find ${{ env.BUILD_DIR }} -name "SDL3.dll" -exec cp {} "Builds/Release/" \; || echo "Could not find SDL3.dll in build directory"
           fi
           
+          # Verify SDL3.dll is in the Builds/Release directory
+          if [ -f "Builds/Release/SDL3.dll" ]; then
+            echo "SDL3.dll found in Builds/Release directory"
+          else
+            echo "ERROR: SDL3.dll not found in Builds/Release directory"
+            exit 1
+          fi
+          
+          # Run the Inno Setup compiler - no need to copy to STANDALONE_PATH as the installer.iss
+          # is already configured to use the correct paths
           iscc "packaging\installer.iss"
           mv "packaging\Output\${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}.exe" "${{ env.ARTIFACTS_PATH }}/"
-
+          # Verify the installer was created
+          echo "Installer created at: ${{ env.ARTIFACTS_PATH }}/${{ env.ARTIFACT_NAME }}.exe"
+          ls -la "${{ env.ARTIFACTS_PATH }}/"
+      
       # - name: Codesign with Azure Trusted Signing (Windows)
       #   if: ${{ matrix.name == 'Windows' }}
       #   uses: azure/trusted-signing-action@v0.5.1
