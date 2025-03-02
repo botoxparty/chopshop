@@ -1,6 +1,5 @@
 #pragma once
 
-#include "BinaryData.h"
 #include "BaseEffectComponent.h"
 #include "Utilities.h"
 

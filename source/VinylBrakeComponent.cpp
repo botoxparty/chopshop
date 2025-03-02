@@ -61,7 +61,6 @@ void VinylBrakeComponent::sliderValueChanged(juce::Slider* slider)
             if (!isSpringAnimating)  // Only update directly if not animating
             {
                 // Apply brake effect by subtracting from the original adjustment
-                DBG("Setting tempo adjustment to: " + juce::String(originalTempoAdjustment - value));
                 setSpeed(originalTempoAdjustment - value);
             }
         }
@@ -70,31 +69,29 @@ void VinylBrakeComponent::sliderValueChanged(juce::Slider* slider)
 
 void VinylBrakeComponent::setSpeed(double value)
 {
-    // Get both clips and apply time stretching
-    auto& transport = edit.getTransport();
-    
-    // Find the clips in the first two tracks
-    tracktion::engine::WaveAudioClip* clip1 = nullptr;
-    tracktion::engine::WaveAudioClip* clip2 = nullptr;
-    
-    if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
-        if (!track1->getClips().isEmpty())
-            clip1 = dynamic_cast<tracktion::engine::WaveAudioClip*>(track1->getClips()[0]);
-            
-    if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
-        if (!track2->getClips().isEmpty())
-            clip2 = dynamic_cast<tracktion::engine::WaveAudioClip*>(track2->getClips()[0]);
+    // Get the tempo sequence from the edit
+    auto& tempoSequence = edit.tempoSequence;
     
     // Calculate the speed ratio based on the brake value
     // value is the adjustment from original tempo (negative for brake effect)
     double speedRatio = 1.0 / (1.0 + value);
     
-    // Apply to both clips
-    if (clip1)
-        clip1->setSpeedRatio(speedRatio);
-        
-    if (clip2)
-        clip2->setSpeedRatio(speedRatio);
+    // Get the current position
+    // auto currentPosition = edit.getTransport().getPosition();
+    
+    // Get the base tempo from the tempo sequence
+    double baseBpm = getEffectiveTempo();
+    
+    // Calculate the actual tempo that should be used (base tempo * screw adjustment * brake effect)
+    // The tempoAdjustment is already (ratio - 1.0), so we add 1.0 to get the full ratio
+    double currentBpm = baseBpm / speedRatio;
+    
+    // Insert a new tempo at the current position
+    auto tempo = tempoSequence.insertTempo(tracktion::TimePosition::fromSeconds(0.0));
+    DBG("Setting tempo adjustment to: " + juce::String(currentBpm));
+    
+    // Set the new tempo
+    tempo->setBpm(currentBpm);
 }
 
 void VinylBrakeComponent::startSpringAnimation()

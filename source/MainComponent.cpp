@@ -719,6 +719,10 @@ void MainComponent::createVinylBrakeComponent()
         // This represents the adjustment from the base tempo
         return ratio - 1.0;
     };
+    
+    vinylBrakeComponent->getEffectiveTempo = [this]() {
+        return screwComponent->getTempo();
+    };
 
     addAndMakeVisible (*vinylBrakeComponent);
 }

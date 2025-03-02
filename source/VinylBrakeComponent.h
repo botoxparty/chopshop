@@ -31,6 +31,8 @@ public:
 
     void startSpringAnimation();
 
+    std::function<double()> getEffectiveTempo;
+
 private:
     class SpringSlider : public juce::Slider
     {
