@@ -6,7 +6,7 @@
 
 ; 'Types': What get displayed during the setup
 [Types]
-Name: "full"; Description: "Standalone application"; Flags: iscustom
+Name: "full"; Description: "Standalone application"
 
 ; Components are used inside the script and can be composed of a set of 'Types'
 [Components]
@@ -22,7 +22,6 @@ AppPublisher={#Publisher}
 AppVersion={#Version}
 DefaultDirName="{commonpf64}\{#Publisher}\{#ProductName}"
 DisableDirPage=yes
-DisableTypesPage=yes
 
 ; MAKE SURE YOU READ/MODIFY THE EULA BEFORE USING IT
 LicenseFile="resources\EULA"
