@@ -125,6 +125,13 @@ jobs:
             cmake --install . --config ${{ env.BUILD_TYPE }}
             # Add SDL3 to path for the main build
             echo "SDL3_DIR=$(pwd)/install" >> $GITHUB_ENV
+            
+            # Copy SDL3.dll to a location we can find later
+            mkdir -p ../../../../Builds/Release/
+            cp ${{ env.BUILD_TYPE }}/SDL3.dll ../../../../Builds/Release/
+            echo "Copied SDL3.dll to Builds/Release directory"
+            ls -la ../../../../Builds/Release/
+            
             cd ../../..
           else
             echo "ERROR: SDL3 directory not found in vendor folder."
@@ -334,9 +341,32 @@ jobs:
         working-directory: ${{ env.ARTIFACTS_PATH }}
         run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" "${{ env.PRODUCT_NAME }}"
 
+      - name: Verify SDL3 in Executable Directory (Windows)
+        if: ${{ matrix.name == 'Windows' }}
+        run: |
+          echo "Checking executable directory contents:"
+          ls -la "${{ env.STANDALONE_PATH }}"
+          
+          # Check if the SDL3 DLL is in the executable directory
+          if [ -f "${{ env.STANDALONE_PATH }}/SDL3.dll" ]; then
+            echo "SDL3.dll found in executable directory"
+          else
+            echo "SDL3.dll not found in executable directory, copying it now"
+            # Copy from our saved location
+            cp "Builds/Release/SDL3.dll" "${{ env.STANDALONE_PATH }}/"
+            echo "Manually copied SDL3.dll to executable directory"
+            ls -la "${{ env.STANDALONE_PATH }}/"
+          fi
+
       - name: Generate Installer (Windows)
         if: ${{ matrix.name == 'Windows' }}
         run: |
+          # Make sure SDL3.dll is in the directory that will be packaged
+          if [ ! -f "${{ env.STANDALONE_PATH }}/SDL3.dll" ]; then
+            echo "Copying SDL3.dll to executable directory before packaging"
+            cp "Builds/Release/SDL3.dll" "${{ env.STANDALONE_PATH }}/"
+          fi
+          
           iscc "packaging\installer.iss"
           mv "packaging\Output\${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}.exe" "${{ env.ARTIFACTS_PATH }}/"
 
