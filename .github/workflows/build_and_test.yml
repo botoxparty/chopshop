@@ -410,9 +410,11 @@ jobs:
             echo "Checking RPATH:"
             readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH || echo "No RPATH found"
             
-            # Install patchelf explicitly
-            echo "Installing patchelf..."
-            sudo apt-get update && sudo apt-get install -y patchelf
+            # Install patchelf explicitly if needed
+            if ! command -v patchelf &> /dev/null; then
+              echo "Installing patchelf..."
+              sudo apt-get update && sudo apt-get install -y patchelf
+            fi
             
             # Set RPATH to $ORIGIN to look for libraries in the same directory as the executable
             echo "Setting RPATH to \$ORIGIN"
@@ -428,10 +430,21 @@ jobs:
           fi
           
           # Make sure the SDL3 library is included in the zip file
-          echo "Updating the zip file to include the SDL3 library"
+          echo "Creating zip file with executable and SDL3 library"
           cd "${{ env.ARTIFACTS_PATH }}"
-          rm -f "${{ env.ARTIFACT_NAME }}.zip"
+          # Check if zip file exists and remove it
+          if [ -f "${{ env.ARTIFACT_NAME }}.zip" ]; then
+            echo "Removing existing zip file"
+            rm -f "${{ env.ARTIFACT_NAME }}.zip"
+          fi
+          
+          # Create a new zip file with both the executable and the SDL3 library
+          echo "Creating new zip file with: ${{ env.PRODUCT_NAME }} and libSDL3.so.0"
           7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" "${{ env.PRODUCT_NAME }}" "libSDL3.so.0"
+          
+          # Verify the contents of the zip file
+          echo "Verifying zip file contents:"
+          7z l "${{ env.ARTIFACT_NAME }}.zip"
           
           echo "Final artifacts directory contents:"
           ls -la "${{ env.ARTIFACTS_PATH }}/"

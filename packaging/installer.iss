@@ -22,6 +22,7 @@ AppPublisher={#Publisher}
 AppVersion={#Version}
 DefaultDirName="{commonpf64}\{#Publisher}\{#ProductName}"
 DisableDirPage=yes
+DisableTypesPage=yes
 
 ; MAKE SURE YOU READ/MODIFY THE EULA BEFORE USING IT
 LicenseFile="resources\EULA"
