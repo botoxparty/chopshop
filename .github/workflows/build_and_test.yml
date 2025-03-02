@@ -382,13 +382,13 @@ jobs:
         if: ${{ matrix.name == 'Linux' }}
         run: |
           echo "Checking executable directory contents:"
-          ls -la "${{ env.ARTIFACTS_PATH }}" || echo "Could not list artifacts path"
+          ls -la "${{ env.ARTIFACTS_PATH }}"
           
-          # Debug: Show the full paths and check if they exist
+          # Debug: Show the full paths
           echo "Full artifacts path: ${{ env.ARTIFACTS_PATH }}"
           echo "Full standalone path: ${{ env.STANDALONE_PATH }}"
           
-          # Check if directories exist
+          # Check if artifacts directory exists
           if [ -d "${{ env.ARTIFACTS_PATH }}" ]; then
             echo "Artifacts directory exists"
           else
@@ -396,14 +396,19 @@ jobs:
             mkdir -p "${{ env.ARTIFACTS_PATH }}"
           fi
           
-          if [ -d "${{ env.STANDALONE_PATH }}" ]; then
-            echo "Standalone directory exists"
+          # Check if standalone path is a file (executable) or directory
+          if [ -f "${{ env.STANDALONE_PATH }}" ]; then
+            echo "Standalone path is a file (executable)"
+            STANDALONE_DIR="${{ env.ARTIFACTS_PATH }}"
+          elif [ -d "${{ env.STANDALONE_PATH }}" ]; then
+            echo "Standalone path is a directory"
+            STANDALONE_DIR="${{ env.STANDALONE_PATH }}"
           else
-            echo "Standalone directory does not exist, creating it"
-            mkdir -p "${{ env.STANDALONE_PATH }}"
+            echo "Standalone path does not exist, using artifacts directory"
+            STANDALONE_DIR="${{ env.ARTIFACTS_PATH }}"
           fi
           
-          # Check if the SDL3 library is in the executable directory
+          # Check if the SDL3 library is in the artifacts directory
           if [ -f "${{ env.ARTIFACTS_PATH }}/libSDL3.so.0" ]; then
             echo "libSDL3.so.0 found in artifacts directory"
           else
@@ -414,16 +419,8 @@ jobs:
             ls -la "${{ env.ARTIFACTS_PATH }}/" || echo "Could not list artifacts path after copy"
           fi
           
-          # Make sure the SDL3 library is also in the standalone directory
-          if [ -f "${{ env.STANDALONE_PATH }}/libSDL3.so.0" ]; then
-            echo "libSDL3.so.0 already exists in standalone directory"
-          else
-            echo "Copying libSDL3.so.0 to standalone directory"
-            cp "${{ env.SDL3_LIBRARY }}" "${{ env.STANDALONE_PATH }}/" || echo "Failed to copy to standalone path"
-          fi
-          
-          echo "Standalone directory contents:"
-          ls -la "${{ env.STANDALONE_PATH }}/" || echo "Could not list standalone directory"
+          echo "Artifacts directory contents:"
+          ls -la "${{ env.ARTIFACTS_PATH }}/"
 
       - name: Verify SDL3 in Executable Directory (Windows)
         if: ${{ matrix.name == 'Windows' }}
