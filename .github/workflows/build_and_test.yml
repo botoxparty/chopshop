@@ -5,6 +5,11 @@ on:
   push:
   pull_request:
 
+# Add permissions needed for creating releases
+permissions:
+  contents: write
+  discussions: write
+
 # When pushing new commits, cancel any running builds on that branch
 concurrency:
   group: ${{ github.ref }}
@@ -641,3 +646,5 @@ jobs:
             */*.zip
             */*.dmg
           body_path: release_notes.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
