@@ -5,39 +5,20 @@ PhaserComponent::PhaserComponent(tracktion::engine::Edit& edit)
 {
     titleLabel.setText("Phaser", juce::dontSendNotification);
     
-    // Configure labels
-    depthLabel.setText("Depth", juce::dontSendNotification);
-    rateLabel.setText("Rate", juce::dontSendNotification);
-    feedbackLabel.setText("Feedback", juce::dontSendNotification);
+    // Configure sliders
+    depthSlider.getSlider().setTextValueSuffix("");
+    depthSlider.getSlider().setNumDecimalPlacesToDisplay(2);
+    depthSlider.getSlider().setDoubleClickReturnValue(true, 0.0);
     
-    depthLabel.setJustificationType(juce::Justification::centred);
-    rateLabel.setJustificationType(juce::Justification::centred);
-    feedbackLabel.setJustificationType(juce::Justification::centred);
+    rateSlider.getSlider().setTextValueSuffix(" Hz");
+    rateSlider.getSlider().setNumDecimalPlacesToDisplay(2);
+    rateSlider.getSlider().setDoubleClickReturnValue(true, 0.0);
     
-    // Configure sliders based on the actual plugin parameters
-    // Depth: initialize to 0.0f
-    depthSlider.setRange(0.0, 10.0, 0.1);
-    depthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    depthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
-    
-    // Rate: initialize to 0.0f
-    rateSlider.setRange(0.0, 10.0, 0.01);
-    rateSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    rateSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
-    
-    // Feedback: initialize to 0.0f
-    feedbackSlider.setRange(0.0, 0.99, 0.01);
-    feedbackSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    feedbackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
-    
-    depthSlider.setDoubleClickReturnValue(true, 0.0);
-    rateSlider.setDoubleClickReturnValue(true, 0.0);
-    feedbackSlider.setDoubleClickReturnValue(true, 0.0);
+    feedbackSlider.getSlider().setTextValueSuffix("");
+    feedbackSlider.getSlider().setNumDecimalPlacesToDisplay(2);
+    feedbackSlider.getSlider().setDoubleClickReturnValue(true, 0.0);
 
     // Add components to content component
-    contentComponent.addAndMakeVisible(depthLabel);
-    contentComponent.addAndMakeVisible(rateLabel);
-    contentComponent.addAndMakeVisible(feedbackLabel);
     contentComponent.addAndMakeVisible(depthSlider);
     contentComponent.addAndMakeVisible(rateSlider);
     contentComponent.addAndMakeVisible(feedbackSlider);
@@ -56,19 +37,18 @@ PhaserComponent::PhaserComponent(tracktion::engine::Edit& edit)
         // Use the correct parameter IDs from the plugin
         if (auto depthParam = plugin->getAutomatableParameterByID("depth"))
         {
-            bindSliderToParameter(depthSlider, *depthParam);
+            bindSliderToParameter(depthSlider.getSlider(), *depthParam);
         }
         
         if (auto rateParam = plugin->getAutomatableParameterByID("rate"))
         {
-            bindSliderToParameter(rateSlider, *rateParam);
+            bindSliderToParameter(rateSlider.getSlider(), *rateParam);
         }
         
         if (auto feedbackParam = plugin->getAutomatableParameterByID("feedback"))
         {
-            bindSliderToParameter(feedbackSlider, *feedbackParam);
+            bindSliderToParameter(feedbackSlider.getSlider(), *feedbackParam);
         }
-
     }
 }
 
@@ -78,30 +58,19 @@ void PhaserComponent::resized()
     BaseEffectComponent::resized();
     
     // Now layout the content within the content component
-    auto bounds = contentComponent.getLocalBounds();
+    auto bounds = contentComponent.getLocalBounds().reduced(4);
     
-    // Create a grid layout
-    juce::Grid grid;
-    grid.rowGap = juce::Grid::Px(4);
-    grid.columnGap = juce::Grid::Px(4);
+    // Calculate component sizes
+    auto componentWidth = (bounds.getWidth() - 16) / 3; // -16 for gaps between components
     
-    using Track = juce::Grid::TrackInfo;
-    using Fr = juce::Grid::Fr;
+    // Position components
+    depthSlider.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(8); // gap
     
-    grid.templateRows = { Track(Fr(1)), Track(Fr(2)) };    // Label row, Dial row
-    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
+    rateSlider.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(8); // gap
     
-    // Add items to grid
-    grid.items = {
-        juce::GridItem(depthLabel),
-        juce::GridItem(rateLabel),
-        juce::GridItem(feedbackLabel),
-        juce::GridItem(depthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(rateSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(feedbackSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
-    };
-    
-    grid.performLayout(bounds);
+    feedbackSlider.setBounds(bounds);
 }
 
 void PhaserComponent::setDepth(float value)

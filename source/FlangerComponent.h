@@ -13,6 +13,7 @@
 #include "BaseEffectComponent.h"
 #include "Plugins/FlangerPlugin.h"
 #include "RampedValue.h"
+#include "RotarySliderComponent.h"
 
 class FlangerComponent : public BaseEffectComponent
 {
@@ -26,15 +27,10 @@ public:
     void rampMixLevel(bool rampUp);
 
 private:
-    juce::Slider depthSlider;
-    juce::Slider speedSlider;
-    juce::Slider widthSlider;
-    juce::Slider mixSlider;
-    
-    juce::Label depthLabel;
-    juce::Label speedLabel;
-    juce::Label widthLabel;
-    juce::Label mixLabel;
+    RotarySliderComponent depthSlider { "Depth" };
+    RotarySliderComponent speedSlider { "Speed" };
+    RotarySliderComponent widthSlider { "Width" };
+    RotarySliderComponent mixSlider { "Mix" };
 
     RampedValue mixRamp;
 

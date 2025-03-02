@@ -13,6 +13,7 @@
 #include "BaseEffectComponent.h"
 #include "Plugins/AutoDelayPlugin.h"
 #include "RampedValue.h"
+#include "RotarySliderComponent.h"
 
 class DelayComponent : public BaseEffectComponent
 {
@@ -24,12 +25,9 @@ public:
     void setTempo(double newTempo) { tempo = newTempo; updateDelayTimeFromNote(); }
 
 private:
-    juce::Slider feedbackSlider;
-    juce::Slider mixSlider;
+    RotarySliderComponent feedbackSlider { "Feedback" };
+    RotarySliderComponent mixSlider { "Mix" };
     juce::ComboBox noteValueBox;
-    
-    juce::Label feedbackLabel;
-    juce::Label mixLabel;
     juce::Label timeLabel;
 
     RampedValue mixRamp;

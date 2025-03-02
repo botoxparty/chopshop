@@ -13,51 +13,28 @@
 FlangerComponent::FlangerComponent(tracktion::engine::Edit &edit)
     : BaseEffectComponent(edit)
 {
-    setMixParameterId("mix"); // Set the correct parameter ID for flanger
+    setMixParameterId("mix");
     mixSlider.setComponentID("mix");
     titleLabel.setText("Flanger", juce::dontSendNotification);
-    // Configure labels
-    depthLabel.setText("Depth", juce::dontSendNotification);
-    speedLabel.setText("Speed", juce::dontSendNotification);
-    widthLabel.setText("Width", juce::dontSendNotification);
-    mixLabel.setText("Mix", juce::dontSendNotification);
 
-    depthLabel.setJustificationType(juce::Justification::centred);
-    speedLabel.setJustificationType(juce::Justification::centred);
-    widthLabel.setJustificationType(juce::Justification::centred);
-    mixLabel.setJustificationType(juce::Justification::centred);
+    // Configure sliders
+    depthSlider.getSlider().setTextValueSuffix("");
+    depthSlider.getSlider().setNumDecimalPlacesToDisplay(2);
+    depthSlider.getSlider().setDoubleClickReturnValue(true, 0.0);
 
-    // Configure sliders as rotary dials
-    depthSlider.setTextValueSuffix("");
-    depthSlider.setNumDecimalPlacesToDisplay(2);
-    depthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    depthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+    speedSlider.getSlider().setTextValueSuffix(" Hz");
+    speedSlider.getSlider().setNumDecimalPlacesToDisplay(2);
+    speedSlider.getSlider().setDoubleClickReturnValue(true, 0.0);
 
-    speedSlider.setTextValueSuffix(" Hz");
-    speedSlider.setNumDecimalPlacesToDisplay(2);
-    speedSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    speedSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+    widthSlider.getSlider().setTextValueSuffix("");
+    widthSlider.getSlider().setNumDecimalPlacesToDisplay(2);
+    widthSlider.getSlider().setDoubleClickReturnValue(true, 0.0);
 
-    widthSlider.setTextValueSuffix("");
-    widthSlider.setNumDecimalPlacesToDisplay(2);
-    widthSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    widthSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
-
-    mixSlider.setTextValueSuffix("%");
-    mixSlider.setNumDecimalPlacesToDisplay(0);
-    mixSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    mixSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
-
-    depthSlider.setDoubleClickReturnValue(true, 0.0);
-    speedSlider.setDoubleClickReturnValue(true, 0.0);
-    widthSlider.setDoubleClickReturnValue(true, 0.0);
-    mixSlider.setDoubleClickReturnValue(true, 0.0);
+    mixSlider.getSlider().setTextValueSuffix("%");
+    mixSlider.getSlider().setNumDecimalPlacesToDisplay(0);
+    mixSlider.getSlider().setDoubleClickReturnValue(true, 0.0);
     
     // Add components to content component
-    contentComponent.addAndMakeVisible(depthLabel);
-    contentComponent.addAndMakeVisible(speedLabel);
-    contentComponent.addAndMakeVisible(widthLabel);
-    contentComponent.addAndMakeVisible(mixLabel);
     contentComponent.addAndMakeVisible(depthSlider);
     contentComponent.addAndMakeVisible(speedSlider);
     contentComponent.addAndMakeVisible(widthSlider);
@@ -68,37 +45,36 @@ FlangerComponent::FlangerComponent(tracktion::engine::Edit &edit)
 
     if (plugin != nullptr)
     {
-               // Initialize all parameters to zero first
+        // Initialize all parameters to zero first
         for (auto param : plugin->getAutomatableParameters())
         {
             param->setParameter(0.0f, juce::sendNotification);
         }
 
         if (auto depthParam = plugin->getAutomatableParameterByID("depth"))
-            bindSliderToParameter(depthSlider, *depthParam);
+            bindSliderToParameter(depthSlider.getSlider(), *depthParam);
         else
             DBG("Depth parameter not found");
 
         if (auto speedParam = plugin->getAutomatableParameterByID("speed"))
-            bindSliderToParameter(speedSlider, *speedParam);
+            bindSliderToParameter(speedSlider.getSlider(), *speedParam);
         else
             DBG("Speed parameter not found");
 
         if (auto widthParam = plugin->getAutomatableParameterByID("width"))
-            bindSliderToParameter(widthSlider, *widthParam);
+            bindSliderToParameter(widthSlider.getSlider(), *widthParam);
         else
             DBG("Width parameter not found");
 
         if (auto mixParam = plugin->getAutomatableParameterByID("mix"))
         {   
             mixParam->setParameter(0.7f, juce::sendNotification);
-            bindSliderToParameter(mixSlider, *mixParam);
+            bindSliderToParameter(mixSlider.getSlider(), *mixParam);
         }
         else
             DBG("Mix parameter not found");
     }
 
-    // Add to constructor after other slider setup:
     mixRamp.onValueChange = [this](float value) {
         mixSlider.setValue(value, juce::sendNotification);
     };
@@ -110,32 +86,22 @@ void FlangerComponent::resized()
     BaseEffectComponent::resized();
     
     // Now layout the content within the content component
-    auto bounds = contentComponent.getLocalBounds();
+    auto bounds = contentComponent.getLocalBounds().reduced(4);
     
-    // Create a grid layout
-    juce::Grid grid;
-    grid.rowGap = juce::Grid::Px(4);
-    grid.columnGap = juce::Grid::Px(4);
+    // Calculate component sizes
+    auto componentWidth = (bounds.getWidth() - 24) / 4; // -24 for gaps between components
     
-    using Track = juce::Grid::TrackInfo;
-    using Fr = juce::Grid::Fr;
+    // Position components
+    depthSlider.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(8); // gap
     
-    grid.templateRows = { Track(Fr(1)), Track(Fr(2)) };    // Label row, Dial row
-    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
+    speedSlider.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(8); // gap
     
-    // Add items to grid
-    grid.items = {
-        juce::GridItem(depthLabel),
-        juce::GridItem(speedLabel),
-        juce::GridItem(widthLabel),
-        juce::GridItem(mixLabel),
-        juce::GridItem(depthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(speedSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(widthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(mixSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
-    };
+    widthSlider.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(8); // gap
     
-    grid.performLayout(bounds);
+    mixSlider.setBounds(bounds);
 }
 
 void FlangerComponent::setDepth(float value)

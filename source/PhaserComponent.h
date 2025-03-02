@@ -2,6 +2,7 @@
 
 #include "BaseEffectComponent.h"
 #include "Plugins/AutoPhaserPlugin.h"
+#include "RotarySliderComponent.h"
 
 class PhaserComponent : public BaseEffectComponent
 {
@@ -13,15 +14,9 @@ public:
     void setFeedback(float value);
 
 private:
-    juce::Slider depthSlider;
-    juce::Slider rateSlider;
-    juce::Slider feedbackSlider;
-    juce::Slider mixSlider;
-    
-    juce::Label depthLabel;
-    juce::Label rateLabel;
-    juce::Label feedbackLabel;
-    juce::Label mixLabel;
+    RotarySliderComponent depthSlider { "Depth" };
+    RotarySliderComponent rateSlider { "Rate" };
+    RotarySliderComponent feedbackSlider { "Feedback" };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PhaserComponent)
 }; 

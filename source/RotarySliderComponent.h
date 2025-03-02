@@ -8,7 +8,7 @@ public:
     RotarySliderComponent(const juce::String& labelText = "")
     {
         slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+        slider.setTextBoxStyle(juce::Slider::NoTextBox, false, 50, 15);
         slider.setNumDecimalPlacesToDisplay(2);
         slider.setTextValueSuffix("");
         addAndMakeVisible(slider);

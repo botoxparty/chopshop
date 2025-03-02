@@ -17,25 +17,19 @@ DelayComponent::DelayComponent(tracktion::engine::Edit& edit)
     mixSlider.setComponentID("mix proportion");
     titleLabel.setText("Delay", juce::dontSendNotification);
     
-    // Configure labels
-    feedbackLabel.setText("Feedback", juce::dontSendNotification);
-    mixLabel.setText("Mix", juce::dontSendNotification);
+    // Configure time label
     timeLabel.setText("Time", juce::dontSendNotification);
-    
-    feedbackLabel.setJustificationType(juce::Justification::centred);
-    mixLabel.setJustificationType(juce::Justification::centred);
     timeLabel.setJustificationType(juce::Justification::centred);
+    timeLabel.setFont(juce::Font(14.0f));
     
     // Configure sliders
-    feedbackSlider.setTextValueSuffix(" dB");
-    feedbackSlider.setNumDecimalPlacesToDisplay(1);
-    feedbackSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    feedbackSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+    feedbackSlider.getSlider().setTextValueSuffix(" dB");
+    feedbackSlider.getSlider().setNumDecimalPlacesToDisplay(1);
+    feedbackSlider.getSlider().setDoubleClickReturnValue(true, -30.0);
     
-    mixSlider.setTextValueSuffix("%");
-    mixSlider.setNumDecimalPlacesToDisplay(0);
-    mixSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-    mixSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 15);
+    mixSlider.getSlider().setTextValueSuffix("%");
+    mixSlider.getSlider().setNumDecimalPlacesToDisplay(0);
+    mixSlider.getSlider().setDoubleClickReturnValue(true, 0.0);
     
     // Configure note value combo box
     noteValueBox.addItem("1/16", 1);
@@ -44,18 +38,12 @@ DelayComponent::DelayComponent(tracktion::engine::Edit& edit)
     noteValueBox.addItem("1/2", 4);
     noteValueBox.addItem("1", 5);
     noteValueBox.setSelectedId(3); // Default to 1/4 note
-    
     noteValueBox.onChange = [this] { updateDelayTimeFromNote(); };
-    
-    feedbackSlider.setDoubleClickReturnValue(true, -30.0);
-    mixSlider.setDoubleClickReturnValue(true, 0.0);
 
     // Add components to content component
-    contentComponent.addAndMakeVisible(feedbackLabel);
-    contentComponent.addAndMakeVisible(mixLabel);
-    contentComponent.addAndMakeVisible(timeLabel);
     contentComponent.addAndMakeVisible(feedbackSlider);
     contentComponent.addAndMakeVisible(mixSlider);
+    contentComponent.addAndMakeVisible(timeLabel);
     contentComponent.addAndMakeVisible(noteValueBox);
 
     // Create and setup plugin
@@ -64,11 +52,11 @@ DelayComponent::DelayComponent(tracktion::engine::Edit& edit)
     if (plugin != nullptr)
     {
         if (auto feedbackParam = plugin->getAutomatableParameterByID("feedback"))
-            bindSliderToParameter(feedbackSlider, *feedbackParam);
+            bindSliderToParameter(feedbackSlider.getSlider(), *feedbackParam);
             
         if (auto mixParam = plugin->getAutomatableParameterByID("mix proportion"))
         {
-            bindSliderToParameter(mixSlider, *mixParam);
+            bindSliderToParameter(mixSlider.getSlider(), *mixParam);
             mixParam->setParameter(0.0f, juce::sendNotification);
         }
             
@@ -89,30 +77,22 @@ void DelayComponent::resized()
     BaseEffectComponent::resized();
     
     // Now layout the content within the content component
-    auto bounds = contentComponent.getLocalBounds();
+    auto bounds = contentComponent.getLocalBounds().reduced(4);
     
-    // Create a grid layout
-    juce::Grid grid;
-    grid.rowGap = juce::Grid::Px(4);
-    grid.columnGap = juce::Grid::Px(4);
+    // Calculate component sizes
+    auto componentWidth = (bounds.getWidth() - 16) / 3; // -16 for gaps between components
     
-    using Track = juce::Grid::TrackInfo;
-    using Fr = juce::Grid::Fr;
+    // Position components
+    feedbackSlider.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(8); // gap
     
-    grid.templateRows = { Track(Fr(1)), Track(Fr(2)) };    // Label row, Dial row
-    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
+    mixSlider.setBounds(bounds.removeFromLeft(componentWidth));
+    bounds.removeFromLeft(8); // gap
     
-    // Add items to grid
-    grid.items = {
-        juce::GridItem(feedbackLabel),
-        juce::GridItem(mixLabel),
-        juce::GridItem(timeLabel),
-        juce::GridItem(feedbackSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(mixSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(noteValueBox).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
-    };
-    
-    grid.performLayout(bounds);
+    // For the time section, create a vertical layout
+    auto timeSection = bounds;
+    timeLabel.setBounds(timeSection.removeFromTop(20));
+    noteValueBox.setBounds(timeSection.withSizeKeepingCentre(60, 25));
 }
 
 void DelayComponent::setDelayTime(double milliseconds)

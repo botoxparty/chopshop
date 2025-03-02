@@ -287,10 +287,10 @@ void MainComponent::resized()
     // Column 3 (Effects)
     juce::FlexBox column3;
     column3.flexDirection = juce::FlexBox::Direction::column;
-    column3.items.add (juce::FlexItem (*reverbComponent).withFlex (1.0f).withMinHeight (120).withMargin (5));
-    column3.items.add (juce::FlexItem (*delayComponent).withFlex (1.0f).withMinHeight (120).withMargin (5));
-    column3.items.add (juce::FlexItem (*flangerComponent).withFlex (1.0f).withMinHeight (120).withMargin (5));
-    column3.items.add (juce::FlexItem (*phaserComponent).withFlex (1.0f).withMinHeight (120).withMargin (5));
+    column3.items.add (juce::FlexItem (*reverbComponent).withFlex (1.0f).withMargin (5));
+    column3.items.add (juce::FlexItem (*delayComponent).withFlex (1.0f).withMargin (5));
+    column3.items.add (juce::FlexItem (*flangerComponent).withFlex (1.0f).withMargin (5));
+    column3.items.add (juce::FlexItem (*phaserComponent).withFlex (1.0f).withMargin (5));
 
     // Add columns to main box
     mainBox.items.add (juce::FlexItem (column1).withFlex (1.0f));
