@@ -6,7 +6,7 @@
 
 ; 'Types': What get displayed during the setup
 [Types]
-Name: "full"; Description: "Standalone application"
+Name: "full"; Description: "Standalone application"; Flags: iscustom
 
 ; Components are used inside the script and can be composed of a set of 'Types'
 [Components]

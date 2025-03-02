@@ -446,8 +446,6 @@ jobs:
           echo "Verifying zip file contents:"
           7z l "${{ env.ARTIFACT_NAME }}.zip"
           
-          echo "Final artifacts directory contents:"
-          ls -la "${{ env.ARTIFACTS_PATH }}/"
 
       - name: Verify SDL3 in Executable Directory (Windows)
         if: ${{ matrix.name == 'Windows' }}
