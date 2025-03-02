@@ -139,6 +139,43 @@ jobs:
             exit 1
           fi
 
+      - name: Build and Install SDL3 (Linux)
+        if: ${{ matrix.name == 'Linux' }}
+        run: |
+          if [ -d "vendor/SDL3" ]; then
+            cd vendor/SDL3
+            mkdir -p build
+            cd build
+            
+            # Build SDL3 for Linux
+            cmake .. -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
+            cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
+            cmake --install . --config ${{ env.BUILD_TYPE }}
+            
+            # Set the SDL3_DIR to point to the directory containing SDL3Config.cmake
+            echo "SDL3_DIR=$(pwd)/install/lib/cmake/SDL3" >> $GITHUB_ENV
+            
+            # Also set the SDL3_LIBRARY path for direct access to the shared library
+            echo "SDL3_LIBRARY=$(pwd)/install/lib/libSDL3.so.0" >> $GITHUB_ENV
+            
+            # List the files to verify they're there
+            echo "Contents of SDL3 cmake directory:"
+            ls -la install/lib/cmake/SDL3/
+            echo "Contents of SDL3 lib directory:"
+            ls -la install/lib/
+            
+            # Create directory for the standalone app and copy the SDL3 library
+            mkdir -p ../../../${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
+            cp install/lib/libSDL3.so.0 ../../../${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/
+            echo "Copied SDL3 library to build artifacts directory"
+            
+            cd ../../..
+          else
+            echo "ERROR: SDL3 directory not found in vendor folder."
+            echo "Please ensure the SDL3 submodule is properly initialized."
+            exit 1
+          fi
+
       - name: Build and Install SDL3 (macOS)
         if: ${{ matrix.name == 'macOS' }}
         run: |
@@ -341,11 +378,42 @@ jobs:
         working-directory: ${{ env.ARTIFACTS_PATH }}
         run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" "${{ env.PRODUCT_NAME }}"
 
+      - name: Verify SDL3 in Executable Directory (Linux)
+        if: ${{ matrix.name == 'Linux' }}
+        run: |
+          echo "Checking executable directory contents:"
+          ls -la "${{ env.ARTIFACTS_PATH }}"
+          
+          # Check if the SDL3 library is in the executable directory
+          if [ -f "${{ env.ARTIFACTS_PATH }}/libSDL3.so.0" ]; then
+            echo "libSDL3.so.0 found in artifacts directory"
+          else
+            echo "libSDL3.so.0 not found in artifacts directory, copying it now"
+            # Copy from our saved location
+            cp "${{ env.SDL3_LIBRARY }}" "${{ env.ARTIFACTS_PATH }}/"
+            echo "Manually copied libSDL3.so.0 to artifacts directory"
+            ls -la "${{ env.ARTIFACTS_PATH }}/"
+          fi
+          
+          # Make sure the SDL3 library is also in the standalone directory
+          if [ ! -f "${{ env.STANDALONE_PATH }}/libSDL3.so.0" ]; then
+            echo "Copying libSDL3.so.0 to standalone directory"
+            cp "${{ env.SDL3_LIBRARY }}" "${{ env.STANDALONE_PATH }}/"
+            echo "Standalone directory contents:"
+            ls -la "${{ env.STANDALONE_PATH }}/"
+          fi
+
       - name: Verify SDL3 in Executable Directory (Windows)
         if: ${{ matrix.name == 'Windows' }}
         run: |
           echo "Checking executable directory contents:"
-          ls -la "${{ env.STANDALONE_PATH }}"
+          
+          # Make sure the directory exists
+          mkdir -p "${{ env.STANDALONE_PATH }}"
+          
+          # List the directory to see what's there
+          echo "Contents of standalone path directory:"
+          ls -la "${{ env.STANDALONE_PATH }}" || echo "Could not list directory"
           
           # Check if the SDL3 DLL is in the executable directory
           if [ -f "${{ env.STANDALONE_PATH }}/SDL3.dll" ]; then
@@ -353,9 +421,17 @@ jobs:
           else
             echo "SDL3.dll not found in executable directory, copying it now"
             # Copy from our saved location
-            cp "Builds/Release/SDL3.dll" "${{ env.STANDALONE_PATH }}/"
+            cp "Builds/Release/SDL3.dll" "${{ env.STANDALONE_PATH }}/" || echo "Failed to copy SDL3.dll"
             echo "Manually copied SDL3.dll to executable directory"
-            ls -la "${{ env.STANDALONE_PATH }}/"
+            ls -la "${{ env.STANDALONE_PATH }}/" || echo "Could not list directory after copy"
+          fi
+          
+          # Debug: Show the full path and check if it exists
+          echo "Full standalone path: ${{ env.STANDALONE_PATH }}"
+          if [ -d "${{ env.STANDALONE_PATH }}" ]; then
+            echo "Directory exists"
+          else
+            echo "Directory does not exist"
           fi
 
       - name: Generate Installer (Windows)
