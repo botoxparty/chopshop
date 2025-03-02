@@ -50,12 +50,13 @@ DelayComponent::DelayComponent(tracktion::engine::Edit& edit)
     feedbackSlider.setDoubleClickReturnValue(true, -30.0);
     mixSlider.setDoubleClickReturnValue(true, 0.0);
 
-    addAndMakeVisible(feedbackLabel);
-    addAndMakeVisible(mixLabel);
-    addAndMakeVisible(timeLabel);
-    addAndMakeVisible(feedbackSlider);
-    addAndMakeVisible(mixSlider);
-    addAndMakeVisible(noteValueBox);
+    // Add components to content component
+    contentComponent.addAndMakeVisible(feedbackLabel);
+    contentComponent.addAndMakeVisible(mixLabel);
+    contentComponent.addAndMakeVisible(timeLabel);
+    contentComponent.addAndMakeVisible(feedbackSlider);
+    contentComponent.addAndMakeVisible(mixSlider);
+    contentComponent.addAndMakeVisible(noteValueBox);
 
     // Create and setup plugin
     plugin = createPlugin(AutoDelayPlugin::xmlTypeName);
@@ -84,8 +85,11 @@ DelayComponent::DelayComponent(tracktion::engine::Edit& edit)
 
 void DelayComponent::resized()
 {
-    auto bounds = getEffectiveArea();
+    // First let the base component handle its layout
     BaseEffectComponent::resized();
+    
+    // Now layout the content within the content component
+    auto bounds = contentComponent.getLocalBounds();
     
     // Create a grid layout
     juce::Grid grid;
@@ -108,7 +112,7 @@ void DelayComponent::resized()
         juce::GridItem(noteValueBox).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
     };
     
-    grid.performLayout(bounds.toNearestInt());
+    grid.performLayout(bounds);
 }
 
 void DelayComponent::setDelayTime(double milliseconds)

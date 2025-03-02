@@ -11,13 +11,13 @@ ScrewComponent::ScrewComponent(tracktion::engine::Edit& edit)
     tempoSlider.setSliderStyle(juce::Slider::LinearHorizontal);
     tempoSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 70, 20);
     
-    // Add all components to make them visible
-    addAndMakeVisible(tempoSlider);
-    addAndMakeVisible(tempo70Button);
-    addAndMakeVisible(tempo75Button);
-    addAndMakeVisible(tempo80Button);
-    addAndMakeVisible(tempo85Button);
-    addAndMakeVisible(tempo100Button);
+    // Add all components to the content component instead of the base
+    contentComponent.addAndMakeVisible(tempoSlider);
+    contentComponent.addAndMakeVisible(tempo70Button);
+    contentComponent.addAndMakeVisible(tempo75Button);
+    contentComponent.addAndMakeVisible(tempo80Button);
+    contentComponent.addAndMakeVisible(tempo85Button);
+    contentComponent.addAndMakeVisible(tempo100Button);
     
     tempoSlider.onValueChange = [this] {
         if (onTempoChanged)
@@ -31,13 +31,15 @@ ScrewComponent::ScrewComponent(tracktion::engine::Edit& edit)
     tempo80Button.onClick = [this] { setTempoPercentage(0.80); };
     tempo85Button.onClick = [this] { setTempoPercentage(0.85); };
     tempo100Button.onClick = [this] { setTempoPercentage(1.00); };
-    resized();
 }
 
 void ScrewComponent::resized()
 {
-    auto bounds = getEffectiveArea();
+    // First let the base component handle its layout
     BaseEffectComponent::resized();
+    
+    // Now layout the content within the content component
+    auto bounds = contentComponent.getLocalBounds();
     
     // Create a grid layout
     juce::Grid grid;
@@ -50,10 +52,8 @@ void ScrewComponent::resized()
     grid.templateRows = { Track(Fr(1)), Track(Fr(1)) };
     grid.templateColumns = { Track(Fr(1)) };
     
-    // Create and setup tempo buttons container
-    auto* tempoButtonComponent = new juce::Component();
-    addAndMakeVisible(tempoButtonComponent);
-    tempoButtonComponent->setBounds(bounds.removeFromTop(30).toNearestInt());
+    // Create tempo buttons container
+    auto tempoButtonBounds = bounds.removeFromTop(30);
     
     juce::FlexBox tempoButtonBox;
     tempoButtonBox.flexDirection = juce::FlexBox::Direction::row;
@@ -63,14 +63,10 @@ void ScrewComponent::resized()
     tempoButtonBox.items.add(juce::FlexItem(tempo85Button).withFlex(1.0f).withMargin(2));
     tempoButtonBox.items.add(juce::FlexItem(tempo100Button).withFlex(1.0f).withMargin(2));
     
-    tempoButtonBox.performLayout(tempoButtonComponent->getBounds().toFloat());
+    tempoButtonBox.performLayout(tempoButtonBounds.toFloat());
     
-    grid.items = {
-        juce::GridItem(*tempoButtonComponent),
-        juce::GridItem(tempoSlider)
-    };
-    
-    grid.performLayout(bounds.toNearestInt());
+    // Position the tempo slider in the remaining space
+    tempoSlider.setBounds(bounds);
 }
 
 void ScrewComponent::setTempo(double tempo, juce::NotificationType notification)

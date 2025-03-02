@@ -53,14 +53,15 @@ FlangerComponent::FlangerComponent(tracktion::engine::Edit &edit)
     widthSlider.setDoubleClickReturnValue(true, 0.0);
     mixSlider.setDoubleClickReturnValue(true, 0.0);
     
-    addAndMakeVisible(depthLabel);
-    addAndMakeVisible(speedLabel);
-    addAndMakeVisible(widthLabel);
-    addAndMakeVisible(mixLabel);
-    addAndMakeVisible(depthSlider);
-    addAndMakeVisible(speedSlider);
-    addAndMakeVisible(widthSlider);
-    addAndMakeVisible(mixSlider);
+    // Add components to content component
+    contentComponent.addAndMakeVisible(depthLabel);
+    contentComponent.addAndMakeVisible(speedLabel);
+    contentComponent.addAndMakeVisible(widthLabel);
+    contentComponent.addAndMakeVisible(mixLabel);
+    contentComponent.addAndMakeVisible(depthSlider);
+    contentComponent.addAndMakeVisible(speedSlider);
+    contentComponent.addAndMakeVisible(widthSlider);
+    contentComponent.addAndMakeVisible(mixSlider);
 
     // Create and setup plugin
     plugin = createPlugin(FlangerPlugin::xmlTypeName);
@@ -105,20 +106,23 @@ FlangerComponent::FlangerComponent(tracktion::engine::Edit &edit)
 
 void FlangerComponent::resized()
 {
-    auto bounds = getEffectiveArea();
+    // First let the base component handle its layout
     BaseEffectComponent::resized();
-
+    
+    // Now layout the content within the content component
+    auto bounds = contentComponent.getLocalBounds();
+    
     // Create a grid layout
     juce::Grid grid;
     grid.rowGap = juce::Grid::Px(4);
     grid.columnGap = juce::Grid::Px(4);
-
+    
     using Track = juce::Grid::TrackInfo;
     using Fr = juce::Grid::Fr;
-
-    grid.templateRows = {Track(Fr(1)), Track(Fr(2))}; // Label row, Dial row
-    grid.templateColumns = {Track(Fr(1)), Track(Fr(1)), Track(Fr(1)), Track(Fr(1))};
-
+    
+    grid.templateRows = { Track(Fr(1)), Track(Fr(2)) };    // Label row, Dial row
+    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
+    
     // Add items to grid
     grid.items = {
         juce::GridItem(depthLabel),
@@ -128,9 +132,10 @@ void FlangerComponent::resized()
         juce::GridItem(depthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
         juce::GridItem(speedSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
         juce::GridItem(widthSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center),
-        juce::GridItem(mixSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)};
-
-    grid.performLayout(bounds.toNearestInt());
+        juce::GridItem(mixSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
+    };
+    
+    grid.performLayout(bounds);
 }
 
 void FlangerComponent::setDepth(float value)

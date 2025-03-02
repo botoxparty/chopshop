@@ -34,10 +34,11 @@ ChopComponent::ChopComponent(tracktion::engine::Edit& edit)
             onCrossfaderValueChanged(crossfaderSlider.getValue());
     };
     
-    addAndMakeVisible(durationLabel);
-    addAndMakeVisible(chopDurationComboBox);
-    addAndMakeVisible(chopButton);
-    addAndMakeVisible(crossfaderSlider);
+    // Add components to the content component instead of the base
+    contentComponent.addAndMakeVisible(durationLabel);
+    contentComponent.addAndMakeVisible(chopDurationComboBox);
+    contentComponent.addAndMakeVisible(chopButton);
+    contentComponent.addAndMakeVisible(crossfaderSlider);
     
     // Make sure this component can receive keyboard focus
     setWantsKeyboardFocus(true);
@@ -72,8 +73,11 @@ void ChopComponent::setCommandManager(juce::ApplicationCommandManager* manager)
 
 void ChopComponent::resized()
 {
-    auto bounds = getEffectiveArea();
+    // First let the base component handle its layout
     BaseEffectComponent::resized();
+    
+    // Now layout the content within the content component
+    auto bounds = contentComponent.getLocalBounds();
     
     // Create a grid layout
     juce::Grid grid;
@@ -93,7 +97,7 @@ void ChopComponent::resized()
         juce::GridItem(crossfaderSlider).withColumn({1, 3})
     };
     
-    grid.performLayout(bounds.toNearestInt());
+    grid.performLayout(bounds);
 }
 
 double ChopComponent::getChopDurationInMs(double currentTempo) const

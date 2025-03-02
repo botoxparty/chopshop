@@ -18,6 +18,9 @@ BaseEffectComponent::BaseEffectComponent(tracktion::engine::Edit& e)
     titleLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(titleLabel);
     
+    // Add content component
+    addAndMakeVisible(contentComponent);
+    
     // Add some padding for the panel effect
     setPaintingIsUnclipped(true);
 }
@@ -103,16 +106,32 @@ void BaseEffectComponent::drawScrew(juce::Graphics& g, float x, float y)
 
 juce::Rectangle<float> BaseEffectComponent::getEffectiveArea() const
 {
-    // Return the usable area inside the screws
-    const float inset = 20.0f;
-    return getLocalBounds().reduced(inset).toFloat();
+    return getLocalBounds().toFloat();
 }
 
 void BaseEffectComponent::resized()
 {
-    auto bounds = getLocalBounds();
-    // Reserve space at the top for the title
-    titleLabel.setBounds(bounds.removeFromTop(25));
+    auto effectiveArea = getEffectiveArea().toNearestInt();
+    
+    juce::FlexBox flexBox;
+    flexBox.flexDirection = juce::FlexBox::Direction::column;
+    flexBox.flexWrap = juce::FlexBox::Wrap::noWrap;
+    flexBox.alignContent = juce::FlexBox::AlignContent::stretch;
+    flexBox.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    
+    // Add title with fixed height
+    flexBox.items.add(juce::FlexItem(titleLabel)
+        .withHeight(25.0f)
+        .withWidth(effectiveArea.getWidth())
+        .withMargin(juce::FlexItem::Margin(0, 0, 5, 0))  // Bottom margin of 5
+        .withFlex(0));  // Don't flex
+        
+    // Content area will take up remaining space
+    flexBox.items.add(juce::FlexItem(contentComponent)
+        .withWidth(effectiveArea.getWidth())
+        .withFlex(1.0f));  // Flex to fill remaining space
+    
+    flexBox.performLayout(effectiveArea);
 }
 
 void BaseEffectComponent::bindSliderToParameter(juce::Slider& slider, tracktion::engine::AutomatableParameter& param)

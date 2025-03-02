@@ -34,12 +34,13 @@ PhaserComponent::PhaserComponent(tracktion::engine::Edit& edit)
     rateSlider.setDoubleClickReturnValue(true, 0.0);
     feedbackSlider.setDoubleClickReturnValue(true, 0.0);
 
-    addAndMakeVisible(depthLabel);
-    addAndMakeVisible(rateLabel);
-    addAndMakeVisible(feedbackLabel);
-    addAndMakeVisible(depthSlider);
-    addAndMakeVisible(rateSlider);
-    addAndMakeVisible(feedbackSlider);
+    // Add components to content component
+    contentComponent.addAndMakeVisible(depthLabel);
+    contentComponent.addAndMakeVisible(rateLabel);
+    contentComponent.addAndMakeVisible(feedbackLabel);
+    contentComponent.addAndMakeVisible(depthSlider);
+    contentComponent.addAndMakeVisible(rateSlider);
+    contentComponent.addAndMakeVisible(feedbackSlider);
 
     // Create and setup plugin
     plugin = createPlugin(AutoPhaserPlugin::xmlTypeName);
@@ -73,8 +74,11 @@ PhaserComponent::PhaserComponent(tracktion::engine::Edit& edit)
 
 void PhaserComponent::resized()
 {
-    auto bounds = getEffectiveArea();
+    // First let the base component handle its layout
     BaseEffectComponent::resized();
+    
+    // Now layout the content within the content component
+    auto bounds = contentComponent.getLocalBounds();
     
     // Create a grid layout
     juce::Grid grid;
@@ -85,7 +89,7 @@ void PhaserComponent::resized()
     using Fr = juce::Grid::Fr;
     
     grid.templateRows = { Track(Fr(1)), Track(Fr(2)) };    // Label row, Dial row
-    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };  // Changed to 3 columns
+    grid.templateColumns = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
     
     // Add items to grid
     grid.items = {
@@ -97,7 +101,7 @@ void PhaserComponent::resized()
         juce::GridItem(feedbackSlider).withSize(60, 60).withJustifySelf(juce::GridItem::JustifySelf::center)
     };
     
-    grid.performLayout(bounds.toNearestInt());
+    grid.performLayout(bounds);
 }
 
 void PhaserComponent::setDepth(float value)

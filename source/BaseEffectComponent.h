@@ -60,6 +60,7 @@ protected:
     tracktion::engine::Edit& edit;
     tracktion::engine::Plugin::Ptr plugin;
     juce::Label titleLabel;
+    juce::Component contentComponent;  // Container for effect-specific content
     
     float storedMixLevel = 0.0f;
     juce::String mixParameterId = "mix"; // Default ID, can be overridden by derived classes
