@@ -23,6 +23,7 @@ MainComponent::MainComponent()
     engine.getPluginManager().createBuiltInType<FlangerPlugin>();
     engine.getPluginManager().createBuiltInType<AutoDelayPlugin>();
     engine.getPluginManager().createBuiltInType<AutoPhaserPlugin>();
+    engine.getPluginManager().createBuiltInType<ScratchPlugin>();
 
     addAndMakeVisible (saveButton);
     addAndMakeVisible (recordButton);
@@ -191,18 +192,26 @@ MainComponent::MainComponent()
     DBG("MainComponent: Creating ScratchComponent");
     scratchComponent = std::make_unique<ScratchComponent> (edit);
     DBG("MainComponent: ScratchComponent created, now making visible");
+    
+    // Set up callbacks to get current tempo and effective tempo
+    scratchComponent->getCurrentTempoAdjustment = [this]() {
+        // Get the current tempo ratio from the screw component
+        if (screwComponent)
+        {
+            double ratio = screwComponent->getTempo() / baseTempo;
+            // For time stretching, we just return the ratio - 1.0
+            // This represents the adjustment from the base tempo
+            return ratio - 1.0;
+        }
+        return 0.0;
+    };
+    
+    scratchComponent->getEffectiveTempo = [this]() {
+        return screwComponent ? screwComponent->getTempo() : 120.0;
+    };
+    
     addAndMakeVisible (*scratchComponent);
     DBG("MainComponent: ScratchComponent made visible");
-
-    // // Set up callbacks to get current tempo and base tempo
-    // scratchComponent->getCurrentTempo = [this]() {
-    //     return screwComponent ? screwComponent->getTempo() : 120.0;
-    // };
-    
-    // scratchComponent->getBaseTempo = [this]() {
-    //     return baseTempo;
-    // };
-    DBG("MainComponent: ScratchComponent callbacks set up");
 
     // Create plugin rack after all effects are initialized
     createPluginRack();
@@ -741,6 +750,8 @@ void MainComponent::createPluginRack()
             plugins.add (flangerComponent->getPlugin());
         if (phaserComponent)
             plugins.add (phaserComponent->getPlugin());
+        if (scratchComponent)
+            plugins.add (scratchComponent->getPlugin());
 
         // Create the rack type with proper channel connections
         if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins (plugins, edit))

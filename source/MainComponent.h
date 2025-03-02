@@ -36,6 +36,7 @@ namespace ProjectInfo
 #include "ControlBarComponent.h"
 #include "Thumbnail.h"
 #include "ScratchComponent.h"
+#include "ScratchPlugin.h"
 
 
 

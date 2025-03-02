@@ -9,7 +9,7 @@ public:
     explicit ReverbComponent(tracktion::engine::Edit& edit);
     void resized() override;
     void rampMixLevel(bool rampUp);
-    void restoreMixLevel();
+    void restoreMixLevel() override;
 
 private:
     RotarySliderComponent roomSizeSlider { "Room Size" };

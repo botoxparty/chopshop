@@ -1,7 +1,7 @@
 #include "ChopComponent.h"
 
-ChopComponent::ChopComponent(tracktion::engine::Edit& edit)
-    : BaseEffectComponent(edit)
+ChopComponent::ChopComponent(tracktion::engine::Edit& editIn)
+    : BaseEffectComponent(editIn)
 {
     titleLabel.setText("Chop Controls", juce::dontSendNotification);
     
