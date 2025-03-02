@@ -10,6 +10,7 @@
 #include <juce_core/juce_core.h>
 #include <juce_graphics/juce_graphics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <melatonin_inspector/melatonin_inspector.h>
 
 #include "MainComponent.h"
 #include "CustomLookAndFeel.h"
@@ -78,6 +79,11 @@ public:
             setUsingNativeTitleBar (true);
             setContentOwned (new MainComponent(), true);
 
+            #if JUCE_DEBUG
+                inspector = std::make_unique<melatonin::Inspector>(*this);
+                inspector->setVisible(true);
+            #endif
+
             #if JUCE_IOS || JUCE_ANDROID
                 setFullScreen (true);
             #else
@@ -111,6 +117,9 @@ public:
 
     private:
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainWindow)
+        #if JUCE_DEBUG
+            std::unique_ptr<melatonin::Inspector> inspector;
+        #endif
     };
 
 private:

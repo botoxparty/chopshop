@@ -9,9 +9,6 @@ ChopComponent::ChopComponent(tracktion::engine::Edit& edit)
     durationLabel.setText("Duration", juce::dontSendNotification);
     durationLabel.setJustificationType(juce::Justification::left);
     
-    crossfaderLabel.setText("Crossfader", juce::dontSendNotification);
-    crossfaderLabel.setJustificationType(juce::Justification::centred);
-    
     // Configure combo box
     chopDurationComboBox.addItem("1/4 Beat", 1);
     chopDurationComboBox.addItem("1/2 Beat", 2);
@@ -40,7 +37,6 @@ ChopComponent::ChopComponent(tracktion::engine::Edit& edit)
     addAndMakeVisible(durationLabel);
     addAndMakeVisible(chopDurationComboBox);
     addAndMakeVisible(chopButton);
-    addAndMakeVisible(crossfaderLabel);
     addAndMakeVisible(crossfaderSlider);
     
     // Make sure this component can receive keyboard focus
@@ -87,15 +83,14 @@ void ChopComponent::resized()
     using Track = juce::Grid::TrackInfo;
     using Fr = juce::Grid::Fr;
     
-    grid.templateRows = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
-    grid.templateColumns = { Track(Fr(1)) };
+    grid.templateRows = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
+    grid.templateColumns = { Track(Fr(1)), Track(Fr(2)) };
     
     grid.items = {
-        juce::GridItem(durationLabel),
-        juce::GridItem(chopDurationComboBox).withHeight(30),
-        juce::GridItem(chopButton).withHeight(30),
-        juce::GridItem(crossfaderLabel),
-        juce::GridItem(crossfaderSlider)
+        juce::GridItem(durationLabel).withColumn({1}).withAlignSelf(juce::GridItem::AlignSelf::center),
+        juce::GridItem(chopDurationComboBox).withColumn({2}).withHeight(30).withAlignSelf(juce::GridItem::AlignSelf::center),
+        juce::GridItem(chopButton).withColumn({1, 3}).withHeight(30),
+        juce::GridItem(crossfaderSlider).withColumn({1, 3})
     };
     
     grid.performLayout(bounds.toNearestInt());
