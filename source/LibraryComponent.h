@@ -15,20 +15,15 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_audio_utils/juce_audio_utils.h>
+#include <tracktion_engine/tracktion_engine.h>
 
-struct PlaylistEntry {
-    juce::String name;
-    juce::String filePath;
-    juce::int64 lastModified;
-    float bpm;
-};
-
+// We'll use ProjectItem instead of PlaylistEntry
 class LibraryComponent : public juce::Component,
                         public juce::FileBrowserListener,
                         public juce::TableListBoxModel
 {
 public:
-    LibraryComponent();
+    LibraryComponent(tracktion::engine::Engine& engineToUse);
     ~LibraryComponent() override;
 
     void paint(juce::Graphics& g) override;
@@ -51,19 +46,19 @@ public:
     std::function<void(const juce::File&)> onFileSelected;
 
     float getBPMForFile(const juce::File& file) const {
-        auto it = std::find_if(playlist.begin(), playlist.end(),
-            [&file](const PlaylistEntry& entry) {
-                return entry.filePath == file.getFullPathName();
-            });
-        return it != playlist.end() ? it->bpm : 120.0f;
+        auto projectItem = getProjectItemForFile(file);
+        if (projectItem != nullptr)
+            return projectItem->getNamedProperty("bpm").getFloatValue();
+        return 120.0f;
     }
 
 private:
-    void addToPlaylist(const juce::File& file);
-    void removeFromPlaylist(int index);
-    void loadPlaylist();
-    void savePlaylist();
+    void addToLibrary(const juce::File& file);
+    void removeFromLibrary(int index);
+    void loadLibrary();
     void showBpmEditorWindow(int rowIndex);
+    
+    tracktion::engine::ProjectItem::Ptr getProjectItemForFile(const juce::File& file) const;
     
     const juce::Colour matrixGreen { 0xFF00FF41 };  // Bright matrix green
     const juce::Colour darkWire { 0xFF003B00 };     // Dark green for backgrounds
@@ -75,7 +70,8 @@ private:
     
     std::unique_ptr<juce::TableListBox> playlistTable;
     
-    std::vector<PlaylistEntry> playlist;
+    tracktion::engine::Engine& engine;
+    tracktion::engine::Project::Ptr libraryProject;
     
     std::shared_ptr<juce::FileChooser> fileChooser;
     

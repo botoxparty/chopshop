@@ -11,9 +11,65 @@
 #include "LibraryComponent.h"
 #include "minibpm.h"
 
+namespace te = tracktion::engine;
 
-LibraryComponent::LibraryComponent()
+LibraryComponent::LibraryComponent(te::Engine& engineToUse)
+    : engine(engineToUse)
 {
+    // Create or load the library project
+    auto projectFile = juce::File::getSpecialLocation(juce::File::userMusicDirectory)
+                        .getChildFile("ChopShop").getChildFile("Library.tracktion");
+    
+    // Create the directory if it doesn't exist
+    auto projectDir = juce::File::getSpecialLocation(juce::File::userMusicDirectory).getChildFile("ChopShop");
+    bool dirCreated = projectDir.createDirectory();
+    DBG("Project directory creation result: " + juce::String(dirCreated ? "Success" : "Failed") + 
+        " Path: " + projectDir.getFullPathName());
+    
+    // Get or create the library project
+    libraryProject = engine.getProjectManager().getProject(projectFile);
+    if (libraryProject == nullptr || !libraryProject->isValid())
+    {
+        DBG("Attempting to create new project at: " + projectFile.getFullPathName());
+        libraryProject = engine.getProjectManager().createNewProject(projectFile);
+        if (libraryProject != nullptr)
+        {
+            libraryProject->createNewProjectId();
+            libraryProject->setName("ChopShop Library");
+            libraryProject->setDescription("Created: " + juce::Time::getCurrentTime().toString(true, false));
+            
+            if (libraryProject->save())
+            {
+                DBG("Created and saved new ChopShop Library project at: " + projectFile.getFullPathName());
+            }
+            else
+            {
+                DBG("Failed to save project!");
+            }
+        }
+        else
+        {
+            DBG("Failed to create new project!");
+        }
+    }
+    else
+    {
+        DBG("Loaded existing ChopShop Library project from: " + projectFile.getFullPathName());
+        DBG("Project contains " + juce::String(libraryProject->getNumProjectItems()) + " items");
+        
+        // Log the items in the project
+        for (int i = 0; i < libraryProject->getNumProjectItems(); ++i)
+        {
+            auto item = libraryProject->getProjectItemAt(i);
+            if (item != nullptr)
+            {
+                DBG("  Item " + juce::String(i) + ": " + item->getName() + 
+                    " (BPM: " + juce::String(item->getNamedProperty("bpm").getFloatValue(), 1) + 
+                    ", File: " + item->getSourceFile().getFileName() + ")");
+            }
+        }
+    }
+    
     // Set up add file button
     addFileButton.setColour(juce::TextButton::buttonColourId, black);
     addFileButton.setColour(juce::TextButton::textColourOffId, matrixGreen);
@@ -61,7 +117,7 @@ LibraryComponent::LibraryComponent()
                                auto results = fc.getResults();
                                for (const auto& file : results) {
                                    if (file.exists()) {
-                                       addToPlaylist(file);
+                                       addToLibrary(file);
                                    }
                                }
                            });
@@ -70,7 +126,7 @@ LibraryComponent::LibraryComponent()
     removeFileButton.onClick = [this]() {
         auto selectedRow = playlistTable->getSelectedRow();
         if (selectedRow >= 0) {
-            removeFromPlaylist(selectedRow);
+            removeFromLibrary(selectedRow);
         }
     };
     
@@ -81,13 +137,13 @@ LibraryComponent::LibraryComponent()
         }
     };
     
-    // Load existing playlist
-    loadPlaylist();
+    // Load existing library
+    loadLibrary();
 }
 
 LibraryComponent::~LibraryComponent()
 {
-    savePlaylist();
+    // No need to explicitly save as the Project class handles this
 }
 
 void LibraryComponent::paint(juce::Graphics& g)
@@ -115,7 +171,7 @@ void LibraryComponent::resized()
 // TableListBoxModel implementations
 int LibraryComponent::getNumRows()
 {
-    return static_cast<int>(playlist.size());
+    return libraryProject ? libraryProject->getNumProjectItems() : 0;
 }
 
 void LibraryComponent::paintRowBackground(juce::Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
@@ -126,20 +182,29 @@ void LibraryComponent::paintRowBackground(juce::Graphics& g, int rowNumber, int 
 
 void LibraryComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
 {
-    if (rowNumber < playlist.size()) {
-        g.setColour(matrixGreen);
+    if (!libraryProject || rowNumber >= libraryProject->getNumProjectItems())
+        return;
         
-        if (columnId == 1) // Name column
-            g.drawText(playlist[rowNumber].name, 2, 0, width - 4, height, juce::Justification::centredLeft);
-        else if (columnId == 2) // BPM column
-            g.drawText(juce::String(playlist[rowNumber].bpm, 1), 2, 0, width - 4, height, juce::Justification::centred);
-    }
+    auto projectItem = libraryProject->getProjectItemAt(rowNumber);
+    if (projectItem == nullptr)
+        return;
+        
+    g.setColour(matrixGreen);
+    
+    if (columnId == 1) // Name column
+        g.drawText(projectItem->getName(), 2, 0, width - 4, height, juce::Justification::centredLeft);
+    else if (columnId == 2) // BPM column
+        g.drawText(juce::String(projectItem->getNamedProperty("bpm").getFloatValue(), 1), 2, 0, width - 4, height, juce::Justification::centred);
 }
 
 void LibraryComponent::cellDoubleClicked(int rowNumber, int columnId, const juce::MouseEvent&)
 {
-    if (rowNumber < playlist.size() && onFileSelected) {
-        juce::File file(playlist[rowNumber].filePath);
+    if (!libraryProject || rowNumber >= libraryProject->getNumProjectItems())
+        return;
+        
+    auto projectItem = libraryProject->getProjectItemAt(rowNumber);
+    if (projectItem != nullptr && onFileSelected) {
+        juce::File file(projectItem->getSourceFile());
         if (file.exists())
             onFileSelected(file);
     }
@@ -147,42 +212,114 @@ void LibraryComponent::cellDoubleClicked(int rowNumber, int columnId, const juce
 
 void LibraryComponent::cellClicked(int rowNumber, int columnId, const juce::MouseEvent& event)
 {
-    if (event.mods.isRightButtonDown() && rowNumber < playlist.size())
+    if (event.mods.isRightButtonDown() && libraryProject && rowNumber < libraryProject->getNumProjectItems())
     {
+        auto projectItem = libraryProject->getProjectItemAt(rowNumber);
+        if (projectItem == nullptr)
+            return;
+            
         juce::PopupMenu menu;
         menu.addItem(1, "Show in Finder");
         menu.addItem(2, "Remove");
 
-        menu.showMenuAsync(juce::PopupMenu::Options(), [this, rowNumber](int result)
+        menu.showMenuAsync(juce::PopupMenu::Options(), [this, rowNumber, projectItem](int result)
         {
             if (result == 1) // Show in Finder
             {
-                juce::File file(playlist[rowNumber].filePath);
+                juce::File file(projectItem->getSourceFile());
                 if (file.exists())
                     file.revealToUser();
             }
             else if (result == 2) // Remove
             {
-                removeFromPlaylist(rowNumber);
+                removeFromLibrary(rowNumber);
             }
         });
     }
 }
 
-void LibraryComponent::addToPlaylist(const juce::File& file)
+void LibraryComponent::sortOrderChanged(int newSortColumnId, bool isForwards)
 {
-    PlaylistEntry entry;
-    entry.name = file.getFileNameWithoutExtension();
-    entry.filePath = file.getFullPathName();
-    entry.lastModified = file.getLastModificationTime().toMilliseconds();
+    if (newSortColumnId != sortedColumnId || isForwards != sortedForward)
+    {
+        sortedColumnId = newSortColumnId;
+        sortedForward = isForwards;
+        
+        // We can't directly sort the project items, so we'll need to reload the table
+        // after sorting is changed
+        playlistTable->updateContent();
+    }
+}
+
+void LibraryComponent::addToLibrary(const juce::File& file)
+{
+    // Log the file we're trying to add
+    DBG("Attempting to add file to library: " + file.getFullPathName());
     
-    // Calculate BPM
+    if (!libraryProject)
+    {
+        DBG("ERROR: No library project available");
+        return;
+    }
+    
+    if (!file.existsAsFile())
+    {
+        DBG("ERROR: File does not exist: " + file.getFullPathName());
+        return;
+    }
+    
+    // Check if the project is valid and not read-only
+    if (!libraryProject->isValid())
+    {
+        DBG("ERROR: Library project is not valid");
+        return;
+    }
+    
+    if (libraryProject->isReadOnly())
+    {
+        DBG("ERROR: Library project is read-only");
+        return;
+    }
+    
+    // Check if the file format is supported
     juce::AudioFormatManager formatManager;
     formatManager.registerBasicFormats();
+    
+    if (formatManager.findFormatForFileExtension(file.getFileExtension()) == nullptr)
+    {
+        DBG("ERROR: Unsupported file format: " + file.getFileExtension());
+        
+        // Check if MP3 support is enabled
+        bool mp3Supported = false;
+        for (int i = 0; i < formatManager.getNumKnownFormats(); ++i)
+        {
+            auto* format = formatManager.getKnownFormat(i);
+            if (format->getFormatName().containsIgnoreCase("MP3"))
+            {
+                mp3Supported = true;
+                break;
+            }
+        }
+        
+        if (!mp3Supported && file.getFileExtension().equalsIgnoreCase(".mp3"))
+        {
+            DBG("ERROR: MP3 support is not enabled in this build");
+        }
+        
+        return;
+    }
+    
+    // Calculate BPM
+    float detectedBPM = 120.0f; // Default BPM
     
     std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
     if (reader)
     {
+        DBG("Successfully created audio reader for file: " + file.getFileName() + 
+            " (Sample rate: " + juce::String(reader->sampleRate) + 
+            ", Channels: " + juce::String(reader->numChannels) + 
+            ", Length: " + juce::String(reader->lengthInSamples) + " samples)");
+            
         // Create MiniBPM detector
         breakfastquay::MiniBPM bpmDetector(reader->sampleRate);
         bpmDetector.setBPMRange(60, 180);  // typical range for music
@@ -203,112 +340,216 @@ void LibraryComponent::addToPlaylist(const juce::File& file)
             bpmDetector.process(samples.data(), numSamples);
         }
         
-        float detectedBPM = bpmDetector.estimateTempo();
-        entry.bpm = detectedBPM > 0 ? detectedBPM : 120.0f;  // Use 120 as fallback
+        float tempBPM = bpmDetector.estimateTempo();
+        if (tempBPM > 0)
+        {
+            detectedBPM = tempBPM;
+            DBG("BPM detection successful: " + juce::String(detectedBPM, 1));
+        }
+        else
+        {
+            DBG("BPM detection failed, using default BPM: " + juce::String(detectedBPM, 1));
+        }
     }
     else
     {
-        entry.bpm = 120.0f;  // Default BPM if file can't be read
+        DBG("ERROR: Failed to create audio reader for file: " + file.getFileName());
+        return; // If we can't read the file, we shouldn't try to add it
     }
     
-    playlist.push_back(entry);
-    
-    playlistTable->updateContent();
-    savePlaylist();
-}
-
-void LibraryComponent::removeFromPlaylist(int index)
-{
-    if (index >= 0 && index < playlist.size()) {
-        playlist.erase(playlist.begin() + index);
-        playlistTable->updateContent();
-        savePlaylist();
+    // Check if the file is already in the library
+    auto existingItem = libraryProject->getProjectItemForFile(file);
+    if (existingItem != nullptr)
+    {
+        DBG("File already exists in library: " + file.getFileName() + 
+            " (ID: " + existingItem->getID().toString() + ")");
+            
+        // Update the BPM if needed
+        float existingBPM = existingItem->getNamedProperty("bpm").getFloatValue();
+        if (std::abs(existingBPM - detectedBPM) > 0.1f)
+        {
+            DBG("Updating BPM from " + juce::String(existingBPM, 1) + 
+                " to " + juce::String(detectedBPM, 1));
+                
+            existingItem->setNamedProperty("bpm", juce::String(detectedBPM));
+            libraryProject->save();
+            playlistTable->updateContent();
+        }
+        return;
     }
-}
-
-void LibraryComponent::loadPlaylist()
-{
-    auto properties = juce::PropertiesFile::Options();
-    properties.applicationName = "ChopShop";
-    properties.filenameSuffix = "settings";
-    properties.folderName = "ChopShop";
-    properties.osxLibrarySubFolder = "Application Support";
     
-    juce::ApplicationProperties appProperties;
-    appProperties.setStorageParameters(properties);
+    // Log the file type we're creating
+    juce::String fileType = file.hasFileExtension("mid;midi") ? 
+        te::ProjectItem::midiItemType() : te::ProjectItem::waveItemType();
+    DBG("Creating project item with type: " + fileType);
     
-    if (auto userSettings = appProperties.getUserSettings()) {
-        auto playlistData = userSettings->getValue("playlist");
-        if (playlistData.isNotEmpty()) {
-            auto var = juce::JSON::parse(playlistData);
-            if (auto* arr = var.getArray()) {
-                for (const auto& entry : *arr) {
-                    if (auto* obj = entry.getDynamicObject()) {
-                        PlaylistEntry pe;
-                        pe.name = obj->getProperty("name").toString();
-                        pe.filePath = obj->getProperty("path").toString();
-                        pe.lastModified = obj->getProperty("modified").toString().getLargeIntValue();
-                        pe.bpm = static_cast<float>(obj->getProperty("bpm"));
-                        playlist.push_back(pe);
-                    }
-                }
+    // Create a new project item for the file
+    try
+    {
+        auto projectItem = libraryProject->createNewItem(
+            file,                                   // File to reference
+            fileType,                               // Type
+            file.getFileNameWithoutExtension(),     // Name
+            "",                                     // Description
+            te::ProjectItem::Category::imported,    // Category
+            true);                                  // Add at top of list
+        
+        // Store the BPM as a named property
+        if (projectItem != nullptr) 
+        {
+            DBG("Successfully created project item: " + projectItem->getID().toString());
+            
+            // Set the BPM property
+            projectItem->setNamedProperty("bpm", juce::String(detectedBPM));
+            
+            // Save the project
+            DBG("Saving project...");
+            libraryProject->save();
+            
+            // Update the table
+            playlistTable->updateContent();
+            
+            DBG("Added file to library: " + file.getFileName() + 
+                " (BPM: " + juce::String(detectedBPM, 1) + 
+                ", ID: " + projectItem->getID().toString() + ")");
+            DBG("Library now contains " + juce::String(libraryProject->getNumProjectItems()) + " items");
+        }
+        else 
+        {
+            DBG("ERROR: createNewItem returned nullptr for file: " + file.getFileName());
+            
+            // Try to get more information about why it failed
+                
+            // Check if the file can be opened for reading
+            std::unique_ptr<juce::FileInputStream> fileStream(file.createInputStream());
+            if (fileStream == nullptr || !fileStream->openedOk())
+            {
+                DBG("ERROR: Cannot open file for reading");
+            }
+            else
+            {
+                DBG("File can be opened for reading");
             }
         }
     }
-}
-
-void LibraryComponent::savePlaylist()
-{
-    auto properties = juce::PropertiesFile::Options();
-    properties.applicationName = "ChopShop";
-    properties.filenameSuffix = "settings";
-    properties.folderName = "ChopShop";
-    properties.osxLibrarySubFolder = "Application Support";
-    
-    juce::ApplicationProperties appProperties;
-    appProperties.setStorageParameters(properties);
-    
-    if (auto userSettings = appProperties.getUserSettings()) {
-        juce::Array<juce::var> playlistArray;
-        
-        for (const auto& entry : playlist) {
-            juce::DynamicObject::Ptr obj = new juce::DynamicObject();
-            obj->setProperty("name", entry.name);
-            obj->setProperty("path", entry.filePath);
-            obj->setProperty("modified", entry.lastModified);
-            obj->setProperty("bpm", entry.bpm);
-            playlistArray.add(obj.get());
-        }
-        
-        userSettings->setValue("playlist", juce::JSON::toString(playlistArray));
-        userSettings->save();
+    catch (const std::exception& e)
+    {
+        DBG("EXCEPTION while adding file to library: " + juce::String(e.what()));
+    }
+    catch (...)
+    {
+        DBG("UNKNOWN EXCEPTION while adding file to library");
     }
 }
 
-// These methods are no longer used but kept for FileBrowserListener interface
-void LibraryComponent::selectionChanged() {}
-void LibraryComponent::fileClicked(const juce::File& file, const juce::MouseEvent& e) {}
-void LibraryComponent::fileDoubleClicked(const juce::File& file) {}
-void LibraryComponent::browserRootChanged(const juce::File& newRoot) {}
+void LibraryComponent::removeFromLibrary(int index)
+{
+    if (!libraryProject || index < 0 || index >= libraryProject->getNumProjectItems())
+        return;
+        
+    auto projectItem = libraryProject->getProjectItemAt(index);
+    auto projectItemID = libraryProject->getProjectItemID(index);
+    
+    if (projectItem != nullptr) {
+        DBG("Removing item from library: " + projectItem->getName() + 
+            " (ID: " + projectItemID.toString() + ")");
+    }
+    
+    libraryProject->removeProjectItem(projectItemID, false); // false = don't delete source material
+    libraryProject->save();
+    playlistTable->updateContent();
+    
+    DBG("Library now contains " + juce::String(libraryProject->getNumProjectItems()) + " items");
+}
+
+void LibraryComponent::loadLibrary()
+{
+    // The project is already loaded in the constructor
+    playlistTable->updateContent();
+    
+    // Log the current state of the library
+    if (libraryProject) {
+        DBG("Library loaded with " + juce::String(libraryProject->getNumProjectItems()) + " items");
+        
+        // Sort the items if needed
+        if (sortedColumnId != 0) {
+            DBG("Items are sorted by " + juce::String(sortedColumnId == 1 ? "Name" : "BPM") + 
+                (sortedForward ? " (ascending)" : " (descending)"));
+        }
+    }
+}
+
+te::ProjectItem::Ptr LibraryComponent::getProjectItemForFile(const juce::File& file) const
+{
+    if (!libraryProject)
+    {
+        DBG("getProjectItemForFile: No library project available");
+        return nullptr;
+    }
+        
+    auto projectItem = libraryProject->getProjectItemForFile(file);
+    
+    if (projectItem != nullptr)
+    {
+        DBG("Found project item for file: " + file.getFileName() + 
+            " (BPM: " + juce::String(projectItem->getNamedProperty("bpm").getFloatValue(), 1) + 
+            ", ID: " + projectItem->getID().toString() + ")");
+    }
+    else
+    {
+        DBG("No project item found for file: " + file.getFileName());
+    }
+    
+    return projectItem;
+}
 
 void LibraryComponent::showBpmEditorWindow(int rowIndex)
 {
-    if (rowIndex < 0 || rowIndex >= playlist.size())
+    DBG("Opening BPM editor for row: " + juce::String(rowIndex));
+    
+    if (!libraryProject)
+    {
+        DBG("ERROR: No library project available");
         return;
+    }
+    
+    if (rowIndex < 0 || rowIndex >= libraryProject->getNumProjectItems())
+    {
+        DBG("ERROR: Invalid row index: " + juce::String(rowIndex) + 
+            " (Project has " + juce::String(libraryProject->getNumProjectItems()) + " items)");
+        return;
+    }
 
-    auto& entry = playlist[rowIndex];
+    auto projectItem = libraryProject->getProjectItemAt(rowIndex);
+    if (projectItem == nullptr)
+    {
+        DBG("ERROR: Failed to get project item at index: " + juce::String(rowIndex));
+        return;
+    }
+    
+    DBG("Editing BPM for item: " + projectItem->getName() + 
+        " (ID: " + projectItem->getID().toString() + 
+        ", File: " + projectItem->getSourceFile().getFileName() + ")");
+        
+    float currentBpm = projectItem->getNamedProperty("bpm").getFloatValue();
+    if (currentBpm <= 0)
+    {
+        currentBpm = 120.0f;
+        DBG("Invalid BPM value, using default: " + juce::String(currentBpm, 1));
+    }
+    else
+    {
+        DBG("Current BPM: " + juce::String(currentBpm, 1));
+    }
     
     juce::DialogWindow::LaunchOptions options;
     
     auto content = std::make_unique<juce::Component>();
     content->setSize(200, 150);
     
-    const auto matrixGreen = juce::Colour(0xFF00FF41);
-    const auto black = juce::Colour(0xFF000000);
-    
     auto editor = new juce::TextEditor();
     editor->setBounds(50, 20, 100, 24);
-    editor->setText(juce::String(entry.bpm, 1));
+    editor->setText(juce::String(currentBpm, 1));
     editor->setInputRestrictions(6, "0123456789.");
     editor->setColour(juce::TextEditor::backgroundColourId, black);
     editor->setColour(juce::TextEditor::textColourId, matrixGreen);
@@ -322,7 +563,9 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     halfButton->setColour(juce::TextButton::textColourOnId, matrixGreen);
     halfButton->onClick = [editor]() {
         double currentValue = editor->getText().getDoubleValue();
-        editor->setText(juce::String(currentValue * 0.5, 1));
+        double newValue = currentValue * 0.5;
+        editor->setText(juce::String(newValue, 1));
+        DBG("BPM halved: " + juce::String(currentValue, 1) + " -> " + juce::String(newValue, 1));
     };
     content->addAndMakeVisible(halfButton);
     
@@ -333,7 +576,9 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     doubleButton->setColour(juce::TextButton::textColourOnId, matrixGreen);
     doubleButton->onClick = [editor]() {
         double currentValue = editor->getText().getDoubleValue();
-        editor->setText(juce::String(currentValue * 2.0, 1));
+        double newValue = currentValue * 2.0;
+        editor->setText(juce::String(newValue, 1));
+        DBG("BPM doubled: " + juce::String(currentValue, 1) + " -> " + juce::String(newValue, 1));
     };
     content->addAndMakeVisible(doubleButton);
     
@@ -342,13 +587,49 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     okButton->setColour(juce::TextButton::buttonColourId, black);
     okButton->setColour(juce::TextButton::textColourOffId, matrixGreen);
     okButton->setColour(juce::TextButton::textColourOnId, matrixGreen);
-    okButton->onClick = [this, rowIndex, editor]() {
+    
+    // Store a reference to the project item for the lambda
+    te::ProjectItem::Ptr itemRef = projectItem;
+    
+    okButton->onClick = [this, itemRef, editor, currentBpm]() {
         float newBpm = editor->getText().getFloatValue();
-        if (newBpm > 0) {
-            playlist[rowIndex].bpm = newBpm;
-            playlistTable->updateContent();
-            savePlaylist();
+        
+        if (newBpm <= 0)
+        {
+            DBG("ERROR: Invalid BPM value entered: " + editor->getText());
+            return;
         }
+        
+        if (itemRef != nullptr) 
+        {
+            DBG("Updating BPM for item: " + itemRef->getName() + 
+                " from " + juce::String(currentBpm, 1) + 
+                " to " + juce::String(newBpm, 1));
+                
+            try
+            {
+                itemRef->setNamedProperty("bpm", juce::String(newBpm));
+                
+                DBG("Saving project after BPM update...");
+                libraryProject->save();
+                
+                playlistTable->updateContent();
+                DBG("BPM updated successfully");
+            }
+            catch (const std::exception& e)
+            {
+                DBG("EXCEPTION while updating BPM: " + juce::String(e.what()));
+            }
+            catch (...)
+            {
+                DBG("UNKNOWN EXCEPTION while updating BPM");
+            }
+        }
+        else
+        {
+            DBG("ERROR: Project item reference is null");
+        }
+        
         if (auto* dw = juce::Component::getCurrentlyModalComponent())
             dw->exitModalState(0);
     };
@@ -363,29 +644,13 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     options.useNativeTitleBar = true;
     options.resizable = false;
     
+    DBG("Launching BPM editor dialog");
     options.launchAsync();
 }
 
-void LibraryComponent::sortOrderChanged(int newSortColumnId, bool isForwards)
-{
-    if (newSortColumnId != sortedColumnId || isForwards != sortedForward)
-    {
-        sortedColumnId = newSortColumnId;
-        sortedForward = isForwards;
-        
-        std::sort(playlist.begin(), playlist.end(), 
-            [this](const PlaylistEntry& a, const PlaylistEntry& b) {
-                if (sortedColumnId == 1) // Name column
-                    return sortedForward ? 
-                        (a.name.compareNatural(b.name) < 0) : 
-                        (b.name.compareNatural(a.name) < 0);
-                else // BPM column
-                    return sortedForward ? 
-                        (a.bpm < b.bpm) : 
-                        (b.bpm < a.bpm);
-            });
-        
-        playlistTable->updateContent();
-    }
-}   
+// FileBrowserListener methods (no longer used but kept for interface)
+void LibraryComponent::selectionChanged() {}
+void LibraryComponent::fileClicked(const juce::File& file, const juce::MouseEvent& e) {}
+void LibraryComponent::fileDoubleClicked(const juce::File& file) {}
+void LibraryComponent::browserRootChanged(const juce::File& newRoot) {}
 

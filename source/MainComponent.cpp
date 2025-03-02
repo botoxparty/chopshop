@@ -116,7 +116,7 @@ MainComponent::MainComponent()
 
     updateButtonStates();
 
-    libraryComponent = std::make_unique<LibraryComponent>();
+    libraryComponent = std::make_unique<LibraryComponent>(engine);
     addAndMakeVisible (*libraryComponent);
 
     // Set up the callback for when a file is selected
