@@ -147,8 +147,13 @@ jobs:
             mkdir -p build
             cd build
             
-            # Build SDL3 for Linux
-            cmake .. -DSDL_STATIC=OFF -DSDL_SHARED=ON -DCMAKE_INSTALL_PREFIX="$(pwd)/install"
+            # Build SDL3 for Linux with RPATH set to $ORIGIN
+            # This tells the executable to look for libraries in its own directory
+            cmake .. -DSDL_STATIC=OFF -DSDL_SHARED=ON \
+              -DCMAKE_INSTALL_PREFIX="$(pwd)/install" \
+              -DCMAKE_INSTALL_RPATH="\$ORIGIN" \
+              -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
+            
             cmake --build . --config ${{ env.BUILD_TYPE }} --parallel 4
             cmake --install . --config ${{ env.BUILD_TYPE }}
             
@@ -163,11 +168,6 @@ jobs:
             ls -la install/lib/cmake/SDL3/
             echo "Contents of SDL3 lib directory:"
             ls -la install/lib/
-            
-            # Create directory for the standalone app and copy the SDL3 library
-            mkdir -p ../../../${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}
-            cp install/lib/libSDL3.so.0 ../../../${{ env.BUILD_DIR }}/${{ env.PROJECT_NAME }}_artefacts/${{ env.BUILD_TYPE }}/
-            echo "Copied SDL3 library to build artifacts directory"
             
             cd ../../..
           else
@@ -244,7 +244,19 @@ jobs:
               -DCMAKE_CXX_FLAGS="-include cstddef -include stddef.h" \
               -DSDL3_LIBRARY="${{ env.SDL3_LIBRARY }}" \
               ${{ matrix.extra-flags }} .
+          elif [[ "${{ matrix.name }}" == "Linux" ]]; then
+            # Linux-specific configuration
+            cmake -B ${{ env.BUILD_DIR }} \
+              -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} \
+              -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+              -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+              -DHAVE_GAMEINPUT_H=0 \
+              -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
+              -DCMAKE_INSTALL_RPATH="\$ORIGIN" \
+              -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+              ${{ matrix.extra-flags }} .
           else
+            # Windows and other platforms
             cmake -B ${{ env.BUILD_DIR }} \
               -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} \
               -DCMAKE_C_COMPILER_LAUNCHER=sccache \
@@ -388,38 +400,31 @@ jobs:
           echo "Full artifacts path: ${{ env.ARTIFACTS_PATH }}"
           echo "Full standalone path: ${{ env.STANDALONE_PATH }}"
           
-          # Check if artifacts directory exists
-          if [ -d "${{ env.ARTIFACTS_PATH }}" ]; then
-            echo "Artifacts directory exists"
-          else
-            echo "Artifacts directory does not exist, creating it"
-            mkdir -p "${{ env.ARTIFACTS_PATH }}"
+          # Make sure the SDL3 library is in the artifacts directory
+          if [ ! -f "${{ env.ARTIFACTS_PATH }}/libSDL3.so.0" ]; then
+            echo "Copying libSDL3.so.0 to artifacts directory"
+            cp "${{ env.SDL3_LIBRARY }}" "${{ env.ARTIFACTS_PATH }}/"
           fi
           
-          # Check if standalone path is a file (executable) or directory
+          # Check if the executable exists
           if [ -f "${{ env.STANDALONE_PATH }}" ]; then
-            echo "Standalone path is a file (executable)"
-            STANDALONE_DIR="${{ env.ARTIFACTS_PATH }}"
-          elif [ -d "${{ env.STANDALONE_PATH }}" ]; then
-            echo "Standalone path is a directory"
-            STANDALONE_DIR="${{ env.STANDALONE_PATH }}"
-          else
-            echo "Standalone path does not exist, using artifacts directory"
-            STANDALONE_DIR="${{ env.ARTIFACTS_PATH }}"
+            echo "Checking executable dependencies:"
+            ldd "${{ env.STANDALONE_PATH }}" | grep SDL3
+            
+            # Check if the executable has the correct RPATH
+            echo "Checking RPATH:"
+            readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH
+            
+            # If RPATH is not set correctly, we can try to fix it
+            if ! readelf -d "${{ env.STANDALONE_PATH }}" | grep -q "RPATH.*\\$ORIGIN"; then
+              echo "Setting RPATH to \$ORIGIN"
+              patchelf --set-rpath '$ORIGIN' "${{ env.STANDALONE_PATH }}"
+              echo "After setting RPATH:"
+              readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH
+            fi
           fi
           
-          # Check if the SDL3 library is in the artifacts directory
-          if [ -f "${{ env.ARTIFACTS_PATH }}/libSDL3.so.0" ]; then
-            echo "libSDL3.so.0 found in artifacts directory"
-          else
-            echo "libSDL3.so.0 not found in artifacts directory, copying it now"
-            # Copy from our saved location
-            cp "${{ env.SDL3_LIBRARY }}" "${{ env.ARTIFACTS_PATH }}/" || echo "Failed to copy to artifacts path"
-            echo "Manually copied libSDL3.so.0 to artifacts directory"
-            ls -la "${{ env.ARTIFACTS_PATH }}/" || echo "Could not list artifacts path after copy"
-          fi
-          
-          echo "Artifacts directory contents:"
+          echo "Final artifacts directory contents:"
           ls -la "${{ env.ARTIFACTS_PATH }}/"
 
       - name: Verify SDL3 in Executable Directory (Windows)
@@ -431,22 +436,31 @@ jobs:
           echo "Full artifacts path: ${{ env.ARTIFACTS_PATH }}"
           echo "Full standalone path: ${{ env.STANDALONE_PATH }}"
           
-          # Make sure the directory exists
-          mkdir -p "${{ env.STANDALONE_PATH }}"
-          
-          # List the directory to see what's there
-          echo "Contents of standalone path directory:"
-          ls -la "${{ env.STANDALONE_PATH }}" || echo "Could not list directory"
-          
-          # Check if the SDL3 DLL is in the executable directory
-          if [ -f "${{ env.STANDALONE_PATH }}/SDL3.dll" ]; then
-            echo "SDL3.dll found in executable directory"
+          # First check if the standalone directory exists
+          if [ ! -d "${{ env.STANDALONE_PATH }}" ]; then
+            echo "Standalone directory does not exist, checking if it's a file"
+            if [ -f "${{ env.STANDALONE_PATH }}" ]; then
+              echo "Standalone path is a file, using its parent directory"
+              STANDALONE_DIR="$(dirname "${{ env.STANDALONE_PATH }}")"
+            else
+              echo "Standalone path doesn't exist at all, using artifacts directory"
+              STANDALONE_DIR="${{ env.ARTIFACTS_PATH }}"
+            fi
           else
-            echo "SDL3.dll not found in executable directory, copying it now"
-            # Copy from our saved location
-            cp "Builds/Release/SDL3.dll" "${{ env.STANDALONE_PATH }}/" || echo "Failed to copy SDL3.dll"
-            echo "Manually copied SDL3.dll to executable directory"
-            ls -la "${{ env.STANDALONE_PATH }}/" || echo "Could not list directory after copy"
+            echo "Standalone directory exists"
+            STANDALONE_DIR="${{ env.STANDALONE_PATH }}"
+          fi
+          
+          echo "Using standalone directory: $STANDALONE_DIR"
+          
+          # Make sure SDL3.dll is in the directory with the executable
+          if [ ! -f "$STANDALONE_DIR/SDL3.dll" ]; then
+            echo "Copying SDL3.dll to executable directory"
+            cp "Builds/Release/SDL3.dll" "$STANDALONE_DIR/" || echo "Failed to copy SDL3.dll"
+            echo "Directory contents after copy:"
+            ls -la "$STANDALONE_DIR/"
+          else
+            echo "SDL3.dll already exists in executable directory"
           fi
 
       - name: Generate Installer (Windows)

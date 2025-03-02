@@ -30,6 +30,7 @@ UninstallFilesDir="{commonappdata}\{#ProductName}\uninstall"
 ; MSVC adds a .ilk when building the plugin. Let's not include that.
 [Files]
 Source: "..\Builds\{#ProjectName}_artefacts\Release\{#ProductName}.exe"; DestDir: "{commonpf64}\{#Publisher}\{#ProductName}"; Flags: ignoreversion; Components: standalone
+Source: "..\Builds\Release\SDL3.dll"; DestDir: "{commonpf64}\{#Publisher}\{#ProductName}"; Flags: ignoreversion; Components: standalone
 
 [Icons]
 Name: "{autoprograms}\{#ProductName}"; Filename: "{commonpf64}\{#Publisher}\{#ProductName}\{#ProductName}.exe"; Components: standalone
