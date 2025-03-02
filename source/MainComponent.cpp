@@ -279,10 +279,10 @@ void MainComponent::resized()
     // Column 2 (Tempo and crossfader)
     juce::FlexBox column2;
     column2.flexDirection = juce::FlexBox::Direction::column;
-    column2.items.add (juce::FlexItem (*screwComponent).withFlex (0.25f).withMinHeight (100).withMargin (5));
-    column2.items.add (juce::FlexItem (*chopComponent).withFlex (0.5f).withMinHeight (200).withMargin (5));
-    column2.items.add (juce::FlexItem (*scratchComponent).withFlex (0.25f).withMinHeight (100).withMargin (5));
-    column2.items.add (juce::FlexItem (*vinylBrakeComponent).withFlex (0.25f).withMinHeight (100).withMargin (5));
+    column2.items.add (juce::FlexItem (*screwComponent).withFlex (0.25f).withMargin (5));
+    column2.items.add (juce::FlexItem (*chopComponent).withFlex (0.5f).withMargin (5));
+    column2.items.add (juce::FlexItem (*scratchComponent).withFlex (0.25f).withMargin (5));
+    column2.items.add (juce::FlexItem (*vinylBrakeComponent).withFlex (0.25f).withMargin (5));
 
     // Column 3 (Effects)
     juce::FlexBox column3;

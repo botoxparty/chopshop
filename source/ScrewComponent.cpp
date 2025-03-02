@@ -41,6 +41,10 @@ void ScrewComponent::resized()
     // Now layout the content within the content component
     auto bounds = contentComponent.getLocalBounds();
     
+    // Add left and right padding
+    bounds.removeFromLeft(10);
+    bounds.removeFromRight(10);
+    
     // Create a grid layout
     juce::Grid grid;
     grid.rowGap = juce::Grid::Px(4);
