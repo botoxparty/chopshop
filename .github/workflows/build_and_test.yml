@@ -385,11 +385,6 @@ jobs:
             --password ${{ secrets.NOTARIZATION_PASSWORD }} \
             --team-id ${{ secrets.TEAM_ID }}
 
-      - name: Zip (Linux)
-        if: ${{ matrix.name == 'Linux' }}
-        working-directory: ${{ env.ARTIFACTS_PATH }}
-        run: 7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" "${{ env.PRODUCT_NAME }}"
-
       - name: Verify SDL3 in Executable Directory (Linux)
         if: ${{ matrix.name == 'Linux' }}
         run: |
@@ -413,24 +408,30 @@ jobs:
             
             # Check if the executable has the correct RPATH
             echo "Checking RPATH:"
-            readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH
+            readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH || echo "No RPATH found"
             
-            # Install patchelf if not already installed
-            if ! command -v patchelf &> /dev/null; then
-              echo "Installing patchelf..."
-              sudo apt-get update && sudo apt-get install -y patchelf
-            fi
+            # Install patchelf explicitly
+            echo "Installing patchelf..."
+            sudo apt-get update && sudo apt-get install -y patchelf
             
             # Set RPATH to $ORIGIN to look for libraries in the same directory as the executable
             echo "Setting RPATH to \$ORIGIN"
             patchelf --set-rpath '$ORIGIN' "${{ env.STANDALONE_PATH }}"
+            
+            # Verify the RPATH was set
             echo "After setting RPATH:"
-            readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH
+            readelf -d "${{ env.STANDALONE_PATH }}" | grep RPATH || echo "Failed to set RPATH"
             
             # Verify the library dependencies again
             echo "Checking executable dependencies after RPATH change:"
             ldd "${{ env.STANDALONE_PATH }}" | grep SDL3
           fi
+          
+          # Make sure the SDL3 library is included in the zip file
+          echo "Updating the zip file to include the SDL3 library"
+          cd "${{ env.ARTIFACTS_PATH }}"
+          rm -f "${{ env.ARTIFACT_NAME }}.zip"
+          7z a -tzip "${{ env.ARTIFACT_NAME }}.zip" "${{ env.PRODUCT_NAME }}" "libSDL3.so.0"
           
           echo "Final artifacts directory contents:"
           ls -la "${{ env.ARTIFACTS_PATH }}/"
