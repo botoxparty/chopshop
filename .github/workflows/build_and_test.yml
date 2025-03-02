@@ -578,6 +578,58 @@ jobs:
       - name: Get Artifacts
         uses: actions/download-artifact@v4
 
+      - name: Generate Release Notes with Download URLs
+        id: release_notes
+        run: |
+          # Extract version from tag
+          VERSION=${GITHUB_REF#refs/tags/v}
+          REPO_OWNER=$(echo $GITHUB_REPOSITORY | cut -d '/' -f 1)
+          REPO_NAME=$(echo $GITHUB_REPOSITORY | cut -d '/' -f 2)
+          
+          # Find all artifact files
+          echo "Generating download URLs for artifacts..."
+          
+          # Start building release notes
+          echo "# Release $VERSION" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Download Links" >> release_notes.md
+          
+          # Generate download URLs for each platform
+          for platform in Windows Linux macOS; do
+            echo "### $platform" >> release_notes.md
+            
+            # Find files for this platform
+            if [ "$platform" == "Windows" ]; then
+              FILES=$(find . -name "*.exe" | sort)
+              EXT="exe"
+            elif [ "$platform" == "Linux" ]; then
+              FILES=$(find . -name "*.zip" | sort)
+              EXT="zip"
+            elif [ "$platform" == "macOS" ]; then
+              FILES=$(find . -name "*.dmg" | sort)
+              EXT="dmg"
+            fi
+            
+            # Generate URLs for each file
+            for file in $FILES; do
+              FILENAME=$(basename "$file")
+              ARTIFACT_NAME="${FILENAME%.*}"
+              
+              # Create download URL using GitHub's download URL format
+              DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/v$VERSION/$FILENAME"
+              
+              echo "- [$ARTIFACT_NAME.$EXT]($DOWNLOAD_URL)" >> release_notes.md
+            done
+            
+            echo "" >> release_notes.md
+          done
+          
+          # Add placeholder for release notes
+          echo "## Release Notes" >> release_notes.md
+          echo "<!-- Add your release notes here -->" >> release_notes.md
+          
+          cat release_notes.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -588,3 +640,4 @@ jobs:
             */*.exe
             */*.zip
             */*.dmg
+          body_path: release_notes.md
