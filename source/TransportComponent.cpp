@@ -260,4 +260,47 @@ void TransportComponent::updateThumbnail()
             }
         }
     }
+}
+
+void TransportComponent::mouseDown(juce::MouseEvent const& event)
+{
+    auto bounds = getLocalBounds();
+    auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.7));
+    
+    // Check if click is within waveform area
+    if (waveformBounds.contains(event.getPosition()))
+    {
+        auto& transport = edit.getTransport();
+        
+        if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+        {
+            if (!track->getClips().isEmpty())
+            {
+                if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*>(track->getClips().getFirst()))
+                {
+                    // Calculate normalized position from click
+                    auto clickX = event.position.x - waveformBounds.getX();
+                    auto normalizedPosition = clickX / waveformBounds.getWidth();
+                    normalizedPosition = juce::jlimit(0.0f, 1.0f, normalizedPosition);
+                    
+                    // Get the source length and calculate the actual position
+                    auto sourceLength = clip->getSourceLength().inSeconds();
+                    
+                    // Get current tempo for adjustment
+                    auto& tempoSequence = edit.tempoSequence;
+                    auto position = createPosition(tempoSequence);
+                    position.set(transport.getPosition());
+                    auto currentTempo = position.getTempo();
+                    auto tempoRatio = currentTempo / clip->getLoopInfo().getBpm(clip->getAudioFile().getInfo());
+                    
+                    // Calculate the actual position accounting for tempo
+                    auto newPosition = (normalizedPosition * sourceLength) / tempoRatio;
+                    
+                    // Set the transport position
+                    transport.setPosition(tracktion::TimePosition::fromSeconds(newPosition));
+                    updateTransportState();
+                }
+            }
+        }
+    }
 } 

@@ -19,6 +19,7 @@ public:
     void resized() override;
     void changeListenerCallback(juce::ChangeBroadcaster*) override;
     void timerCallback() override;
+    void mouseDown(juce::MouseEvent const& event) override;
 
 private:
     tracktion::engine::Edit& edit;
