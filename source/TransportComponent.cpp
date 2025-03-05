@@ -14,10 +14,23 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     // Setup button callbacks
     playButton.onClick = [this] { 
         auto& transport = edit.getTransport();
+        auto& tempoSequence = edit.tempoSequence;
+        
         if (transport.isPlaying())
             transport.stop(false, false);
-        else
+        else {
+            // Ensure we're synced to tempo before playing
+            auto position = createPosition(tempoSequence);
+            position.set(transport.getPosition());
+            
+            // Get current tempo and time signature
+            auto tempo = position.getTempo();
+            auto timeSignature = position.getTimeSignature();
+            
+            // Update transport to sync with tempo
+            transport.setPosition(position.getTime());
             transport.play(false);
+        }
         updateTransportState();
     };
     
@@ -143,11 +156,25 @@ void TransportComponent::changeListenerCallback(juce::ChangeBroadcaster*)
 
 void TransportComponent::updateTimeDisplay()
 {
-    auto seconds = edit.getTransport().getPosition().inSeconds();
+    auto& transport = edit.getTransport();
+    auto& tempoSequence = edit.tempoSequence;
+    auto position = createPosition(tempoSequence);
+    position.set(transport.getPosition());
+    
+    auto barsBeats = position.getBarsBeats();
+    auto tempo = position.getTempo();
+    auto timeSignature = position.getTimeSignature();
+    
+    auto seconds = transport.getPosition().inSeconds();
     auto minutes = (int)(seconds / 60.0);
     auto millis = (int)(seconds * 1000) % 1000;
     
-    timeDisplay.setText(juce::String::formatted("%02d:%02d:%03d", minutes, seconds, millis),
+    timeDisplay.setText(juce::String::formatted("%02d:%02d:%03d | %d/%d | Bar %d | %.1f BPM", 
+                                              minutes, (int)seconds % 60, millis,
+                                              timeSignature.numerator,
+                                              timeSignature.denominator,
+                                              barsBeats.bars + 1, 
+                                              tempo),
                        juce::dontSendNotification);
 }
 
@@ -158,10 +185,43 @@ void TransportComponent::updatePlayheadPosition()
         auto bounds = getLocalBounds();
         auto waveformBounds = bounds.removeFromTop(bounds.getHeight() * 0.7);
         
-        auto normalizedPosition = edit.getTransport().getPosition().inSeconds() / edit.getLength().inSeconds();
-        auto playheadX = waveformBounds.getX() + waveformBounds.getWidth() * normalizedPosition;
+        auto& transport = edit.getTransport();
+        auto& tempoSequence = edit.tempoSequence;
+        auto position = createPosition(tempoSequence);
+        position.set(transport.getPosition());
         
-        playhead->setTopLeftPosition((int)playheadX, waveformBounds.getY());
+        // Get current tempo
+        auto currentTempo = position.getTempo();
+        
+        if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+        {
+            if (!track->getClips().isEmpty())
+            {
+                if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*>(track->getClips().getFirst()))
+                {
+                    // Get the source length and current position
+                    auto sourceLength = clip->getSourceLength().inSeconds();
+                    auto currentPosition = transport.getPosition().inSeconds();
+                    
+                    // Calculate tempo ratio (1.0 = normal speed, 0.5 = half speed, etc)
+                    auto tempoRatio = currentTempo / clip->getLoopInfo().getBpm(clip->getAudioFile().getInfo());
+                    
+                    // Adjust the position based on tempo
+                    auto adjustedPosition = currentPosition * tempoRatio;
+                    auto adjustedLength = sourceLength;
+                    
+                    if (adjustedLength > 0.0)
+                    {
+                        // Calculate normalized position
+                        auto normalizedPosition = adjustedPosition / adjustedLength;
+                        normalizedPosition = juce::jlimit(0.0, 1.0, normalizedPosition);
+                        
+                        auto playheadX = waveformBounds.getX() + waveformBounds.getWidth() * normalizedPosition;
+                        playhead->setTopLeftPosition((int)playheadX, waveformBounds.getY());
+                    }
+                }
+            }
+        }
     }
 }
 
