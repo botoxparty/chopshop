@@ -218,6 +218,14 @@ void TransportComponent::updatePlayheadPosition()
                         
                         auto playheadX = waveformBounds.getX() + waveformBounds.getWidth() * normalizedPosition;
                         playhead->setTopLeftPosition((int)playheadX, waveformBounds.getY());
+
+                        // Stop playback if we've reached the end and we're not looping
+                        if (transport.isPlaying() && !transport.looping && normalizedPosition >= 1.0)
+                        {
+                            transport.stop(false, false);
+                            transport.setPosition(tracktion::TimePosition::fromSeconds(0.0));
+                            updateTransportState();
+                        }
                     }
                 }
             }
