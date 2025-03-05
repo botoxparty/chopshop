@@ -400,12 +400,10 @@ void MainComponent::handleFileSelection (const juce::File& file)
     clip1->getLoopInfo().setBpm (baseTempo, clip1->getAudioFile().getInfo());
     clip2->getLoopInfo().setBpm (baseTempo, clip2->getAudioFile().getInfo());
 
-    // Store current tempo ratio before updating base tempo
-    const double currentRatio = screwComponent->getTempo() / baseTempo;
-    screwComponent->setBaseTempo (baseTempo);
-    // Apply the previous tempo ratio to the new base tempo
-    const double newTempo = baseTempo * currentRatio;
-    screwComponent->setTempo (newTempo, juce::dontSendNotification);
+    // Reset the screw component to the base tempo of the new track
+    screwComponent->setBaseTempo(baseTempo);
+    screwComponent->setTempo(baseTempo, juce::dontSendNotification);
+    
     // Initialize the tempo sequence with the base tempo
     auto tempoSetting = edit.tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
     if (tempoSetting != nullptr)
@@ -750,8 +748,8 @@ void MainComponent::createPluginRack()
             plugins.add (flangerComponent->getPlugin());
         if (phaserComponent)
             plugins.add (phaserComponent->getPlugin());
-        if (scratchComponent)
-            plugins.add (scratchComponent->getPlugin());
+        // if (scratchComponent)
+            // plugins.add (scratchComponent->getPlugin());
 
         // Create the rack type with proper channel connections
         if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins (plugins, edit))
