@@ -33,8 +33,6 @@ namespace ProjectInfo
 #include "Plugins/FlangerPlugin.h"
 #include "Plugins/AutoDelayPlugin.h"
 #include "Plugins/AutoPhaserPlugin.h"
-#include "ControlBarComponent.h"
-#include "Thumbnail.h"
 #include "ScratchComponent.h"
 #include "ScratchPlugin.h"
 
@@ -83,8 +81,6 @@ public:
             stopTimer();
             return;
         }
-        
-        updatePositionLabel();
         
         // Only manipulate the crossfader if we're handling a chop release
         if (chopReleaseDelay > 0)
@@ -169,8 +165,6 @@ private:
     void updateCrossfader();
     void setTrackVolume(int trackIndex, float volume);
 
-    std::unique_ptr<Thumbnail> thumbnail;
-
     void armTrack(int trackIndex, bool arm);
     void startRecording();
     void stopRecording();
@@ -208,8 +202,6 @@ private:
         recordButton.setEnabled(trackLoaded);
     }
 
-    void updatePositionLabel();
-
     std::unique_ptr<Component> oscilloscopeComponent;
 
     // Add a member to hold the plugin reference
@@ -222,8 +214,6 @@ private:
     void createPluginRack();
 
     void releaseResources();
-
-    std::unique_ptr<ControlBarComponent> controlBarComponent;
 
     // Add this line to declare the command manager
     std::unique_ptr<juce::ApplicationCommandManager> commandManager;

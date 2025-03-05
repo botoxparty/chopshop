@@ -10,14 +10,6 @@ MainComponent::MainComponent()
     // Create a global command manager
     commandManager = std::make_unique<juce::ApplicationCommandManager>();
 
-    // Add this near the start of the constructor, before other component setup
-    controlBarComponent = std::make_unique<ControlBarComponent> (edit);
-    addAndMakeVisible (*controlBarComponent);
-
-    // Set up callbacks for the control bar
-    controlBarComponent->onPlayButtonClicked = [this] { play(); };
-    controlBarComponent->onStopButtonClicked = [this] { stop(); };
-
     // Register our custom plugins with the engine
     engine.getPluginManager().createBuiltInType<tracktion::engine::OscilloscopePlugin>();
     engine.getPluginManager().createBuiltInType<FlangerPlugin>();
@@ -32,14 +24,6 @@ MainComponent::MainComponent()
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
     // // setLookAndFeel(customLookAndFeel.get());
     LookAndFeel::setDefaultLookAndFeel (customLookAndFeel.get());
-
-    // Create and set up thumbnail with modern styling
-    thumbnail = std::make_unique<Thumbnail> (edit.getTransport());
-    addAndMakeVisible (*thumbnail);
-    thumbnail->start();
-    thumbnail->setWaveformColor (juce::Colours::lightblue);
-    thumbnail->setCursorColor (juce::Colours::red);
-    thumbnail->setBackgroundColor (juce::Colours::black.withAlpha (0.7f));
 
     // Set initial position
     edit.getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
@@ -266,11 +250,7 @@ void MainComponent::resized()
         visualizerBox.items.add (juce::FlexItem (*oscilloscopeComponent).withFlex (0.6f).withMargin (5));
 
     // Give the thumbnail more space for better visualization
-    visualizerBox.items.add (juce::FlexItem (*thumbnail).withFlex (0.4f).withMargin (5));
     mainColumn.items.add (juce::FlexItem (visualizerBox).withFlex (1.0f));
-
-    // Row 2: Control Bar - now just add the component directly
-    mainColumn.items.add (juce::FlexItem (*controlBarComponent).withHeight (50).withMargin (5));
 
     // Row 3: Main Box (remaining space)
     juce::FlexBox mainBox;
@@ -319,8 +299,6 @@ void MainComponent::play()
 
     // Update button states based on transport state
     const bool isPlaying = edit.getTransport().isPlaying();
-    controlBarComponent->setPlayButtonState (isPlaying);
-    controlBarComponent->setStopButtonState (!isPlaying);
     playState = isPlaying ? PlayState::Playing : PlayState::Stopped;
 }
 
@@ -333,8 +311,6 @@ void MainComponent::stop()
     edit.getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
 
     playState = PlayState::Stopped;
-    controlBarComponent->setPlayButtonState (false);
-    controlBarComponent->setStopButtonState (true);
 
     updateButtonStates();
 }
@@ -415,9 +391,6 @@ void MainComponent::handleFileSelection (const juce::File& file)
 
     // Reset play/pause/stop button states
     playState = PlayState::Stopped;
-    controlBarComponent->setPlayButtonState (false);
-    controlBarComponent->setStopButtonState (true);
-    controlBarComponent->setTrackName (file.getFileNameWithoutExtension());
 
     // Calculate and set delay time to 1/4 note
     if (delayComponent)
@@ -432,9 +405,6 @@ void MainComponent::handleFileSelection (const juce::File& file)
     auto loopedClip = EngineHelpers::loopAroundClip (*clip1);
     edit.getTransport().stop (false, false); // Stop playback after loop setup
 
-    // Update the thumbnail with the new audio file
-    thumbnail->setFile (loopedClip->getPlaybackFile());
-    thumbnail->setSpeedRatio (ratio);
 
     // Reset crossfader to first track
     chopComponent->setCrossfaderValue (0.0);
@@ -464,12 +434,6 @@ void MainComponent::updateTempo()
 
     // Calculate ratio for thumbnail display
     const double ratio = baseTempo / newBpm;
-
-    // Update the thumbnail to reflect the speed ratio
-    if (thumbnail)
-    {
-        thumbnail->setSpeedRatio (ratio);
-    }
 
     // Update the delay component if it exists
     if (delayComponent)
@@ -708,12 +672,6 @@ void MainComponent::gamepadAxisMoved (int axisId, float value)
     }
 }
 
-void MainComponent::updatePositionLabel()
-{
-    if (controlBarComponent)
-        controlBarComponent->updatePositionLabel();
-}
-
 void MainComponent::createVinylBrakeComponent()
 {
     vinylBrakeComponent = std::make_unique<VinylBrakeComponent> (edit);
@@ -783,8 +741,6 @@ void MainComponent::releaseResources()
 
     // Clear all component pointers in a specific order
     oscilloscopeComponent = nullptr;
-    thumbnail = nullptr;
-
     controllerMappingComponent = nullptr;
     libraryComponent = nullptr;
 
@@ -804,6 +760,4 @@ void MainComponent::releaseResources()
     if (gamepadManager)
         gamepadManager->removeListener (this);
     gamepadManager = nullptr;
-
-    controlBarComponent = nullptr;
 }
