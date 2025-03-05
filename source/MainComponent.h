@@ -35,6 +35,7 @@ namespace ProjectInfo
 #include "Plugins/AutoPhaserPlugin.h"
 #include "ScratchComponent.h"
 #include "ScratchPlugin.h"
+#include "TransportComponent.h"
 
 
 
@@ -217,6 +218,8 @@ private:
 
     // Add this line to declare the command manager
     std::unique_ptr<juce::ApplicationCommandManager> commandManager;
+
+    std::unique_ptr<TransportComponent> transportComponent;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

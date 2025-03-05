@@ -203,6 +203,10 @@ MainComponent::MainComponent()
     controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
     addAndMakeVisible (*controllerMappingComponent);
 
+    // Create transport component
+    transportComponent = std::make_unique<TransportComponent>(edit);
+    addAndMakeVisible(*transportComponent);
+
     resized();
 }
 
@@ -243,14 +247,18 @@ void MainComponent::resized()
     mainColumn.flexDirection = juce::FlexBox::Direction::column;
     mainColumn.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
 
-    // Row 1: Thumbnail and Oscilloscope (about 1/3 of height)
+    // Row 1: Transport control (about 1/4 of height)
+    if (transportComponent != nullptr)
+        mainColumn.items.add(juce::FlexItem(*transportComponent).withFlex(1.0f).withMargin(5));
+
+    // Row 2: Thumbnail and Oscilloscope (about 1/3 of height)
     juce::FlexBox visualizerBox;
     visualizerBox.flexDirection = juce::FlexBox::Direction::column;
     if (oscilloscopeComponent != nullptr)
-        visualizerBox.items.add (juce::FlexItem (*oscilloscopeComponent).withFlex (0.6f).withMargin (5));
+        visualizerBox.items.add(juce::FlexItem(*oscilloscopeComponent).withFlex(0.6f).withMargin(5));
 
-    // Give the thumbnail more space for better visualization
-    mainColumn.items.add (juce::FlexItem (visualizerBox).withFlex (1.0f));
+    // Give the thumbnail more space for visualization
+    mainColumn.items.add(juce::FlexItem(visualizerBox).withFlex(1.0f));
 
     // Row 3: Main Box (remaining space)
     juce::FlexBox mainBox;
