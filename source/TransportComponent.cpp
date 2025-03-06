@@ -137,15 +137,12 @@ void TransportComponent::resized()
     loopButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
     timeDisplay.setBounds(controlsBounds.reduced(2));
     
-    // Position playhead
+    // Only set the playhead rectangle dimensions here, not its position
     if (playhead != nullptr)
     {
-        auto playheadX = (float)waveformBounds.getX() + 
-                        (float)waveformBounds.getWidth() * 
-                        (float)(edit.getTransport().getPosition() / edit.getLength());
         playhead->setRectangle(juce::Rectangle<float>(2.0f, (float)waveformBounds.getY(),
                                                     2.0f, (float)waveformBounds.getHeight()));
-        playhead->setTopLeftPosition((int)playheadX, waveformBounds.getY());
+        updatePlayheadPosition(); // Let the dedicated method handle positioning
     }
 }
 
@@ -186,12 +183,7 @@ void TransportComponent::updatePlayheadPosition()
         auto waveformBounds = bounds.removeFromTop(bounds.getHeight() * 0.7);
         
         auto& transport = edit.getTransport();
-        auto& tempoSequence = edit.tempoSequence;
-        auto position = createPosition(tempoSequence);
-        position.set(transport.getPosition());
-        
-        // Get current tempo
-        auto currentTempo = position.getTempo();
+        auto normalizedPosition = 0.0;
         
         if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
         {
@@ -199,37 +191,26 @@ void TransportComponent::updatePlayheadPosition()
             {
                 if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*>(track->getClips().getFirst()))
                 {
-                    // Get the source length and current position
                     auto sourceLength = clip->getSourceLength().inSeconds();
                     auto currentPosition = transport.getPosition().inSeconds();
                     
-                    // Calculate tempo ratio (1.0 = normal speed, 0.5 = half speed, etc)
+                    // Get current tempo for adjustment
+                    auto& tempoSequence = edit.tempoSequence;
+                    auto position = createPosition(tempoSequence);
+                    position.set(transport.getPosition());
+                    auto currentTempo = position.getTempo();
                     auto tempoRatio = currentTempo / clip->getLoopInfo().getBpm(clip->getAudioFile().getInfo());
                     
-                    // Adjust the position based on tempo
+                    // Calculate normalized position accounting for tempo
                     auto adjustedPosition = currentPosition * tempoRatio;
-                    auto adjustedLength = sourceLength;
-                    
-                    if (adjustedLength > 0.0)
-                    {
-                        // Calculate normalized position
-                        auto normalizedPosition = adjustedPosition / adjustedLength;
-                        normalizedPosition = juce::jlimit(0.0, 1.0, normalizedPosition);
-                        
-                        auto playheadX = waveformBounds.getX() + waveformBounds.getWidth() * normalizedPosition;
-                        playhead->setTopLeftPosition((int)playheadX, waveformBounds.getY());
-
-                        // Stop playback if we've reached the end and we're not looping
-                        if (transport.isPlaying() && !transport.looping && normalizedPosition >= 1.0)
-                        {
-                            transport.stop(false, false);
-                            transport.setPosition(tracktion::TimePosition::fromSeconds(0.0));
-                            updateTransportState();
-                        }
-                    }
+                    normalizedPosition = adjustedPosition / sourceLength;
+                    normalizedPosition = juce::jlimit(0.0, 1.0, normalizedPosition);
                 }
             }
         }
+        
+        auto playheadX = waveformBounds.getX() + waveformBounds.getWidth() * normalizedPosition;
+        playhead->setTopLeftPosition((int)playheadX, waveformBounds.getY());
     }
 }
 
@@ -295,6 +276,17 @@ void TransportComponent::mouseDown(juce::MouseEvent const& event)
                     
                     // Calculate the actual position accounting for tempo
                     auto newPosition = (normalizedPosition * sourceLength) / tempoRatio;
+
+                    // debug the event.
+                    DBG("Mouse down event at position: " + juce::String(event.position.x) + " " + juce::String(event.position.y));
+                    DBG("Waveform bounds: " + juce::String(waveformBounds.getX()) + " " + juce::String(waveformBounds.getY()) + " " + juce::String(waveformBounds.getWidth()) + " " + juce::String(waveformBounds.getHeight()));
+                    DBG("New position: " + juce::String(newPosition));
+                    DBG("Current tempo: " + juce::String(currentTempo));
+                    DBG("Tempo ratio: " + juce::String(tempoRatio));
+                    DBG("Source length: " + juce::String(sourceLength));
+                    DBG("Normalized position: " + juce::String(normalizedPosition));
+                    DBG("Transport position: " + juce::String(transport.getPosition().inSeconds()));
+
                     
                     // Set the transport position
                     transport.setPosition(tracktion::TimePosition::fromSeconds(newPosition));
