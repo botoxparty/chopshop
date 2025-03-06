@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+never use: using namespace tracktion::engine;
+never use: te::

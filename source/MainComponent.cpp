@@ -1,5 +1,6 @@
 #include "MainComponent.h"
 #include "ChopComponent.h"
+#include "Plugins/ChopPlugin.h"
 #include <algorithm>
 
 #define JUCE_USE_DIRECTWRITE 0 // Fix drawing of Monospace fonts in Code Editor!
@@ -22,6 +23,7 @@ MainComponent::MainComponent()
     engine.getPluginManager().createBuiltInType<AutoDelayPlugin>();
     engine.getPluginManager().createBuiltInType<AutoPhaserPlugin>();
     engine.getPluginManager().createBuiltInType<ScratchPlugin>();
+    engine.getPluginManager().createBuiltInType<ChopPlugin>();
 
     addAndMakeVisible (audioSettingsButton);
 
@@ -160,9 +162,9 @@ void MainComponent::updateTempo()
     double newBpm = screwComponent->getTempo();
 
     // Insert tempo change at the beginning of the track
-    auto tempoSetting = edit->tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
+    auto tempoSetting = edit->tempoSequence.insertTempo(tracktion::TimePosition::fromSeconds(0.0));
     if (tempoSetting != nullptr)
-        tempoSetting->setBpm (newBpm);
+        tempoSetting->setBpm(newBpm);
 
     // Calculate ratio for thumbnail display
     const double ratio = baseTempo / newBpm;
@@ -170,77 +172,59 @@ void MainComponent::updateTempo()
     // Update the delay component if it exists
     if (delayComponent)
     {
-        delayComponent->setTempo (newBpm);
+        delayComponent->setTempo(newBpm);
     }
 }
 
-te::WaveAudioClip::Ptr MainComponent::getClip (int trackIndex)
+te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
 {
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (*edit, trackIndex))
-        if (auto clip = dynamic_cast<te::WaveAudioClip*> (track->getClips()[0]))
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(*edit, trackIndex))
+        if (auto clip = dynamic_cast<te::WaveAudioClip*>(track->getClips()[0]))
             return *clip;
 
     return {};
 }
 
-void MainComponent::updateCrossfader()
-{
-    const float position = chopComponent->getCrossfaderValue();
-    const float minDB = -60.0f; // Effectively silent
-
-    // Calculate volume curves that give equal power at center position
-    float gainTrack1 = std::cos (position * juce::MathConstants<float>::halfPi);
-    float gainTrack2 = std::sin (position * juce::MathConstants<float>::halfPi);
-
-    // Convert linear gains to dB
-    float gainDB1 = gainTrack1 <= 0.0f ? minDB : juce::Decibels::gainToDecibels (gainTrack1);
-    float gainDB2 = gainTrack2 <= 0.0f ? minDB : juce::Decibels::gainToDecibels (gainTrack2);
-
-    // Apply volumes to tracks
-    setTrackVolume (0, gainDB1);
-    setTrackVolume (1, gainDB2);
-}
-
 void MainComponent::setupChopComponent()
 {
     // Create ChopComponent and pass the command manager
-    chopComponent = std::make_unique<ChopComponent> (*edit);
-    addAndMakeVisible (*chopComponent);
+    chopComponent = std::make_unique<ChopComponent>(*edit);
+    addAndMakeVisible(*chopComponent);
 
     // Set the command manager for the ChopComponent
-    chopComponent->setCommandManager (commandManager.get());
+    chopComponent->setCommandManager(commandManager.get());
 
     // Register all commands with the command manager
-    commandManager->registerAllCommandsForTarget (this);
+    commandManager->registerAllCommandsForTarget(this);
 
     // Add key mappings to the top level component
-    addKeyListener (commandManager->getKeyMappings());
+    addKeyListener(commandManager->getKeyMappings());
 
     // Restore the mouse handlers
     chopComponent->onChopButtonPressed = [this]() {
         chopStartTime = juce::Time::getMillisecondCounterHiRes();
         float currentPosition = chopComponent->getCrossfaderValue();
-        chopComponent->setCrossfaderValue (currentPosition <= 0.5f ? 1.0f : 0.0f);
+        chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
     };
 
     chopComponent->onChopButtonReleased = [this]() {
         double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-        double minimumTime = chopComponent->getChopDurationInMs (screwComponent->getTempo());
+        double minimumTime = chopComponent->getChopDurationInMs(screwComponent->getTempo());
 
         if (elapsedTime >= minimumTime)
         {
             float currentPosition = chopComponent->getCrossfaderValue();
-            chopComponent->setCrossfaderValue (currentPosition <= 0.5f ? 1.0f : 0.0f);
+            chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
         }
         else
         {
             chopReleaseDelay = minimumTime - elapsedTime;
-            startTimer (static_cast<int> (chopReleaseDelay));
+            startTimer(static_cast<int>(chopReleaseDelay));
         }
     };
 
-    chopComponent->onCrossfaderValueChanged = [this] (float) {
-        updateCrossfader();
+    chopComponent->onCrossfaderValueChanged = [this](float) {
+        // The ChopPlugin now handles the volume changes directly
     };
 }
 
@@ -346,7 +330,6 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     if (chopComponent)
     {
         chopComponent->setCrossfaderValue(0.0f);
-        updateCrossfader();
     }
 
     // Update plugin components
@@ -364,46 +347,30 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     resized();
 }
 
-void MainComponent::setTrackVolume (int trackIndex, float gainDB)
+void MainComponent::armTrack(int trackIndex, bool arm)
 {
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (*edit, trackIndex))
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(*edit, trackIndex))
     {
-        DBG ("Setting track volume for track index: " + juce::String (trackIndex));
-        if (auto volumeAndPan = dynamic_cast<te::VolumeAndPanPlugin*> (track->pluginList.getPluginsOfType<te::VolumeAndPanPlugin>().getFirst())) {
-            DBG ("Volume and pan plugin found");
-            volumeAndPan->setVolumeDb (gainDB);
-        }
-        else
-        {
-            DBG ("No volume and pan plugin found");
-        }
-    }
-}
-
-void MainComponent::armTrack (int trackIndex, bool arm)
-{
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (*edit, trackIndex))
-    {
-        EngineHelpers::armTrack (*track, arm);
+        EngineHelpers::armTrack(*track, arm);
     }
 }
 
 void MainComponent::startRecording()
 {
     // Arm the first track for recording
-    armTrack (0, true);
+    armTrack(0, true);
 
     // Start transport recording
-    edit->getTransport().record (true);
+    edit->getTransport().record(true);
 }
 
 void MainComponent::stopRecording()
 {
     // Stop recording
-    edit->getTransport().stop (false, false);
+    edit->getTransport().stop(false, false);
 
     // Disarm track
-    armTrack (0, false);
+    armTrack(0, false);
 }
 
 void MainComponent::gamepadButtonPressed (int buttonId)

@@ -1,8 +1,12 @@
 #include "ChopComponent.h"
+#include "Plugins/ChopPlugin.h"
 
 ChopComponent::ChopComponent(tracktion::engine::Edit& editIn)
     : BaseEffectComponent(editIn)
 {
+    // Create the plugin
+    plugin = createPlugin("chop");
+    
     titleLabel.setText("Chop Controls", juce::dontSendNotification);
     
     // Configure labels
@@ -27,12 +31,13 @@ ChopComponent::ChopComponent(tracktion::engine::Edit& editIn)
     crossfaderSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
     crossfaderSlider.setRange(0.0, 1.0, 0.01);
     crossfaderSlider.setValue(0.0, juce::dontSendNotification);
-    // crossfaderSlider.setPopupDisplayEnabled(true, false, this);
     crossfaderSlider.setPopupMenuEnabled(false);
-    crossfaderSlider.onValueChange = [this] {
-        if (onCrossfaderValueChanged)
-            onCrossfaderValueChanged(crossfaderSlider.getValue());
-    };
+
+    // Bind the crossfader parameter
+    if (auto chopPlugin = dynamic_cast<ChopPlugin*>(plugin.get()))
+    {
+        bindSliderToParameter(crossfaderSlider, *chopPlugin->crossfaderParam);
+    }
     
     // Add components to the content component instead of the base
     contentComponent.addAndMakeVisible(durationLabel);

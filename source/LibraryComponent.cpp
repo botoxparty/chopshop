@@ -323,6 +323,16 @@ void LibraryComponent::addToLibrary (const juce::File& file)
             // Add volume and pan plugin
             auto volumeAndPan = track->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0);
 
+            // Add ChopPlugin to first track
+            if (i == 0) {
+                auto plugin = ChopPlugin::create(*edit);
+                if (plugin != nullptr) {
+                    if (auto chopPlugin = track->pluginList.insertPlugin(plugin->state, -1)) {
+                        DBG("Added ChopPlugin to track " + juce::String(i + 1));
+                    }
+                }
+            }
+
             // Get the audio file length
             te::AudioFile audioFile (engine, file);
             if (!audioFile.isValid())

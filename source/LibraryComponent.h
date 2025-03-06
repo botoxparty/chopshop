@@ -16,7 +16,7 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <tracktion_engine/tracktion_engine.h>
-
+#include "Plugins/ChopPlugin.h"
 #include "Utilities.h"
 
 // We'll use ProjectItem instead of PlaylistEntry
