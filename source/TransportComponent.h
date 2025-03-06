@@ -53,6 +53,9 @@ private:
     double scrollPosition = 0.0; // 0.0 to 1.0
     static constexpr double minZoom = 1.0; // Changed from 0.1 to 1.0 (100%)
     static constexpr double maxZoom = 10.0;
+
+    // Current clip reference
+    tracktion::engine::WaveAudioClip* currentClip = nullptr;
     
     void updateTimeDisplay();
     void updatePlayheadPosition();

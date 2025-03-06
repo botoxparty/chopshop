@@ -303,7 +303,7 @@ void LibraryComponent::addToLibrary (const juce::File& file)
     options.editState = te::createEmptyEdit (engine);
     options.editProjectItemID = te::ProjectItemID::fromProperty (options.editState, te::IDs::projectID);
     options.numUndoLevelsToStore = 0;
-    options.role = te::Edit::forRendering;
+    options.role = te::Edit::forEditing;
 
     auto edit = te::Edit::createEdit (std::move (options));
     if (!edit)

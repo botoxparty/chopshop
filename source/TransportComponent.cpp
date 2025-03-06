@@ -3,7 +3,9 @@
 TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     : edit (e),
       transport (e.getTransport()),
-      thumbnail (e.engine, tracktion::AudioFile (e.engine), *this, &e)
+      thumbnail (e.engine, tracktion::AudioFile (e.engine), *this, &e),
+      scrollPosition(0.0),
+      zoomLevel(1.0)
 {
     // Add and make visible all buttons
     addAndMakeVisible (playButton);
@@ -17,6 +19,10 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     // Create and add automation lane
     automationLane = std::make_unique<AutomationLane> (edit);
     addAndMakeVisible (*automationLane);
+
+    // Initialize thumbnail
+    thumbnail.audioFileChanged();
+    startTimerHz(30);
 
     // Setup button callbacks
     playButton.onClick = [this] {
@@ -83,13 +89,9 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     playhead->setFill (juce::FillType (juce::Colours::red));
     addAndMakeVisible (*playhead);
 
-    // Start timer for updates
-    startTimerHz (30);
-
     // Listen to transport changes
     edit.getTransport().addChangeListener (this);
 
-    // Initialize thumbnail with first track's audio if available
     updateThumbnail();
 }
 
@@ -123,63 +125,89 @@ void TransportComponent::paint (juce::Graphics& g)
 
     // Create drawing bounds
     auto drawBounds = waveformBounds.reduced (2);
+    
+    DBG("Paint called - waveformBounds: " + juce::String(waveformBounds.toString()));
+    DBG("drawBounds: " + juce::String(drawBounds.toString()));
 
-    // Draw waveform if we have one
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (edit, 0))
+    // Draw waveform if we have a clip
+    if (currentClip != nullptr)
     {
-        if (!track->getClips().isEmpty())
+        DBG("Using stored clip reference");
+        auto sourceLength = currentClip->getSourceLength().inSeconds();
+        DBG("Source length: " + juce::String(sourceLength));
+        
+        auto timeRange = tracktion::TimeRange (
+            tracktion::TimePosition::fromSeconds (sourceLength * scrollPosition),
+            tracktion::TimePosition::fromSeconds (sourceLength * (scrollPosition + 1.0 / zoomLevel)));
+        
+        if (sourceLength > 0.0)
         {
-            if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*> (track->getClips().getFirst()))
+            DBG("sourceLength: " + juce::String(sourceLength));
+            DBG("scrollPosition: " + juce::String(scrollPosition));
+            DBG("zoomLevel: " + juce::String(zoomLevel));
+            DBG("timeRange: " + juce::String(timeRange.getStart().inSeconds()) + " to " + juce::String(timeRange.getEnd().inSeconds()));
+            DBG("Thumbnail total length: " + juce::String(thumbnail.getTotalLength()));
+
+            // Enable anti-aliasing
+            g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
+
+            // Draw waveform first (so beat markers appear on top)
+            g.setColour (juce::Colours::lightblue.withAlpha (0.7f));
+            
+            if (thumbnail.getTotalLength() > 0.0)
             {
-                auto sourceLength = clip->getSourceLength().inSeconds();
-                auto timeRange = tracktion::TimeRange (
-                    tracktion::TimePosition::fromSeconds (sourceLength * scrollPosition),
-                    tracktion::TimePosition::fromSeconds (sourceLength * (scrollPosition + 1.0 / zoomLevel)));
-
-                // Enable anti-aliasing
-                g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
-
-                // Draw waveform first (so beat markers appear on top)
-                g.setColour (juce::Colours::lightblue.withAlpha (0.7f));
                 thumbnail.drawChannels (g, drawBounds, timeRange, 0.8f);
-
-                // Draw center line
-                g.setColour (juce::Colours::grey.withAlpha (0.3f));
-                g.drawHorizontalLine (drawBounds.getCentreY(),
-                    drawBounds.getX(),
-                    drawBounds.getRight());
-
-                // Draw beat markers
-                auto& tempoSequence = edit.tempoSequence;
-                auto position = createPosition (tempoSequence);
-
-                // Find the first beat before our visible range
-                position.set (tracktion::TimePosition::fromSeconds (timeRange.getStart().inSeconds()));
-                auto currentBarsBeats = position.getBarsBeats();
-                auto beatTime = timeRange.getStart().inSeconds() - (currentBarsBeats.beats.inBeats() * 60.0 / position.getTempo());
-
-                // Draw all beat markers
-                for (double time = beatTime; time <= timeRange.getEnd().inSeconds(); time += 60.0 / position.getTempo())
-                {
-                    if (time >= timeRange.getStart().inSeconds() && time <= timeRange.getEnd().inSeconds()) // Only draw if in visible range
-                    {
-                        auto beatX = drawBounds.getX() + ((time - timeRange.getStart().inSeconds()) / (timeRange.getEnd().inSeconds() - timeRange.getStart().inSeconds())) * drawBounds.getWidth();
-
-                        position.set (tracktion::TimePosition::fromSeconds (time));
-                        auto barsBeats = position.getBarsBeats();
-
-                        // Bar starts get a brighter color
-                        g.setColour (barsBeats.beats.inBeats() == 0
-                                         ? juce::Colours::white.withAlpha (0.4f)
-                                         : juce::Colours::white.withAlpha (0.2f));
-
-                        g.drawVerticalLine (static_cast<int> (beatX),
-                            drawBounds.getY(),
-                            drawBounds.getBottom());
-                    }
-                }
+                DBG("Drew thumbnail channels");
+            }
+            else
+            {
+                DBG("Error: Thumbnail has no length");
             }
         }
+        else
+        {
+            DBG("Error: Source has no length");
+        }
+
+        // Draw center line
+        g.setColour (juce::Colours::grey.withAlpha (0.3f));
+        g.drawHorizontalLine (drawBounds.getCentreY(),
+            drawBounds.getX(),
+            drawBounds.getRight());
+
+        // Draw beat markers
+        auto& tempoSequence = edit.tempoSequence;
+        auto position = createPosition (tempoSequence);
+
+        // Find the first beat before our visible range
+        position.set (tracktion::TimePosition::fromSeconds (timeRange.getStart().inSeconds()));
+        auto currentBarsBeats = position.getBarsBeats();
+        auto beatTime = timeRange.getStart().inSeconds() - (currentBarsBeats.beats.inBeats() * 60.0 / position.getTempo());
+
+        // Draw all beat markers
+        for (double time = beatTime; time <= timeRange.getEnd().inSeconds(); time += 60.0 / position.getTempo())
+        {
+            if (time >= timeRange.getStart().inSeconds() && time <= timeRange.getEnd().inSeconds()) // Only draw if in visible range
+            {
+                auto beatX = drawBounds.getX() + ((time - timeRange.getStart().inSeconds()) / (timeRange.getEnd().inSeconds() - timeRange.getStart().inSeconds())) * drawBounds.getWidth();
+
+                position.set (tracktion::TimePosition::fromSeconds (time));
+                auto barsBeats = position.getBarsBeats();
+
+                // Bar starts get a brighter color
+                g.setColour (barsBeats.beats.inBeats() == 0
+                                 ? juce::Colours::white.withAlpha (0.4f)
+                                 : juce::Colours::white.withAlpha (0.2f));
+
+                g.drawVerticalLine (static_cast<int> (beatX),
+                    drawBounds.getY(),
+                    drawBounds.getBottom());
+            }
+        }
+    }
+    else
+    {
+        DBG("No clip reference available");
     }
 }
 
@@ -216,7 +244,7 @@ void TransportComponent::resized()
 void TransportComponent::changeListenerCallback (juce::ChangeBroadcaster*)
 {
     updateTransportState();
-    updateThumbnail(); // Update thumbnail when transport state changes
+    // updateThumbnail(); // Update thumbnail when transport state changes
     repaint();
 }
 
@@ -251,10 +279,10 @@ void TransportComponent::updatePlayheadPosition()
     if (playhead != nullptr)
     {
         auto bounds = getLocalBounds();
-        auto waveformBounds = bounds.removeFromTop (bounds.getHeight() * 0.7);
+        auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.5)).reduced (2);
 
         auto& transport = edit.getTransport();
-        auto normalizedPosition = 0.0;
+        auto currentPosition = transport.getPosition().inSeconds();
 
         if (auto track = EngineHelpers::getOrInsertAudioTrackAt (edit, 0))
         {
@@ -263,35 +291,27 @@ void TransportComponent::updatePlayheadPosition()
                 if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*> (track->getClips().getFirst()))
                 {
                     auto sourceLength = clip->getSourceLength().inSeconds();
-                    auto currentPosition = transport.getPosition().inSeconds();
 
-                    // Get current tempo for adjustment
-                    auto& tempoSequence = edit.tempoSequence;
-                    auto position = createPosition (tempoSequence);
-                    position.set (transport.getPosition());
-                    auto currentTempo = position.getTempo();
-                    auto tempoRatio = currentTempo / clip->getLoopInfo().getBpm (clip->getAudioFile().getInfo());
+                    // Calculate visible time range
+                    auto visibleTimeStart = sourceLength * scrollPosition;
+                    auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
 
-                    // Calculate normalized position accounting for tempo
-                    auto adjustedPosition = currentPosition * tempoRatio;
-                    normalizedPosition = adjustedPosition / sourceLength;
+                    // Calculate normalized position within visible range
+                    auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
 
-                    // Adjust for zoom and scroll
-                    normalizedPosition = (normalizedPosition - scrollPosition) * zoomLevel;
+                    // Only show playhead if it's in the visible range
+                    if (currentPosition >= visibleTimeStart && currentPosition <= visibleTimeEnd)
+                    {
+                        auto playheadX = waveformBounds.getX() + (normalizedPosition * waveformBounds.getWidth());
+                        playhead->setVisible (true);
+                        playhead->setTopLeftPosition (static_cast<int> (playheadX), waveformBounds.getY());
+                    }
+                    else
+                    {
+                        playhead->setVisible (false);
+                    }
                 }
             }
-        }
-
-        // Only show playhead if it's in the visible range
-        if (normalizedPosition >= 0.0 && normalizedPosition <= 1.0)
-        {
-            auto playheadX = waveformBounds.getX() + waveformBounds.getWidth() * normalizedPosition;
-            playhead->setVisible (true);
-            playhead->setTopLeftPosition ((int) playheadX, waveformBounds.getY());
-        }
-        else
-        {
-            playhead->setVisible (false);
         }
     }
 }
@@ -304,21 +324,18 @@ void TransportComponent::updateTransportState()
     recordButton.setToggleState (transport.isRecording(), juce::dontSendNotification);
     loopButton.setToggleState (transport.looping, juce::dontSendNotification);
 
-    updateThumbnail();
 }
 
 void TransportComponent::updateThumbnail()
 {
-    tracktion::engine::TrackList& trackList = edit.getTrackList();
-
     auto audioTracks = te::getAudioTracks (edit);
+    currentClip = nullptr; // Reset current clip reference
+
+    DBG("Updating thumbnail");
+    DBG("Number of audio tracks: " + juce::String(audioTracks.size()));
+
     for (auto track : audioTracks)
     {
-        DBG ("--- Track: " + track->getName() + " (ID: " + track->state.getProperty ("id").toString() + ") ---");
-        DBG ("  Track type: " + track->state.getType().toString());
-        // DBG("  playSlotClips value: " + juce::String(track->playSlotClips.get()));
-
-        // Debug clips
         auto clips = track->getClips();
         DBG ("  Number of clips: " + juce::String (clips.size()));
 
@@ -328,36 +345,34 @@ void TransportComponent::updateThumbnail()
             DBG ("    Start: " + juce::String (clip->getPosition().getStart().inSeconds()));
             DBG ("    Length: " + juce::String (clip->getPosition().getLength().inSeconds()));
             DBG ("    Source file: " + clip->getSourceFileReference().getFile().getFullPathName());
-            thumbnail.setSource(new juce::FileInputSource(clip->getSourceFileReference().getFile()));
-            repaint();
+            
+            if (auto* waveClip = dynamic_cast<tracktion::engine::WaveAudioClip*>(clip))
+            {
+                auto audioFile = waveClip->getAudioFile();
+                
+                if (audioFile.isValid())
+                {
+                    DBG ("    Audio file is valid");
+                    DBG ("    Audio file path: " + audioFile.getFile().getFullPathName());
+                    DBG ("    Audio file length: " + juce::String(audioFile.getLength()));
+                    
+                    // Store the clip reference
+                    currentClip = waveClip;
+                    
+                    // Set the new file and force regeneration
+                    thumbnail.setNewFile(audioFile);
+                    
+                    // Force a repaint after setting the source
+                    repaint();
+                    break;
+                }
+                else
+                {
+                    DBG ("    Error: Invalid audio file");
+                }
+            }
         }
     }
-
-    // if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
-    // {
-    //     DBG("Track found");
-    //     if (!track->getClips().isEmpty())
-    //     {
-    //         DBG("Clips found in track");
-    //         if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*>(track->getClips().getFirst()))
-    //         {
-    //             auto audioFile = clip->getAudioFile();
-    //             DBG("Audio file found");
-    //             if (audioFile.getFile().existsAsFile())
-    //             {
-    //                 thumbnail.setSource(new juce::FileInputSource(audioFile.getFile()));
-    //                 repaint(); // Force a repaint after setting new source
-    //             }
-    //         }
-    //     }
-    //     else
-    //     {
-    //         DBG("No clips found in track");
-    //         // Clear thumbnail if no clips
-    //         thumbnail.setSource(nullptr);
-    //         repaint();
-    //     }
-    // }
 }
 
 void TransportComponent::mouseDown (juce::MouseEvent const& event)
