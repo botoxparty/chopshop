@@ -10,6 +10,12 @@ MainComponent::MainComponent()
     // Create a global command manager
     commandManager = std::make_unique<juce::ApplicationCommandManager>();
 
+    customLookAndFeel = std::make_unique<CustomLookAndFeel>();
+    LookAndFeel::setDefaultLookAndFeel (customLookAndFeel.get());
+    getLookAndFeel().setDefaultSansSerifTypefaceName ("Arial");
+    setSize (1024, 900);
+    startTimerHz (30);
+
     // Register our custom plugins with the engine
     engine.getPluginManager().createBuiltInType<tracktion::engine::OscilloscopePlugin>();
     engine.getPluginManager().createBuiltInType<FlangerPlugin>();
@@ -17,69 +23,16 @@ MainComponent::MainComponent()
     engine.getPluginManager().createBuiltInType<AutoPhaserPlugin>();
     engine.getPluginManager().createBuiltInType<ScratchPlugin>();
 
-    addAndMakeVisible (saveButton);
-    addAndMakeVisible (recordButton);
     addAndMakeVisible (audioSettingsButton);
-
-    customLookAndFeel = std::make_unique<CustomLookAndFeel>();
-    // // setLookAndFeel(customLookAndFeel.get());
-    LookAndFeel::setDefaultLookAndFeel (customLookAndFeel.get());
 
     // Set initial position
     edit.getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
-
-    setSize (1024, 900);
 
     // Setup reverb control
     reverbComponent = std::make_unique<ReverbComponent> (edit);
     addAndMakeVisible (*reverbComponent);
 
-    // setup effects
-    recordButton.setToggleState (false, juce::NotificationType::dontSendNotification);
-    recordButton.onClick = [this] {
-        if (edit.getTransport().isRecording())
-            stopRecording();
-        else
-            startRecording();
-    };
-
-    // Create ChopComponent and pass the command manager
-    chopComponent = std::make_unique<ChopComponent> (edit);
-    addAndMakeVisible (*chopComponent);
-
-    // Set the command manager for the ChopComponent
-    chopComponent->setCommandManager (commandManager.get());
-
-    // Register all commands with the command manager
-    commandManager->registerAllCommandsForTarget (this);
-
-    // Add key mappings to the top level component
-    addKeyListener (commandManager->getKeyMappings());
-
-    // Restore the mouse handlers
-    chopComponent->onChopButtonPressed = [this]() {
-        chopStartTime = juce::Time::getMillisecondCounterHiRes();
-        float currentPosition = chopComponent->getCrossfaderValue();
-        chopComponent->setCrossfaderValue (currentPosition <= 0.5f ? 1.0f : 0.0f);
-    };
-
-    chopComponent->onChopButtonReleased = [this]() {
-        double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-        double minimumTime = chopComponent->getChopDurationInMs (screwComponent->getTempo());
-
-        if (elapsedTime >= minimumTime)
-        {
-            float currentPosition = chopComponent->getCrossfaderValue();
-            chopComponent->setCrossfaderValue (currentPosition <= 0.5f ? 1.0f : 0.0f);
-        }
-        else
-        {
-            chopReleaseDelay = minimumTime - elapsedTime;
-            startTimer (static_cast<int> (chopReleaseDelay));
-        }
-    };
-
-    getLookAndFeel().setDefaultSansSerifTypefaceName ("Arial");
+    setupChopComponent();
 
     // Add the button callback
     audioSettingsButton.onClick = [this] {
@@ -99,103 +52,14 @@ MainComponent::MainComponent()
     phaserComponent = std::make_unique<PhaserComponent> (edit);
     addAndMakeVisible (*phaserComponent);
 
-    updateButtonStates();
 
-    libraryComponent = std::make_unique<LibraryComponent>(engine);
-    addAndMakeVisible (*libraryComponent);
-
-    // Set up the callback for when a file is selected
-    libraryComponent->onFileSelected = [this] (const juce::File& file) {
-        handleFileSelection (file);
-    };
-
-    // Initialize two tracks
-    if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt (edit, 0))
-    {
-        EngineHelpers::removeAllClips (*track1);
-        volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin*> (track1->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
-
-        // Add oscilloscope plugin to track 1
-        track1->pluginList.insertPlugin (te::OscilloscopePlugin::create(), -1);
-    }
-
-    if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt (edit, 1))
-    {
-        EngineHelpers::removeAllClips (*track2);
-        volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin*> (track2->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
-    }
-
-    createVinylBrakeComponent();
-
-    startTimerHz (30); // Update 30 times per second
-
-    // Add oscilloscope to master track
-    if (auto masterTrack = edit.getMasterTrack())
-    {
-        DBG ("Found master track");
-
-        // Register our custom plugins with the engine
-        engine.getPluginManager().createBuiltInType<tracktion::engine::OscilloscopePlugin>();
-
-        oscilloscopePlugin = masterTrack->pluginList.insertPlugin (tracktion::engine::OscilloscopePlugin::create(), -1);
-        if (oscilloscopePlugin != nullptr)
-        {
-            DBG ("Created oscilloscope plugin");
-            if (auto* oscPlugin = dynamic_cast<tracktion::engine::OscilloscopePlugin*> (oscilloscopePlugin.get()))
-            {
-                DBG ("Cast to oscilloscope plugin successful");
-                oscPlugin->addListener (this);
-            }
-        }
-    }
-
-    // Add oscilloscope to visualizer box
-    if (oscilloscopeComponent != nullptr)
-        DBG ("Oscilloscope component added to visualizer box");
-    else
-        DBG ("Oscilloscope component not added to visualizer box");
-
-    // Add after other component setup
-    chopComponent->onCrossfaderValueChanged = [this] ([[maybe_unused]] float value) {
-        updateCrossfader();
-    };
-
-    screwComponent = std::make_unique<ScrewComponent> (edit);
-    addAndMakeVisible (*screwComponent);
-
-    // Initialize the screw component with the current tempo
-    screwComponent->setTempo (baseTempo, juce::dontSendNotification);
-
-    screwComponent->onTempoChanged = [this] (double tempo) {
-        updateTempo();
-        if (delayComponent)
-            delayComponent->setTempo (tempo);
-    };
-
-    // Initialize the scratch component
-    DBG("MainComponent: Creating ScratchComponent");
-    scratchComponent = std::make_unique<ScratchComponent> (edit);
-    DBG("MainComponent: ScratchComponent created, now making visible");
+    initialiseTracks();
     
-    // Set up callbacks to get current tempo and effective tempo
-    scratchComponent->getCurrentTempoAdjustment = [this]() {
-        // Get the current tempo ratio from the screw component
-        if (screwComponent)
-        {
-            double ratio = screwComponent->getTempo() / baseTempo;
-            // For time stretching, we just return the ratio - 1.0
-            // This represents the adjustment from the base tempo
-            return ratio - 1.0;
-        }
-        return 0.0;
-    };
-    
-    scratchComponent->getEffectiveTempo = [this]() {
-        return screwComponent ? screwComponent->getTempo() : 120.0;
-    };
-    
-    addAndMakeVisible (*scratchComponent);
-    DBG("MainComponent: ScratchComponent made visible");
+    setupLibraryComponent();
+    setupVinylBrakeComponent();
+    setupOscilloscopeComponent();
+    setupScrewComponent();
+    setupScratchComponent();
 
     // Create plugin rack after all effects are initialized
     createPluginRack();
@@ -204,8 +68,8 @@ MainComponent::MainComponent()
     addAndMakeVisible (*controllerMappingComponent);
 
     // Create transport component
-    transportComponent = std::make_unique<TransportComponent>(edit);
-    addAndMakeVisible(*transportComponent);
+    transportComponent = std::make_unique<TransportComponent> (edit);
+    addAndMakeVisible (*transportComponent);
 
     resized();
 }
@@ -249,16 +113,16 @@ void MainComponent::resized()
 
     // Row 1: Transport control (about 1/4 of height)
     if (transportComponent != nullptr)
-        mainColumn.items.add(juce::FlexItem(*transportComponent).withFlex(1.0f).withMargin(5));
+        mainColumn.items.add (juce::FlexItem (*transportComponent).withFlex (1.0f).withMargin (5));
 
     // Row 2: Thumbnail and Oscilloscope (about 1/3 of height)
     juce::FlexBox visualizerBox;
     visualizerBox.flexDirection = juce::FlexBox::Direction::column;
     if (oscilloscopeComponent != nullptr)
-        visualizerBox.items.add(juce::FlexItem(*oscilloscopeComponent).withFlex(0.6f).withMargin(5));
+        visualizerBox.items.add (juce::FlexItem (*oscilloscopeComponent).withFlex (0.6f).withMargin (5));
 
     // Give the thumbnail more space for visualization
-    mainColumn.items.add(juce::FlexItem(visualizerBox).withFlex(1.0f));
+    mainColumn.items.add (juce::FlexItem (visualizerBox).withFlex (1.0f));
 
     // Row 3: Main Box (remaining space)
     juce::FlexBox mainBox;
@@ -319,8 +183,6 @@ void MainComponent::stop()
     edit.getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
 
     playState = PlayState::Stopped;
-
-    updateButtonStates();
 }
 
 void MainComponent::loadAudioFile()
@@ -363,12 +225,12 @@ void MainComponent::handleFileSelection (const juce::File& file)
     DBG ("Track offset: " + juce::String (trackOffset));
 
     // Create clip2 with a positive offset instead of negative start time
-    tracktion::engine::WaveAudioClip::Ptr clip2 = track2->insertWaveClip (file.getFileNameWithoutExtension(), 
-                                                                          file, 
-                                                                          { { tracktion::TimePosition::fromSeconds (0.0), // Start at 0
-                                                                              tracktion::TimeDuration::fromSeconds (audioFile.getLength()) },
-                                                                            tracktion::TimeDuration::fromSeconds (trackOffset / 1000.0) }, // Use offset parameter
-                                                                          true);
+    tracktion::engine::WaveAudioClip::Ptr clip2 = track2->insertWaveClip (file.getFileNameWithoutExtension(),
+        file,
+        { { tracktion::TimePosition::fromSeconds (0.0), // Start at 0
+              tracktion::TimeDuration::fromSeconds (audioFile.getLength()) },
+            tracktion::TimeDuration::fromSeconds (trackOffset / 1000.0) }, // Use offset parameter
+        true);
     clip2->setSyncType (te::Clip::syncBarsBeats);
     clip2->setAutoPitch (false);
     clip2->setTimeStretchMode (te::TimeStretcher::elastiquePro);
@@ -385,9 +247,9 @@ void MainComponent::handleFileSelection (const juce::File& file)
     clip2->getLoopInfo().setBpm (baseTempo, clip2->getAudioFile().getInfo());
 
     // Reset the screw component to the base tempo of the new track
-    screwComponent->setBaseTempo(baseTempo);
-    screwComponent->setTempo(baseTempo, juce::dontSendNotification);
-    
+    screwComponent->setBaseTempo (baseTempo);
+    screwComponent->setTempo (baseTempo, juce::dontSendNotification);
+
     // Initialize the tempo sequence with the base tempo
     auto tempoSetting = edit.tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
     if (tempoSetting != nullptr)
@@ -413,11 +275,9 @@ void MainComponent::handleFileSelection (const juce::File& file)
     auto loopedClip = EngineHelpers::loopAroundClip (*clip1);
     edit.getTransport().stop (false, false); // Stop playback after loop setup
 
-
     // Reset crossfader to first track
     chopComponent->setCrossfaderValue (0.0);
     updateCrossfader();
-    updateButtonStates();
 
     // Apply the current tempo to the clips
     updateTempo();
@@ -477,6 +337,60 @@ void MainComponent::updateCrossfader()
     setTrackVolume (1, gainDB2);
 }
 
+void MainComponent::setupChopComponent()
+{
+    // Create ChopComponent and pass the command manager
+    chopComponent = std::make_unique<ChopComponent> (edit);
+    addAndMakeVisible (*chopComponent);
+
+    // Set the command manager for the ChopComponent
+    chopComponent->setCommandManager (commandManager.get());
+
+    // Register all commands with the command manager
+    commandManager->registerAllCommandsForTarget (this);
+
+    // Add key mappings to the top level component
+    addKeyListener (commandManager->getKeyMappings());
+
+    // Restore the mouse handlers
+    chopComponent->onChopButtonPressed = [this]() {
+        chopStartTime = juce::Time::getMillisecondCounterHiRes();
+        float currentPosition = chopComponent->getCrossfaderValue();
+        chopComponent->setCrossfaderValue (currentPosition <= 0.5f ? 1.0f : 0.0f);
+    };
+
+    chopComponent->onChopButtonReleased = [this]() {
+        double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
+        double minimumTime = chopComponent->getChopDurationInMs (screwComponent->getTempo());
+
+        if (elapsedTime >= minimumTime)
+        {
+            float currentPosition = chopComponent->getCrossfaderValue();
+            chopComponent->setCrossfaderValue (currentPosition <= 0.5f ? 1.0f : 0.0f);
+        }
+        else
+        {
+            chopReleaseDelay = minimumTime - elapsedTime;
+            startTimer (static_cast<int> (chopReleaseDelay));
+        }
+    };
+
+    chopComponent->onCrossfaderValueChanged = [this] (float) {
+        updateCrossfader();
+    };
+}
+
+void MainComponent::setupLibraryComponent()
+{
+    libraryComponent = std::make_unique<LibraryComponent> (engine);
+    addAndMakeVisible (*libraryComponent);
+
+    // Set up the callback for when a file is selected
+    libraryComponent->onFileSelected = [this] (const juce::File& file) {
+        handleFileSelection (file);
+    };
+}
+
 void MainComponent::setTrackVolume (int trackIndex, float gainDB)
 {
     if (trackIndex == 0 && volumeAndPan1)
@@ -499,9 +413,7 @@ void MainComponent::startRecording()
     armTrack (0, true);
 
     // Start transport recording
-    edit.getTransport().record (false);
-
-    recordButton.setToggleState (true, juce::NotificationType::dontSendNotification);
+    edit.getTransport().record (true);
 }
 
 void MainComponent::stopRecording()
@@ -511,16 +423,6 @@ void MainComponent::stopRecording()
 
     // Disarm track
     armTrack (0, false);
-
-    recordButton.setToggleState (false, juce::NotificationType::dontSendNotification);
-}
-
-bool MainComponent::isTempoPercentageActive (double percentage) const
-{
-    // Compare current tempo with base tempo * percentage
-    const double currentPercentage = screwComponent->getTempo() / baseTempo;
-    // Allow for small floating point differences
-    return std::abs (currentPercentage - percentage) < 0.001;
 }
 
 void MainComponent::gamepadButtonPressed (int buttonId)
@@ -623,7 +525,7 @@ void MainComponent::gamepadAxisMoved (int axisId, float value)
             //     // Trigger values are 0 to 1, we'll map to -1 to 1 for scratch speed
             //     float scratchSpeed = (value > 0.1f) ? (value * 2.0f - 1.0f) : 0.0f;
             //     scratchComponent->applyScratchEffect(scratchSpeed);
-                
+
             //     // If trigger is released, start returning to original tempo
             //     if (value < 0.1f)
             //     {
@@ -680,7 +582,7 @@ void MainComponent::gamepadAxisMoved (int axisId, float value)
     }
 }
 
-void MainComponent::createVinylBrakeComponent()
+void MainComponent::setupVinylBrakeComponent()
 {
     vinylBrakeComponent = std::make_unique<VinylBrakeComponent> (edit);
 
@@ -692,7 +594,7 @@ void MainComponent::createVinylBrakeComponent()
         // This represents the adjustment from the base tempo
         return ratio - 1.0;
     };
-    
+
     vinylBrakeComponent->getEffectiveTempo = [this]() {
         return screwComponent->getTempo();
     };
@@ -715,13 +617,93 @@ void MainComponent::createPluginRack()
         if (phaserComponent)
             plugins.add (phaserComponent->getPlugin());
         // if (scratchComponent)
-            // plugins.add (scratchComponent->getPlugin());
+        // plugins.add (scratchComponent->getPlugin());
 
         // Create the rack type with proper channel connections
         if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins (plugins, edit))
         {
             masterTrack->pluginList.insertPlugin (tracktion::engine::RackInstance::create (*rack), 0);
         }
+    }
+}
+
+void MainComponent::setupOscilloscopeComponent()
+{
+    // Add oscilloscope to master track
+    if (auto masterTrack = edit.getMasterTrack())
+    {
+        // Register our custom plugins with the engine
+        engine.getPluginManager().createBuiltInType<tracktion::engine::OscilloscopePlugin>();
+
+        oscilloscopePlugin = masterTrack->pluginList.insertPlugin (tracktion::engine::OscilloscopePlugin::create(), -1);
+        if (oscilloscopePlugin != nullptr)
+        {
+            if (auto* oscPlugin = dynamic_cast<tracktion::engine::OscilloscopePlugin*> (oscilloscopePlugin.get()))
+            {
+                oscPlugin->addListener (this);
+            }
+        }
+    }
+}
+
+void MainComponent::setupScrewComponent()
+{
+    screwComponent = std::make_unique<ScrewComponent> (edit);
+    addAndMakeVisible (*screwComponent);
+
+    // Initialize the screw component with the current tempo
+    screwComponent->setTempo (baseTempo, juce::dontSendNotification);
+
+    screwComponent->onTempoChanged = [this] (double tempo) {
+        updateTempo();
+        if (delayComponent)
+            delayComponent->setTempo (tempo);
+    };
+}
+
+void MainComponent::setupScratchComponent()
+{
+    // Initialize the scratch component
+    DBG ("MainComponent: Creating ScratchComponent");
+    scratchComponent = std::make_unique<ScratchComponent> (edit);
+    DBG ("MainComponent: ScratchComponent created, now making visible");
+
+    // Set up callbacks to get current tempo and effective tempo
+    scratchComponent->getCurrentTempoAdjustment = [this]() {
+        // Get the current tempo ratio from the screw component
+        if (screwComponent)
+        {
+            double ratio = screwComponent->getTempo() / baseTempo;
+            // For time stretching, we just return the ratio - 1.0
+            // This represents the adjustment from the base tempo
+            return ratio - 1.0;
+        }
+        return 0.0;
+    };
+
+    scratchComponent->getEffectiveTempo = [this]() {
+        return screwComponent ? screwComponent->getTempo() : 120.0;
+    };
+
+    // addAndMakeVisible (*scratchComponent);
+}
+
+void MainComponent::initialiseTracks()
+{
+    // Initialize two tracks
+    if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt (edit, 0))
+    {
+        EngineHelpers::removeAllClips (*track1);
+        volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin*> (track1->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
+
+        // Add oscilloscope plugin to track 1
+        track1->pluginList.insertPlugin (te::OscilloscopePlugin::create(), -1);
+    }
+
+    if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt (edit, 1))
+    {
+        EngineHelpers::removeAllClips (*track2);
+        volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin*> (track2->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
     }
 }
 

@@ -7,11 +7,10 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <tracktion_engine/tracktion_engine.h>
 
-// Project info that was previously in JuceHeader.h
 namespace ProjectInfo
 {
     const char* const  projectName    = "ChopShop";
-    const char* const  companyName    = "";
+    const char* const  companyName    = "Pounding Systems";
     const char* const  versionString  = "1.0.0";
     const int          versionNumber  = 0x10000;
 }
@@ -158,9 +157,6 @@ private:
 
     PlayState playState{PlayState::Stopped};
 
-    juce::TextButton saveButton{"Save"};
-    juce::TextButton recordButton{"Record"};
-
     void handleFileSelection(const juce::File &file);
 
     void updateCrossfader();
@@ -169,8 +165,6 @@ private:
     void armTrack(int trackIndex, bool arm);
     void startRecording();
     void stopRecording();
-
-    bool isTempoPercentageActive(double percentage) const;
 
     double chopStartTime = 0.0;
     double chopReleaseDelay = 0.0;
@@ -197,26 +191,24 @@ private:
         return false;
     }
 
-    void updateButtonStates()
-    {
-        bool trackLoaded = isTrackLoaded();
-        recordButton.setEnabled(trackLoaded);
-    }
-
     std::unique_ptr<Component> oscilloscopeComponent;
-
-    // Add a member to hold the plugin reference
     tracktion::engine::Plugin::Ptr oscilloscopePlugin;
 
     std::unique_ptr<ControllerMappingComponent> controllerMappingComponent;
 
-    void createVinylBrakeComponent();
+    void initialiseTracks();
+
+    void setupVinylBrakeComponent();
+    void setupChopComponent();
+    void setupLibraryComponent();
+    void setupOscilloscopeComponent();
+    void setupScrewComponent();
+    void setupScratchComponent();
 
     void createPluginRack();
 
     void releaseResources();
 
-    // Add this line to declare the command manager
     std::unique_ptr<juce::ApplicationCommandManager> commandManager;
 
     std::unique_ptr<TransportComponent> transportComponent;
