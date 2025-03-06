@@ -110,14 +110,12 @@ void TransportComponent::paint(juce::Graphics& g)
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
     
     // Draw waveform area
-    auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.7));
-    g.setColour(juce::Colours::darkgrey);
+    auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.5));
+    g.setColour(juce::Colours::darkgrey.darker(0.7f));
     g.fillRect(waveformBounds);
     
-    // Draw timeline
-    g.setColour(juce::Colours::white);
-    auto timelineBounds = waveformBounds.removeFromBottom(20);
-    g.drawRect(timelineBounds);
+    // Create drawing bounds
+    auto drawBounds = waveformBounds.reduced(2);
     
     // Draw waveform if we have one
     if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
@@ -126,14 +124,54 @@ void TransportComponent::paint(juce::Graphics& g)
         {
             if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*>(track->getClips().getFirst()))
             {
-                g.setColour(juce::Colours::lightblue);
                 auto sourceLength = clip->getSourceLength().inSeconds();
-                
                 auto timeRange = tracktion::TimeRange(
                     tracktion::TimePosition::fromSeconds(sourceLength * scrollPosition),
                     tracktion::TimePosition::fromSeconds(sourceLength * (scrollPosition + 1.0 / zoomLevel)));
                 
-                thumbnail.drawChannels(g, waveformBounds.reduced(2), timeRange, 1.0f);
+                // Enable anti-aliasing
+                g.setImageResamplingQuality(juce::Graphics::highResamplingQuality);
+                
+                // Draw waveform first (so beat markers appear on top)
+                g.setColour(juce::Colours::lightblue.withAlpha(0.7f));
+                thumbnail.drawChannels(g, drawBounds, timeRange, 0.8f);
+                
+                // Draw center line
+                g.setColour(juce::Colours::grey.withAlpha(0.3f));
+                g.drawHorizontalLine(drawBounds.getCentreY(), 
+                                   drawBounds.getX(), 
+                                   drawBounds.getRight());
+                
+                // Draw beat markers
+                auto& tempoSequence = edit.tempoSequence;
+                auto position = createPosition(tempoSequence);
+                
+                // Find the first beat before our visible range
+                position.set(tracktion::TimePosition::fromSeconds(timeRange.getStart().inSeconds()));
+                auto currentBarsBeats = position.getBarsBeats();
+                auto beatTime = timeRange.getStart().inSeconds() - (currentBarsBeats.beats.inBeats() * 60.0 / position.getTempo());
+                
+                // Draw all beat markers
+                for (double time = beatTime; time <= timeRange.getEnd().inSeconds(); time += 60.0 / position.getTempo())
+                {
+                    if (time >= timeRange.getStart().inSeconds() && time <= timeRange.getEnd().inSeconds()) // Only draw if in visible range
+                    {
+                        auto beatX = drawBounds.getX() + 
+                            ((time - timeRange.getStart().inSeconds()) / (timeRange.getEnd().inSeconds() - timeRange.getStart().inSeconds())) * drawBounds.getWidth();
+                        
+                        position.set(tracktion::TimePosition::fromSeconds(time));
+                        auto barsBeats = position.getBarsBeats();
+                        
+                        // Bar starts get a brighter color
+                        g.setColour(barsBeats.beats.inBeats() == 0 
+                                   ? juce::Colours::white.withAlpha(0.4f) 
+                                   : juce::Colours::white.withAlpha(0.2f));
+                        
+                        g.drawVerticalLine(static_cast<int>(beatX), 
+                                         drawBounds.getY(), 
+                                         drawBounds.getBottom());
+                    }
+                }
             }
         }
     }
