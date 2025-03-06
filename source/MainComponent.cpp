@@ -154,53 +154,6 @@ void MainComponent::stop()
     playState = PlayState::Stopped;
 }
 
-
-// void MainComponent::handleFileSelection (const juce::File& file)
-// {
-//     // Reset the screw component to the base tempo of the new track
-//     screwComponent->setBaseTempo (baseTempo);
-//     screwComponent->setTempo (baseTempo, juce::dontSendNotification);
-
-//     // Initialize the tempo sequence with the base tempo
-//     auto tempoSetting = edit->tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
-//     if (tempoSetting != nullptr)
-//         tempoSetting->setBpm (baseTempo);
-
-//     // Stop playback and reset transport
-//     edit->getTransport().stop (false, false);
-//     edit->getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
-
-//     // Reset play/pause/stop button states
-//     playState = PlayState::Stopped;
-
-//     // Calculate and set delay time to 1/4 note
-//     if (delayComponent)
-//     {
-//         // Calculate quarter note duration in milliseconds
-//         double quarterNoteMs = (60.0 / baseTempo) * 1000.0;
-//         delayComponent->setDelayTime (quarterNoteMs);
-//     }
-
-//     double ratio = screwComponent->getTempo() / baseTempo;
-
-//     auto loopedClip = EngineHelpers::loopAroundClip (*clip1);
-//     edit->getTransport().stop (false, false); // Stop playback after loop setup
-
-//     // Reset crossfader to first track
-//     chopComponent->setCrossfaderValue (0.0);
-//     updateCrossfader();
-
-//     // Apply the current tempo to the clips
-//     updateTempo();
-
-//     // Auto-play the newly loaded track
-//     if (playState != PlayState::Playing)
-//     {
-//         edit->getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
-//         play();
-//     }
-// }
-
 void MainComponent::updateTempo()
 {
     // Calculate the new BPM based on the current tempo from the screw component
@@ -350,13 +303,44 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     // Create plugin rack after all effects are initialized
     createPluginRack();
 
-    // Update screw component with stored BPM
+    // Reset component states
     if (screwComponent)
-        screwComponent->setTempo(bpm);
+    {
+        screwComponent->setBaseTempo(baseTempo);
+        screwComponent->setTempo(baseTempo, juce::dontSendNotification);
+    }
+
+    // Initialize the tempo sequence with the base tempo
+    auto tempoSetting = edit->tempoSequence.insertTempo(tracktion::TimePosition::fromSeconds(0.0));
+    if (tempoSetting != nullptr)
+        tempoSetting->setBpm(baseTempo);
+
+    // Reset transport position and state
+    edit->getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
+    playState = PlayState::Stopped;
+
+    // Reset delay time to 1/4 note if component exists
+    if (delayComponent)
+    {
+        // Calculate quarter note duration in milliseconds
+        double quarterNoteMs = (60.0 / baseTempo) * 1000.0;
+        delayComponent->setDelayTime(quarterNoteMs);
+        delayComponent->setTempo(baseTempo);
+    }
+
+    // Reset crossfader to first track
+    if (chopComponent)
+    {
+        chopComponent->setCrossfaderValue(0.0f);
+        updateCrossfader();
+    }
 
     // Update plugin components
     if (oscilloscopePlugin)
         oscilloscopePlugin->setEnabled(true);
+
+    // Apply the current tempo to the clips
+    updateTempo();
 
     // Trigger a layout update
     resized();

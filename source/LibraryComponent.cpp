@@ -341,8 +341,7 @@ void LibraryComponent::addToLibrary(const juce::File& file)
     
     if (!editFile.exists())
     {
-        DBG("Failed to save edit file: " + editFile.getFullPathName());
-        return;
+        throw std::runtime_error(("Failed to save edit file: " + editFile.getFullPathName()).toStdString());
     }
 
     DBG("Edit saved to: " + editFile.getFullPathName());
