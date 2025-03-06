@@ -11,6 +11,8 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     addAndMakeVisible(recordButton);
     addAndMakeVisible(loopButton);
     addAndMakeVisible(timeDisplay);
+    addAndMakeVisible(zoomInButton);
+    addAndMakeVisible(zoomOutButton);
     
     // Create and add automation lane
     automationLane = std::make_unique<AutomationLane>(edit);
@@ -60,6 +62,15 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
         auto& transport = edit.getTransport();
         transport.looping = loopButton.getToggleState();
         updateTransportState();
+    };
+    
+    // Add zoom button callbacks
+    zoomInButton.onClick = [this] {
+        setZoomLevel(zoomLevel * 1.5);
+    };
+    
+    zoomOutButton.onClick = [this] {
+        setZoomLevel(zoomLevel / 1.5);
     };
     
     // Initialize time display
@@ -116,9 +127,12 @@ void TransportComponent::paint(juce::Graphics& g)
             if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*>(track->getClips().getFirst()))
             {
                 g.setColour(juce::Colours::lightblue);
+                auto sourceLength = clip->getSourceLength().inSeconds();
+                
                 auto timeRange = tracktion::TimeRange(
-                    tracktion::TimePosition::fromSeconds(0.0),
-                    tracktion::TimePosition::fromSeconds(clip->getSourceLength().inSeconds()));
+                    tracktion::TimePosition::fromSeconds(sourceLength * scrollPosition),
+                    tracktion::TimePosition::fromSeconds(sourceLength * (scrollPosition + 1.0 / zoomLevel)));
+                
                 thumbnail.drawChannels(g, waveformBounds.reduced(2), timeRange, 1.0f);
             }
         }
@@ -138,20 +152,21 @@ void TransportComponent::resized()
     
     // Layout transport controls in remaining space
     auto controlsBounds = bounds.reduced(5);
-    auto buttonWidth = controlsBounds.getWidth() / 5;
+    auto buttonWidth = controlsBounds.getWidth() / 7; // Updated to accommodate zoom buttons
     
     playButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
     stopButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
     recordButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
     loopButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    zoomOutButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    zoomInButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
     timeDisplay.setBounds(controlsBounds.reduced(2));
     
-    // Only set the playhead rectangle dimensions here, not its position
     if (playhead != nullptr)
     {
         playhead->setRectangle(juce::Rectangle<float>(2.0f, (float)waveformBounds.getY(),
-                                                    2.0f, (float)waveformBounds.getHeight()));
-        updatePlayheadPosition(); // Let the dedicated method handle positioning
+                                                   2.0f, (float)waveformBounds.getHeight()));
+        updatePlayheadPosition();
     }
 }
 
@@ -213,13 +228,24 @@ void TransportComponent::updatePlayheadPosition()
                     // Calculate normalized position accounting for tempo
                     auto adjustedPosition = currentPosition * tempoRatio;
                     normalizedPosition = adjustedPosition / sourceLength;
-                    normalizedPosition = juce::jlimit(0.0, 1.0, normalizedPosition);
+                    
+                    // Adjust for zoom and scroll
+                    normalizedPosition = (normalizedPosition - scrollPosition) * zoomLevel;
                 }
             }
         }
         
-        auto playheadX = waveformBounds.getX() + waveformBounds.getWidth() * normalizedPosition;
-        playhead->setTopLeftPosition((int)playheadX, waveformBounds.getY());
+        // Only show playhead if it's in the visible range
+        if (normalizedPosition >= 0.0 && normalizedPosition <= 1.0)
+        {
+            auto playheadX = waveformBounds.getX() + waveformBounds.getWidth() * normalizedPosition;
+            playhead->setVisible(true);
+            playhead->setTopLeftPosition((int)playheadX, waveformBounds.getY());
+        }
+        else
+        {
+            playhead->setVisible(false);
+        }
     }
 }
 
@@ -257,7 +283,6 @@ void TransportComponent::mouseDown(juce::MouseEvent const& event)
     auto bounds = getLocalBounds();
     auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.7));
     
-    // Check if click is within waveform area
     if (waveformBounds.contains(event.getPosition()))
     {
         auto& transport = edit.getTransport();
@@ -270,10 +295,9 @@ void TransportComponent::mouseDown(juce::MouseEvent const& event)
                 {
                     // Calculate normalized position from click
                     auto clickX = event.position.x - waveformBounds.getX();
-                    auto normalizedPosition = clickX / waveformBounds.getWidth();
-                    normalizedPosition = juce::jlimit(0.0f, 1.0f, normalizedPosition);
+                    auto normalizedPosition = (clickX / waveformBounds.getWidth()) / zoomLevel + scrollPosition;
+                    normalizedPosition = juce::jlimit(0.0, 1.0, normalizedPosition);
                     
-                    // Get the source length and calculate the actual position
                     auto sourceLength = clip->getSourceLength().inSeconds();
                     
                     // Get current tempo for adjustment
@@ -285,23 +309,65 @@ void TransportComponent::mouseDown(juce::MouseEvent const& event)
                     
                     // Calculate the actual position accounting for tempo
                     auto newPosition = (normalizedPosition * sourceLength) / tempoRatio;
-
-                    // debug the event.
-                    DBG("Mouse down event at position: " + juce::String(event.position.x) + " " + juce::String(event.position.y));
-                    DBG("Waveform bounds: " + juce::String(waveformBounds.getX()) + " " + juce::String(waveformBounds.getY()) + " " + juce::String(waveformBounds.getWidth()) + " " + juce::String(waveformBounds.getHeight()));
-                    DBG("New position: " + juce::String(newPosition));
-                    DBG("Current tempo: " + juce::String(currentTempo));
-                    DBG("Tempo ratio: " + juce::String(tempoRatio));
-                    DBG("Source length: " + juce::String(sourceLength));
-                    DBG("Normalized position: " + juce::String(normalizedPosition));
-                    DBG("Transport position: " + juce::String(transport.getPosition().inSeconds()));
-
                     
-                    // Set the transport position
                     transport.setPosition(tracktion::TimePosition::fromSeconds(newPosition));
                     updateTransportState();
                 }
             }
         }
     }
-} 
+}
+
+void TransportComponent::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
+{
+    auto bounds = getLocalBounds();
+    auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.7));
+    
+    if (waveformBounds.contains(event.getPosition()))
+    {
+        // Handle horizontal scrolling with shift key or horizontal wheel
+        if (event.mods.isShiftDown() || wheel.deltaX != 0.0f)
+        {
+            auto delta = wheel.deltaX != 0.0f ? wheel.deltaX : wheel.deltaY;
+            auto newScrollPos = scrollPosition - (delta * 0.1);
+            setScrollPosition(newScrollPos);
+        }
+        // Handle zooming
+        else if (wheel.deltaY != 0.0f)
+        {
+            auto zoomFactor = wheel.deltaY > 0 ? 1.1 : 0.9;
+            
+            // Calculate the position under the mouse as a fraction of the visible width
+            auto mouseXProportion = (event.position.x - waveformBounds.getX()) / (float)waveformBounds.getWidth();
+            
+            // Get the time position under the mouse
+            auto oldTimePosition = (mouseXProportion + scrollPosition) / zoomLevel;
+            
+            // Apply the new zoom level
+            setZoomLevel(zoomLevel * zoomFactor);
+            
+            // Calculate and set the new scroll position to keep the mouse point steady
+            auto newScrollPos = oldTimePosition * zoomLevel - mouseXProportion;
+            setScrollPosition(newScrollPos);
+        }
+    }
+}
+
+void TransportComponent::setZoomLevel(double newLevel)
+{
+    zoomLevel = juce::jlimit(minZoom, maxZoom, newLevel);
+    repaint();
+}
+
+void TransportComponent::setScrollPosition(double newPosition)
+{
+    // Limit scrolling based on zoom level
+    auto maxScroll = getMaxScrollPosition();
+    scrollPosition = juce::jlimit(0.0, maxScroll, newPosition);
+    repaint();
+}
+
+double TransportComponent::getMaxScrollPosition() const
+{
+    return zoomLevel > 1.0 ? 1.0 - (1.0 / zoomLevel) : 0.0;
+}

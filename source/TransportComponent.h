@@ -21,6 +21,7 @@ public:
     void changeListenerCallback(juce::ChangeBroadcaster*) override;
     void timerCallback() override;
     void mouseDown(juce::MouseEvent const& event) override;
+    void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
 private:
     tracktion::engine::Edit& edit;
@@ -32,6 +33,10 @@ private:
     juce::TextButton recordButton{"Record"};
     juce::TextButton loopButton{"Loop"};
     
+    // Zoom controls
+    juce::TextButton zoomInButton{"+"}; 
+    juce::TextButton zoomOutButton{"-"};
+    
     // Timeline and position display
     juce::Label timeDisplay;
     std::unique_ptr<juce::DrawableRectangle> playhead;
@@ -41,10 +46,19 @@ private:
     
     std::unique_ptr<AutomationLane> automationLane;
     
+    // Zoom and scroll state
+    double zoomLevel = 1.0;
+    double scrollPosition = 0.0; // 0.0 to 1.0
+    static constexpr double minZoom = 1.0; // Changed from 0.1 to 1.0 (100%)
+    static constexpr double maxZoom = 10.0;
+    
     void updateTimeDisplay();
     void updatePlayheadPosition();
     void updateTransportState();
     void updateThumbnail();
+    void setZoomLevel(double newLevel);
+    void setScrollPosition(double newPosition);
+    double getMaxScrollPosition() const;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TransportComponent)
 }; 

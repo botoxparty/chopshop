@@ -57,7 +57,7 @@ MainComponent::MainComponent()
     
     setupLibraryComponent();
     setupVinylBrakeComponent();
-    setupOscilloscopeComponent();
+    // setupOscilloscopeComponent();
     setupScrewComponent();
     setupScratchComponent();
 
@@ -122,7 +122,7 @@ void MainComponent::resized()
         visualizerBox.items.add (juce::FlexItem (*oscilloscopeComponent).withFlex (0.6f).withMargin (5));
 
     // Give the thumbnail more space for visualization
-    mainColumn.items.add (juce::FlexItem (visualizerBox).withFlex (1.0f));
+    // mainColumn.items.add (juce::FlexItem (visualizerBox).withFlex (1.0f));
 
     // Row 3: Main Box (remaining space)
     juce::FlexBox mainBox;
