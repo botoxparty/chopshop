@@ -382,13 +382,46 @@ void MainComponent::setupChopComponent()
 
 void MainComponent::setupLibraryComponent()
 {
-    libraryComponent = std::make_unique<LibraryComponent> (engine);
-    addAndMakeVisible (*libraryComponent);
-
-    // Set up the callback for when a file is selected
-    libraryComponent->onFileSelected = [this] (const juce::File& file) {
-        handleFileSelection (file);
+    libraryComponent = std::make_unique<LibraryComponent>(engine);
+    addAndMakeVisible(libraryComponent.get());
+    
+    // Update to use Edit selection instead of File selection
+    libraryComponent->onEditSelected = [this](std::unique_ptr<tracktion::engine::Edit> edit) {
+        handleEditSelection(std::move(edit));
     };
+}
+
+void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit> newEdit)
+{
+    if (!newEdit)
+        return;
+
+    // Stop any current playback
+    stop();
+
+    // Release current edit resources
+    edit = std::move(newEdit);
+
+    // Initialize tracks
+    initialiseTracks();
+
+    // Get the stored BPM from the Edit
+    float bpm = edit.state.getProperty("bpm", 120.0f);
+    
+    // Update screw component with stored BPM
+    if (screwComponent)
+        screwComponent->setTempo(bpm);
+
+    // Setup audio graph
+    setupAudioGraph();
+
+    // Update UI components
+    // if (transportComponent)
+        // transportComponent->updatePosition();
+
+    // Update plugin components
+    if (oscilloscopePlugin)
+        oscilloscopePlugin->setEnabled(true);
 }
 
 void MainComponent::setTrackVolume (int trackIndex, float gainDB)

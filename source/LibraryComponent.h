@@ -43,7 +43,7 @@ public:
     void cellClicked(int rowNumber, int columnId, const juce::MouseEvent& event) override;
     void sortOrderChanged(int newSortColumnId, bool isForwards) override;
 
-    std::function<void(const juce::File&)> onFileSelected;
+    std::function<void(std::unique_ptr<tracktion::engine::Edit>)> onEditSelected;
 
     float getBPMForFile(const juce::File& file) const {
         auto projectItem = getProjectItemForFile(file);
@@ -77,6 +77,9 @@ private:
     
     int sortedColumnId = 0;  // 0 means unsorted
     bool sortedForward = true;
+    
+    // Helper to load an Edit from a project item
+    std::unique_ptr<tracktion::engine::Edit> loadEditFromProjectItem(tracktion::engine::ProjectItem::Ptr projectItem);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LibraryComponent)
 };

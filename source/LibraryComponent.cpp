@@ -203,10 +203,9 @@ void LibraryComponent::cellDoubleClicked(int rowNumber, int columnId, const juce
         return;
         
     auto projectItem = libraryProject->getProjectItemAt(rowNumber);
-    if (projectItem != nullptr && onFileSelected) {
-        juce::File file(projectItem->getSourceFile());
-        if (file.exists())
-            onFileSelected(file);
+    if (projectItem != nullptr && onEditSelected) {
+        if (auto edit = loadEditFromProjectItem(projectItem))
+            onEditSelected(std::move(edit));
     }
 }
 
@@ -253,73 +252,18 @@ void LibraryComponent::sortOrderChanged(int newSortColumnId, bool isForwards)
 
 void LibraryComponent::addToLibrary(const juce::File& file)
 {
-    // Log the file we're trying to add
-    DBG("Attempting to add file to library: " + file.getFullPathName());
-    
     if (!libraryProject)
-    {
-        DBG("ERROR: No library project available");
         return;
-    }
+
+    // Calculate BPM first
+    float detectedBPM = 120.0f; // Default BPM
     
-    if (!file.existsAsFile())
-    {
-        DBG("ERROR: File does not exist: " + file.getFullPathName());
-        return;
-    }
-    
-    // Check if the project is valid and not read-only
-    if (!libraryProject->isValid())
-    {
-        DBG("ERROR: Library project is not valid");
-        return;
-    }
-    
-    if (libraryProject->isReadOnly())
-    {
-        DBG("ERROR: Library project is read-only");
-        return;
-    }
-    
-    // Check if the file format is supported
     juce::AudioFormatManager formatManager;
     formatManager.registerBasicFormats();
-    
-    if (formatManager.findFormatForFileExtension(file.getFileExtension()) == nullptr)
-    {
-        DBG("ERROR: Unsupported file format: " + file.getFileExtension());
-        
-        // Check if MP3 support is enabled
-        bool mp3Supported = false;
-        for (int i = 0; i < formatManager.getNumKnownFormats(); ++i)
-        {
-            auto* format = formatManager.getKnownFormat(i);
-            if (format->getFormatName().containsIgnoreCase("MP3"))
-            {
-                mp3Supported = true;
-                break;
-            }
-        }
-        
-        if (!mp3Supported && file.getFileExtension().equalsIgnoreCase(".mp3"))
-        {
-            DBG("ERROR: MP3 support is not enabled in this build");
-        }
-        
-        return;
-    }
-    
-    // Calculate BPM
-    float detectedBPM = 120.0f; // Default BPM
     
     std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
     if (reader)
     {
-        DBG("Successfully created audio reader for file: " + file.getFileName() + 
-            " (Sample rate: " + juce::String(reader->sampleRate) + 
-            ", Channels: " + juce::String(reader->numChannels) + 
-            ", Length: " + juce::String(reader->lengthInSamples) + " samples)");
-            
         // Create MiniBPM detector
         breakfastquay::MiniBPM bpmDetector(reader->sampleRate);
         bpmDetector.setBPMRange(60, 180);  // typical range for music
@@ -342,103 +286,67 @@ void LibraryComponent::addToLibrary(const juce::File& file)
         
         float tempBPM = bpmDetector.estimateTempo();
         if (tempBPM > 0)
-        {
             detectedBPM = tempBPM;
-            DBG("BPM detection successful: " + juce::String(detectedBPM, 1));
-        }
-        else
-        {
-            DBG("BPM detection failed, using default BPM: " + juce::String(detectedBPM, 1));
-        }
     }
-    else
-    {
-        DBG("ERROR: Failed to create audio reader for file: " + file.getFileName());
-        return; // If we can't read the file, we shouldn't try to add it
-    }
+
+    // Calculate beat duration in seconds
+    double beatDuration = 60.0 / detectedBPM;
+
+    // Create a new Edit for this file
+    auto options = te::Edit::Options(engine);
+    options.editProjectItemID = te::ProjectItemID::createNewID(0);
+    options.numUndoLevelsToStore = 0;
+    options.role = te::Edit::forRendering;
     
-    // Check if the file is already in the library
-    auto existingItem = libraryProject->getProjectItemForFile(file);
-    if (existingItem != nullptr)
+    auto edit = std::make_unique<te::Edit>(options);
+    
+    // Create two tracks and import the audio file to both
+    for (int i = 0; i < 2; i++)
     {
-        DBG("File already exists in library: " + file.getFileName() + 
-            " (ID: " + existingItem->getID().toString() + ")");
-            
-        // Update the BPM if needed
-        float existingBPM = existingItem->getNamedProperty("bpm").getFloatValue();
-        if (std::abs(existingBPM - detectedBPM) > 0.1f)
+        if (auto track = edit->insertNewAudioTrack(te::TrackInsertPoint::getEndOfTracks(*edit), nullptr))
         {
-            DBG("Updating BPM from " + juce::String(existingBPM, 1) + 
-                " to " + juce::String(detectedBPM, 1));
-                
-            existingItem->setNamedProperty("bpm", juce::String(detectedBPM));
-            libraryProject->save();
-            playlistTable->updateContent();
+            // For the second track, offset by 1 beat duration
+            auto clip = track->insertWaveClip(file.getFileNameWithoutExtension(),
+                                            file,
+                                            { { i == 1 ? tracktion::TimePosition::fromSeconds(0.0) : tracktion::TimePosition(),
+                                                tracktion::TimeDuration::fromSeconds(1000.0) },
+                                              i == 1 ? tracktion::TimeDuration::fromSeconds(beatDuration) : tracktion::TimeDuration() },
+                                            true);
+            if (!clip)
+                return;
+
+            clip->setSyncType(te::Clip::syncBarsBeats);
+            clip->setAutoPitch(false);
+            clip->setTimeStretchMode(te::TimeStretcher::elastiquePro);
+            clip->setUsesProxy(false);
+            clip->setAutoTempo(true);
+            clip->setGainDB(0.0f);
+            clip->getLoopInfo().setBpm(detectedBPM, clip->getAudioFile().getInfo());
         }
+    }
+
+    // Store BPM in the Edit's ValueTree
+    edit->state.setProperty("bpm", detectedBPM, nullptr);
+
+    // Save the Edit to get a file
+    auto editFile = edit->editFileRetriever();
+    if (!editFile.exists())
         return;
-    }
-    
-    // Log the file type we're creating
-    juce::String fileType = file.hasFileExtension("mid;midi") ? 
-        te::ProjectItem::midiItemType() : te::ProjectItem::waveItemType();
-    DBG("Creating project item with type: " + fileType);
-    
-    // Create a new project item for the file
-    try
+
+    // Add the Edit file to the project
+    auto projectItem = libraryProject->createNewItem(editFile,
+                                                   te::ProjectItem::editItemType(),
+                                                   file.getFileNameWithoutExtension(),
+                                                   {},
+                                                   te::ProjectItem::Category::edit,
+                                                   true);
+
+    if (projectItem)
     {
-        auto projectItem = libraryProject->createNewItem(
-            file,                                   // File to reference
-            fileType,                               // Type
-            file.getFileNameWithoutExtension(),     // Name
-            "",                                     // Description
-            te::ProjectItem::Category::imported,    // Category
-            true);                                  // Add at top of list
-        
-        // Store the BPM as a named property
-        if (projectItem != nullptr) 
-        {
-            DBG("Successfully created project item: " + projectItem->getID().toString());
-            
-            // Set the BPM property
-            projectItem->setNamedProperty("bpm", juce::String(detectedBPM));
-            
-            // Save the project
-            DBG("Saving project...");
-            libraryProject->save();
-            
-            // Update the table
-            playlistTable->updateContent();
-            
-            DBG("Added file to library: " + file.getFileName() + 
-                " (BPM: " + juce::String(detectedBPM, 1) + 
-                ", ID: " + projectItem->getID().toString() + ")");
-            DBG("Library now contains " + juce::String(libraryProject->getNumProjectItems()) + " items");
-        }
-        else 
-        {
-            DBG("ERROR: createNewItem returned nullptr for file: " + file.getFileName());
-            
-            // Try to get more information about why it failed
-                
-            // Check if the file can be opened for reading
-            std::unique_ptr<juce::FileInputStream> fileStream(file.createInputStream());
-            if (fileStream == nullptr || !fileStream->openedOk())
-            {
-                DBG("ERROR: Cannot open file for reading");
-            }
-            else
-            {
-                DBG("File can be opened for reading");
-            }
-        }
-    }
-    catch (const std::exception& e)
-    {
-        DBG("EXCEPTION while adding file to library: " + juce::String(e.what()));
-    }
-    catch (...)
-    {
-        DBG("UNKNOWN EXCEPTION while adding file to library");
+        // Store BPM as a property on the project item too
+        projectItem->setNamedProperty("bpm", juce::String(detectedBPM));
+        playlistTable->updateContent();
+        playlistTable->repaint();
     }
 }
 
@@ -646,6 +554,23 @@ void LibraryComponent::showBpmEditorWindow(int rowIndex)
     
     DBG("Launching BPM editor dialog");
     options.launchAsync();
+}
+
+std::unique_ptr<tracktion::engine::Edit> LibraryComponent::loadEditFromProjectItem(tracktion::engine::ProjectItem::Ptr projectItem)
+{
+    if (!projectItem)
+        return nullptr;
+
+    auto sourceFile = projectItem->getSourceFile();
+    if (!sourceFile.exists())
+        return nullptr;
+
+    auto options = tracktion::engine::Edit::Options(engine);
+    options.editProjectItemID = projectItem->getID();
+    options.numUndoLevelsToStore = 0;
+    options.role = tracktion::engine::Edit::forEditing;
+    
+    return std::make_unique<tracktion::engine::Edit>(options);
 }
 
 // FileBrowserListener methods (no longer used but kept for interface)

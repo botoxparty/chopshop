@@ -213,5 +213,8 @@ private:
 
     std::unique_ptr<TransportComponent> transportComponent;
 
+    // Change to handle Edits instead of Files
+    void handleEditSelection(std::unique_ptr<tracktion::engine::Edit> newEdit);
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };
