@@ -166,9 +166,6 @@ private:
     double chopStartTime = 0.0;
     double chopReleaseDelay = 0.0;
 
-    te::VolumeAndPanPlugin *volumeAndPan1 = nullptr;
-    te::VolumeAndPanPlugin *volumeAndPan2 = nullptr;
-
     // GameController member variables
     GamepadManager* gamepadManager = nullptr;
 

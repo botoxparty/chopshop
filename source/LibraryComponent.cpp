@@ -320,6 +320,9 @@ void LibraryComponent::addToLibrary (const juce::File& file)
         {
             DBG ("Created track " + juce::String (i + 1));
 
+            // Add volume and pan plugin
+            auto volumeAndPan = track->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0);
+
             // Get the audio file length
             te::AudioFile audioFile (engine, file);
             if (!audioFile.isValid())
@@ -332,8 +335,7 @@ void LibraryComponent::addToLibrary (const juce::File& file)
             DBG ("Audio file length: " + juce::String (fileLength) + " seconds");
 
             // Create clip position
-            auto startTime = i == 0 ? tracktion::TimePosition() : tracktion::TimePosition::fromSeconds (beatDuration);
-            auto timeRange = tracktion::TimeRange (startTime, tracktion::TimePosition::fromSeconds (fileLength));
+            auto timeRange = tracktion::TimeRange (tracktion::TimePosition(), tracktion::TimePosition::fromSeconds (fileLength));
             auto position = tracktion::engine::createClipPosition (edit->tempoSequence, timeRange, tracktion::TimeDuration::fromSeconds (i == 0 ? 0.0 : beatDuration));
 
             DBG ("Clip position: " + juce::String (position.time.getStart().inSeconds()) + " to " + juce::String (position.time.getEnd().inSeconds()));

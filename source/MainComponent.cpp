@@ -284,9 +284,6 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     // Release current edit and assign new one
     edit = std::move(newEdit);
 
-    // Initialize tracks first
-    initialiseTracks();
-
     // Get the stored BPM from the Edit
     float bpm = edit->state.getProperty("bpm", 120.0f);
     baseTempo = bpm;  // Update base tempo
@@ -369,10 +366,18 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
 
 void MainComponent::setTrackVolume (int trackIndex, float gainDB)
 {
-    if (trackIndex == 0 && volumeAndPan1)
-        volumeAndPan1->setVolumeDb (gainDB);
-    else if (trackIndex == 1 && volumeAndPan2)
-        volumeAndPan2->setVolumeDb (gainDB);
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (*edit, trackIndex))
+    {
+        DBG ("Setting track volume for track index: " + juce::String (trackIndex));
+        if (auto volumeAndPan = dynamic_cast<te::VolumeAndPanPlugin*> (track->pluginList.getPluginsOfType<te::VolumeAndPanPlugin>().getFirst())) {
+            DBG ("Volume and pan plugin found");
+            volumeAndPan->setVolumeDb (gainDB);
+        }
+        else
+        {
+            DBG ("No volume and pan plugin found");
+        }
+    }
 }
 
 void MainComponent::armTrack (int trackIndex, bool arm)
@@ -662,28 +667,6 @@ void MainComponent::setupScratchComponent()
     };
 
     // addAndMakeVisible (*scratchComponent);
-}
-
-void MainComponent::initialiseTracks()
-{
-    // Only initialize tracks if there are none
-    auto audioTracks = te::getAudioTracks(*edit);
-    if (!audioTracks.isEmpty())
-        return;
-
-    // Initialize two tracks
-    if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt (*edit, 0))
-    {
-        volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin*> (track1->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
-
-        // Add oscilloscope plugin to track 1
-        track1->pluginList.insertPlugin (te::OscilloscopePlugin::create(), -1);
-    }
-
-    if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt (*edit, 1))
-    {
-        volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin*> (track2->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
-    }
 }
 
 void MainComponent::setupAudioGraph()
