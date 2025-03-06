@@ -87,6 +87,12 @@ LibraryComponent::LibraryComponent(te::Engine& engineToUse)
     editBpmButton.setColour(juce::TextButton::buttonColourId, black);
     editBpmButton.setColour(juce::TextButton::textColourOffId, matrixGreen);
     editBpmButton.setColour(juce::TextButton::textColourOnId, matrixGreen);
+    editBpmButton.onClick = [this]() {
+        auto selectedRow = playlistTable->getSelectedRow();
+        if (selectedRow >= 0) {
+            showBpmEditorWindow(selectedRow);
+        }
+    };
     addAndMakeVisible(editBpmButton);
     
     // Set up playlist table
@@ -127,13 +133,6 @@ LibraryComponent::LibraryComponent(te::Engine& engineToUse)
         auto selectedRow = playlistTable->getSelectedRow();
         if (selectedRow >= 0) {
             removeFromLibrary(selectedRow);
-        }
-    };
-    
-    editBpmButton.onClick = [this]() {
-        auto selectedRow = playlistTable->getSelectedRow();
-        if (selectedRow >= 0) {
-            showBpmEditorWindow(selectedRow);
         }
     };
     
@@ -294,11 +293,14 @@ void LibraryComponent::addToLibrary(const juce::File& file)
 
     // Create a new Edit for this file
     auto options = te::Edit::Options(engine);
-    options.editProjectItemID = te::ProjectItemID::createNewID(0);
+    options.editState = te::createEmptyEdit(engine);
+    options.editProjectItemID = te::ProjectItemID::fromProperty(options.editState, te::IDs::projectID);
     options.numUndoLevelsToStore = 0;
     options.role = te::Edit::forRendering;
     
-    auto edit = std::make_unique<te::Edit>(options);
+    auto edit = te::Edit::createEdit(std::move(options));
+    if (!edit)
+        throw std::runtime_error("Failed to create edit");
     
     // Create two tracks and import the audio file to both
     for (int i = 0; i < 2; i++)
@@ -328,10 +330,22 @@ void LibraryComponent::addToLibrary(const juce::File& file)
     // Store BPM in the Edit's ValueTree
     edit->state.setProperty("bpm", detectedBPM, nullptr);
 
-    // Save the Edit to get a file
-    auto editFile = edit->editFileRetriever();
+    DBG("Edit created");
+
+    // Create a file path for the edit in the library project directory
+    auto editFileName = file.getFileNameWithoutExtension() + ".tracktionedit";
+    auto editFile = libraryProject->getDefaultDirectory().getChildFile(editFileName);
+    
+    // Save the edit to disk
+    te::EditFileOperations(*edit).saveAs(editFile, true);
+    
     if (!editFile.exists())
+    {
+        DBG("Failed to save edit file: " + editFile.getFullPathName());
         return;
+    }
+
+    DBG("Edit saved to: " + editFile.getFullPathName());
 
     // Add the Edit file to the project
     auto projectItem = libraryProject->createNewItem(editFile,
@@ -347,6 +361,7 @@ void LibraryComponent::addToLibrary(const juce::File& file)
         projectItem->setNamedProperty("bpm", juce::String(detectedBPM));
         playlistTable->updateContent();
         playlistTable->repaint();
+        DBG("Project item created");
     }
 }
 
@@ -566,11 +581,12 @@ std::unique_ptr<tracktion::engine::Edit> LibraryComponent::loadEditFromProjectIt
         return nullptr;
 
     auto options = tracktion::engine::Edit::Options(engine);
+    options.editState = te::loadEditFromProjectManager(engine.getProjectManager(), projectItem->getID());
     options.editProjectItemID = projectItem->getID();
     options.numUndoLevelsToStore = 0;
     options.role = tracktion::engine::Edit::forEditing;
     
-    return std::make_unique<tracktion::engine::Edit>(options);
+    return tracktion::engine::Edit::createEdit(std::move(options));
 }
 
 // FileBrowserListener methods (no longer used but kept for interface)

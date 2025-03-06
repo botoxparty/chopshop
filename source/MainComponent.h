@@ -69,7 +69,6 @@ public:
     // Toggles playback state and updates UI
     void play();
     void stop();
-    void loadAudioFile();
     void updateTempo();
     tracktion::engine::WaveAudioClip::Ptr getClip(int trackIndex);
 
@@ -141,7 +140,7 @@ public:
 private:
     //==============================================================================
     tracktion::engine::Engine engine{ProjectInfo::projectName};
-    tracktion::engine::Edit edit{engine, tracktion::engine::Edit::forEditing};
+    std::unique_ptr<tracktion::engine::Edit> edit;
     std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
     juce::TextButton audioSettingsButton{"Audio Settings"};
 
@@ -156,8 +155,6 @@ private:
     };
 
     PlayState playState{PlayState::Stopped};
-
-    void handleFileSelection(const juce::File &file);
 
     void updateCrossfader();
     void setTrackVolume(int trackIndex, float volume);
@@ -186,7 +183,9 @@ private:
     std::unique_ptr<ScratchComponent> scratchComponent;
     bool isTrackLoaded()
     {
-        if (auto track = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+        if (!edit)
+            return false;
+        if (auto track = EngineHelpers::getOrInsertAudioTrackAt(*edit, 0))
             return !track->getClips().isEmpty();
         return false;
     }

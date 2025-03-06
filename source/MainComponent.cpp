@@ -25,15 +25,6 @@ MainComponent::MainComponent()
 
     addAndMakeVisible (audioSettingsButton);
 
-    // Set initial position
-    edit.getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
-
-    // Setup reverb control
-    reverbComponent = std::make_unique<ReverbComponent> (edit);
-    addAndMakeVisible (*reverbComponent);
-
-    setupChopComponent();
-
     // Add the button callback
     audioSettingsButton.onClick = [this] {
         EngineHelpers::showAudioDeviceSettings (engine);
@@ -42,34 +33,12 @@ MainComponent::MainComponent()
     gamepadManager = GamepadManager::getInstance();
     gamepadManager->addListener (this);
 
-    // Add after reverbComponent initialization
-    flangerComponent = std::make_unique<FlangerComponent> (edit);
-    addAndMakeVisible (*flangerComponent);
-
-    delayComponent = std::make_unique<DelayComponent> (edit);
-    addAndMakeVisible (*delayComponent);
-
-    phaserComponent = std::make_unique<PhaserComponent> (edit);
-    addAndMakeVisible (*phaserComponent);
-
-
-    initialiseTracks();
-    
+    // Initialize library component first as it's not edit-dependent
     setupLibraryComponent();
-    setupVinylBrakeComponent();
-    // setupOscilloscopeComponent();
-    setupScrewComponent();
-    setupScratchComponent();
 
-    // Create plugin rack after all effects are initialized
-    createPluginRack();
-
+    // Initialize controller mapping component (not edit-dependent)
     controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
     addAndMakeVisible (*controllerMappingComponent);
-
-    // Create transport component
-    transportComponent = std::make_unique<TransportComponent> (edit);
-    addAndMakeVisible (*transportComponent);
 
     resized();
 }
@@ -167,128 +136,70 @@ void MainComponent::resized()
 
 void MainComponent::play()
 {
-    EngineHelpers::togglePlay (edit);
+    EngineHelpers::togglePlay (*edit);
 
     // Update button states based on transport state
-    const bool isPlaying = edit.getTransport().isPlaying();
+    const bool isPlaying = edit->getTransport().isPlaying();
     playState = isPlaying ? PlayState::Playing : PlayState::Stopped;
 }
 
 void MainComponent::stop()
 {
-    EngineHelpers::togglePlay (edit, EngineHelpers::ReturnToStart::yes);
+    EngineHelpers::togglePlay (*edit, EngineHelpers::ReturnToStart::yes);
 
     // Stop transport and reset position
-    edit.getTransport().stop (true, false);
-    edit.getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
+    edit->getTransport().stop (true, false);
+    edit->getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
 
     playState = PlayState::Stopped;
 }
 
-void MainComponent::loadAudioFile()
-{
-    EngineHelpers::browseForAudioFile (engine, [this] (const juce::File& file) { handleFileSelection (file); });
-}
 
-void MainComponent::handleFileSelection (const juce::File& file)
-{
-    if (!file.existsAsFile())
-        return;
+// void MainComponent::handleFileSelection (const juce::File& file)
+// {
+//     // Reset the screw component to the base tempo of the new track
+//     screwComponent->setBaseTempo (baseTempo);
+//     screwComponent->setTempo (baseTempo, juce::dontSendNotification);
 
-    tracktion::AudioFile audioFile (edit.engine, file);
+//     // Initialize the tempo sequence with the base tempo
+//     auto tempoSetting = edit->tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
+//     if (tempoSetting != nullptr)
+//         tempoSetting->setBpm (baseTempo);
 
-    if (!audioFile.isValid())
-        return;
+//     // Stop playback and reset transport
+//     edit->getTransport().stop (false, false);
+//     edit->getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
 
-    tracktion::AudioTrack* track1 = EngineHelpers::getOrInsertAudioTrackAt (edit, 0);
-    tracktion::AudioTrack* track2 = EngineHelpers::getOrInsertAudioTrackAt (edit, 1);
+//     // Reset play/pause/stop button states
+//     playState = PlayState::Stopped;
 
-    if (!track1 || !track2)
-        return;
+//     // Calculate and set delay time to 1/4 note
+//     if (delayComponent)
+//     {
+//         // Calculate quarter note duration in milliseconds
+//         double quarterNoteMs = (60.0 / baseTempo) * 1000.0;
+//         delayComponent->setDelayTime (quarterNoteMs);
+//     }
 
-    EngineHelpers::removeAllClips (*track1);
-    EngineHelpers::removeAllClips (*track2);
+//     double ratio = screwComponent->getTempo() / baseTempo;
 
-    // Load clip into first track
-    float detectedBPM = libraryComponent->getBPMForFile (file);
-    baseTempo = detectedBPM;
-    // Load clip into first track
-    tracktion::engine::WaveAudioClip::Ptr clip1 = track1->insertWaveClip (file.getFileNameWithoutExtension(), file, { { {}, tracktion::TimeDuration::fromSeconds (audioFile.getLength()) }, {} }, true);
-    clip1->setSyncType (te::Clip::syncBarsBeats);
-    clip1->setAutoPitch (false);
-    clip1->setTimeStretchMode (te::TimeStretcher::elastiquePro);
-    clip1->setUsesProxy (false);
-    clip1->setAutoTempo (true);
+//     auto loopedClip = EngineHelpers::loopAroundClip (*clip1);
+//     edit->getTransport().stop (false, false); // Stop playback after loop setup
 
-    trackOffset = (60.0 / baseTempo) * 1000.0;
+//     // Reset crossfader to first track
+//     chopComponent->setCrossfaderValue (0.0);
+//     updateCrossfader();
 
-    DBG ("Track offset: " + juce::String (trackOffset));
+//     // Apply the current tempo to the clips
+//     updateTempo();
 
-    // Create clip2 with a positive offset instead of negative start time
-    tracktion::engine::WaveAudioClip::Ptr clip2 = track2->insertWaveClip (file.getFileNameWithoutExtension(),
-        file,
-        { { tracktion::TimePosition::fromSeconds (0.0), // Start at 0
-              tracktion::TimeDuration::fromSeconds (audioFile.getLength()) },
-            tracktion::TimeDuration::fromSeconds (trackOffset / 1000.0) }, // Use offset parameter
-        true);
-    clip2->setSyncType (te::Clip::syncBarsBeats);
-    clip2->setAutoPitch (false);
-    clip2->setTimeStretchMode (te::TimeStretcher::elastiquePro);
-    clip2->setUsesProxy (false);
-    clip2->setAutoTempo (true);
-    clip2->setGainDB (0.0f);
-
-    if (!clip1 || !clip2)
-        return;
-
-    DBG ("Setting BPM for clip 1: " + juce::String (baseTempo));
-    DBG ("Setting BPM for clip 2: " + juce::String (baseTempo));
-    clip1->getLoopInfo().setBpm (baseTempo, clip1->getAudioFile().getInfo());
-    clip2->getLoopInfo().setBpm (baseTempo, clip2->getAudioFile().getInfo());
-
-    // Reset the screw component to the base tempo of the new track
-    screwComponent->setBaseTempo (baseTempo);
-    screwComponent->setTempo (baseTempo, juce::dontSendNotification);
-
-    // Initialize the tempo sequence with the base tempo
-    auto tempoSetting = edit.tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
-    if (tempoSetting != nullptr)
-        tempoSetting->setBpm (baseTempo);
-
-    // Stop playback and reset transport
-    edit.getTransport().stop (false, false);
-    edit.getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
-
-    // Reset play/pause/stop button states
-    playState = PlayState::Stopped;
-
-    // Calculate and set delay time to 1/4 note
-    if (delayComponent)
-    {
-        // Calculate quarter note duration in milliseconds
-        double quarterNoteMs = (60.0 / baseTempo) * 1000.0;
-        delayComponent->setDelayTime (quarterNoteMs);
-    }
-
-    double ratio = screwComponent->getTempo() / baseTempo;
-
-    auto loopedClip = EngineHelpers::loopAroundClip (*clip1);
-    edit.getTransport().stop (false, false); // Stop playback after loop setup
-
-    // Reset crossfader to first track
-    chopComponent->setCrossfaderValue (0.0);
-    updateCrossfader();
-
-    // Apply the current tempo to the clips
-    updateTempo();
-
-    // Auto-play the newly loaded track
-    if (playState != PlayState::Playing)
-    {
-        edit.getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
-        play();
-    }
-}
+//     // Auto-play the newly loaded track
+//     if (playState != PlayState::Playing)
+//     {
+//         edit->getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
+//         play();
+//     }
+// }
 
 void MainComponent::updateTempo()
 {
@@ -296,7 +207,7 @@ void MainComponent::updateTempo()
     double newBpm = screwComponent->getTempo();
 
     // Insert tempo change at the beginning of the track
-    auto tempoSetting = edit.tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
+    auto tempoSetting = edit->tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
     if (tempoSetting != nullptr)
         tempoSetting->setBpm (newBpm);
 
@@ -312,7 +223,7 @@ void MainComponent::updateTempo()
 
 te::WaveAudioClip::Ptr MainComponent::getClip (int trackIndex)
 {
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (edit, trackIndex))
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (*edit, trackIndex))
         if (auto clip = dynamic_cast<te::WaveAudioClip*> (track->getClips()[0]))
             return *clip;
 
@@ -340,7 +251,7 @@ void MainComponent::updateCrossfader()
 void MainComponent::setupChopComponent()
 {
     // Create ChopComponent and pass the command manager
-    chopComponent = std::make_unique<ChopComponent> (edit);
+    chopComponent = std::make_unique<ChopComponent> (*edit);
     addAndMakeVisible (*chopComponent);
 
     // Set the command manager for the ChopComponent
@@ -396,32 +307,59 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     if (!newEdit)
         return;
 
-    // Stop any current playback
-    stop();
+    // Stop any current playback if we have an existing edit
+    if (edit)
+        edit->getTransport().stop(false, false);
 
     // Release current edit resources
     edit = std::move(newEdit);
 
-    // Initialize tracks
+    // Initialize tracks first
     initialiseTracks();
 
     // Get the stored BPM from the Edit
-    float bpm = edit.state.getProperty("bpm", 120.0f);
-    
-    // Update screw component with stored BPM
-    if (screwComponent)
-        screwComponent->setTempo(bpm);
+    float bpm = edit->state.getProperty("bpm", 120.0f);
+    baseTempo = bpm;  // Update base tempo
 
     // Setup audio graph
     setupAudioGraph();
 
-    // Update UI components
-    // if (transportComponent)
-        // transportComponent->updatePosition();
+    // Initialize all edit-dependent components
+    reverbComponent = std::make_unique<ReverbComponent>(*edit);
+    addAndMakeVisible(*reverbComponent);
+
+    setupChopComponent();
+
+    flangerComponent = std::make_unique<FlangerComponent>(*edit);
+    addAndMakeVisible(*flangerComponent);
+
+    delayComponent = std::make_unique<DelayComponent>(*edit);
+    addAndMakeVisible(*delayComponent);
+
+    phaserComponent = std::make_unique<PhaserComponent>(*edit);
+    addAndMakeVisible(*phaserComponent);
+
+    setupVinylBrakeComponent();
+    setupScrewComponent();
+    setupScratchComponent();
+
+    // Create transport component
+    transportComponent = std::make_unique<TransportComponent>(*edit);
+    addAndMakeVisible(*transportComponent);
+
+    // Create plugin rack after all effects are initialized
+    createPluginRack();
+
+    // Update screw component with stored BPM
+    if (screwComponent)
+        screwComponent->setTempo(bpm);
 
     // Update plugin components
     if (oscilloscopePlugin)
         oscilloscopePlugin->setEnabled(true);
+
+    // Trigger a layout update
+    resized();
 }
 
 void MainComponent::setTrackVolume (int trackIndex, float gainDB)
@@ -434,7 +372,7 @@ void MainComponent::setTrackVolume (int trackIndex, float gainDB)
 
 void MainComponent::armTrack (int trackIndex, bool arm)
 {
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (edit, trackIndex))
+    if (auto track = EngineHelpers::getOrInsertAudioTrackAt (*edit, trackIndex))
     {
         EngineHelpers::armTrack (*track, arm);
     }
@@ -446,13 +384,13 @@ void MainComponent::startRecording()
     armTrack (0, true);
 
     // Start transport recording
-    edit.getTransport().record (true);
+    edit->getTransport().record (true);
 }
 
 void MainComponent::stopRecording()
 {
     // Stop recording
-    edit.getTransport().stop (false, false);
+    edit->getTransport().stop (false, false);
 
     // Disarm track
     armTrack (0, false);
@@ -617,7 +555,7 @@ void MainComponent::gamepadAxisMoved (int axisId, float value)
 
 void MainComponent::setupVinylBrakeComponent()
 {
-    vinylBrakeComponent = std::make_unique<VinylBrakeComponent> (edit);
+    vinylBrakeComponent = std::make_unique<VinylBrakeComponent> (*edit);
 
     // Set up the callback to get current tempo adjustment
     vinylBrakeComponent->getCurrentTempoAdjustment = [this]() {
@@ -637,7 +575,7 @@ void MainComponent::setupVinylBrakeComponent()
 
 void MainComponent::createPluginRack()
 {
-    if (auto masterTrack = edit.getMasterTrack())
+    if (auto masterTrack = edit->getMasterTrack())
     {
         tracktion::engine::Plugin::Array plugins;
 
@@ -653,7 +591,7 @@ void MainComponent::createPluginRack()
         // plugins.add (scratchComponent->getPlugin());
 
         // Create the rack type with proper channel connections
-        if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins (plugins, edit))
+        if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins (plugins, *edit))
         {
             masterTrack->pluginList.insertPlugin (tracktion::engine::RackInstance::create (*rack), 0);
         }
@@ -663,7 +601,7 @@ void MainComponent::createPluginRack()
 void MainComponent::setupOscilloscopeComponent()
 {
     // Add oscilloscope to master track
-    if (auto masterTrack = edit.getMasterTrack())
+    if (auto masterTrack = edit->getMasterTrack())
     {
         // Register our custom plugins with the engine
         engine.getPluginManager().createBuiltInType<tracktion::engine::OscilloscopePlugin>();
@@ -681,7 +619,7 @@ void MainComponent::setupOscilloscopeComponent()
 
 void MainComponent::setupScrewComponent()
 {
-    screwComponent = std::make_unique<ScrewComponent> (edit);
+    screwComponent = std::make_unique<ScrewComponent> (*edit);
     addAndMakeVisible (*screwComponent);
 
     // Initialize the screw component with the current tempo
@@ -698,7 +636,7 @@ void MainComponent::setupScratchComponent()
 {
     // Initialize the scratch component
     DBG ("MainComponent: Creating ScratchComponent");
-    scratchComponent = std::make_unique<ScratchComponent> (edit);
+    scratchComponent = std::make_unique<ScratchComponent> (*edit);
     DBG ("MainComponent: ScratchComponent created, now making visible");
 
     // Set up callbacks to get current tempo and effective tempo
@@ -724,7 +662,7 @@ void MainComponent::setupScratchComponent()
 void MainComponent::initialiseTracks()
 {
     // Initialize two tracks
-    if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt (edit, 0))
+    if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt (*edit, 0))
     {
         EngineHelpers::removeAllClips (*track1);
         volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin*> (track1->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
@@ -733,11 +671,23 @@ void MainComponent::initialiseTracks()
         track1->pluginList.insertPlugin (te::OscilloscopePlugin::create(), -1);
     }
 
-    if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt (edit, 1))
+    if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt (*edit, 1))
     {
         EngineHelpers::removeAllClips (*track2);
         volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin*> (track2->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
     }
+}
+
+void MainComponent::setupAudioGraph()
+{
+    // Ensure transport is stopped
+    edit->getTransport().stop(false, false);
+    
+    // Reset transport position
+    edit->getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
+    
+    // Ensure playback context is allocated
+    edit->getTransport().ensureContextAllocated();
 }
 
 void MainComponent::releaseResources()
@@ -746,8 +696,8 @@ void MainComponent::releaseResources()
     stopTimer();
 
     // Stop playback if active
-    if (edit.getTransport().isPlaying())
-        edit.getTransport().stop (true, false);
+    if (edit->getTransport().isPlaying())
+        edit->getTransport().stop (true, false);
 
     // Debug reference counting
     if (oscilloscopePlugin != nullptr)
