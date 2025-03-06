@@ -22,6 +22,8 @@ public:
     void timerCallback() override;
     void mouseDown(juce::MouseEvent const& event) override;
     void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
+    
+    void updateThumbnail();
 
 private:
     tracktion::engine::Edit& edit;
@@ -55,7 +57,6 @@ private:
     void updateTimeDisplay();
     void updatePlayheadPosition();
     void updateTransportState();
-    void updateThumbnail();
     void setZoomLevel(double newLevel);
     void setScrollPosition(double newPosition);
     double getMaxScrollPosition() const;

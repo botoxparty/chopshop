@@ -17,6 +17,8 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <tracktion_engine/tracktion_engine.h>
 
+#include "Utilities.h"
+
 // We'll use ProjectItem instead of PlaylistEntry
 class LibraryComponent : public juce::Component,
                         public juce::FileBrowserListener,

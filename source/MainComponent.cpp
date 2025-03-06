@@ -262,9 +262,26 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
 
     // Stop any current playback if we have an existing edit
     if (edit)
+    {
         edit->getTransport().stop(false, false);
+        
+        // Clean up all edit-dependent components first
+        transportComponent = nullptr;
+        reverbComponent = nullptr;
+        delayComponent = nullptr;
+        flangerComponent = nullptr;
+        phaserComponent = nullptr;
+        chopComponent = nullptr;
+        screwComponent = nullptr;
+        scratchComponent = nullptr;
+        vinylBrakeComponent = nullptr;
+        oscilloscopeComponent = nullptr;
+        
+        // Release resources
+        releaseResources();
+    }
 
-    // Release current edit resources
+    // Release current edit and assign new one
     edit = std::move(newEdit);
 
     // Initialize tracks first
@@ -341,6 +358,10 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
 
     // Apply the current tempo to the clips
     updateTempo();
+
+    // Force transport component to update its thumbnail
+    if (transportComponent)
+        transportComponent->updateThumbnail();
 
     // Trigger a layout update
     resized();
@@ -645,10 +666,14 @@ void MainComponent::setupScratchComponent()
 
 void MainComponent::initialiseTracks()
 {
+    // Only initialize tracks if there are none
+    auto audioTracks = te::getAudioTracks(*edit);
+    if (!audioTracks.isEmpty())
+        return;
+
     // Initialize two tracks
     if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt (*edit, 0))
     {
-        EngineHelpers::removeAllClips (*track1);
         volumeAndPan1 = dynamic_cast<te::VolumeAndPanPlugin*> (track1->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
 
         // Add oscilloscope plugin to track 1
@@ -657,7 +682,6 @@ void MainComponent::initialiseTracks()
 
     if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt (*edit, 1))
     {
-        EngineHelpers::removeAllClips (*track2);
         volumeAndPan2 = dynamic_cast<te::VolumeAndPanPlugin*> (track2->pluginList.insertPlugin (te::VolumeAndPanPlugin::create(), 0).get());
     }
 }
