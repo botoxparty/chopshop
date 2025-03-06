@@ -2,6 +2,7 @@
 
 TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     : edit(e),
+      transport(e.getTransport()),
       thumbnail(e.engine, tracktion::AudioFile(e.engine), *this, &e)
 {
     // Add and make visible all buttons
@@ -10,6 +11,10 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     addAndMakeVisible(recordButton);
     addAndMakeVisible(loopButton);
     addAndMakeVisible(timeDisplay);
+    
+    // Create and add automation lane
+    automationLane = std::make_unique<AutomationLane>(edit);
+    addAndMakeVisible(*automationLane);
     
     // Setup button callbacks
     playButton.onClick = [this] { 
@@ -124,10 +129,14 @@ void TransportComponent::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Reserve space for waveform display
-    auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.7));
+    // Reserve space for waveform display (50% of height)
+    auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.5));
     
-    // Layout transport controls
+    // Reserve space for automation lane (30% of original height)
+    auto automationBounds = bounds.removeFromTop(static_cast<int>(getHeight() * 0.3));
+    automationLane->setBounds(automationBounds);
+    
+    // Layout transport controls in remaining space
     auto controlsBounds = bounds.reduced(5);
     auto buttonWidth = controlsBounds.getWidth() / 5;
     

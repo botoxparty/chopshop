@@ -6,6 +6,7 @@
 #include <tracktion_engine/tracktion_engine.h>
 
 #include "Utilities.h"
+#include "AutomationLane.h"
 
 class TransportComponent : public juce::Component,
                          public juce::Timer,
@@ -23,6 +24,7 @@ public:
 
 private:
     tracktion::engine::Edit& edit;
+    tracktion::engine::TransportControl& transport;
     
     // Transport controls
     juce::TextButton playButton{"Play"};
@@ -35,7 +37,9 @@ private:
     std::unique_ptr<juce::DrawableRectangle> playhead;
     
     // Waveform thumbnail
-    tracktion::SmartThumbnail thumbnail;
+    tracktion::engine::SmartThumbnail thumbnail;
+    
+    std::unique_ptr<AutomationLane> automationLane;
     
     void updateTimeDisplay();
     void updatePlayheadPosition();

@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Use specific JUCE includes instead of the JuceHeader. Never use JuceHeader import. 
