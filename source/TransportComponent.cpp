@@ -4,8 +4,8 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     : edit (e),
       transport (e.getTransport()),
       thumbnail (e.engine, tracktion::AudioFile (e.engine), *this, &e),
-      scrollPosition(0.0),
-      zoomLevel(1.0)
+      zoomLevel(1.0),
+      scrollPosition(0.0)
 {
     // Add and make visible all buttons
     addAndMakeVisible (playButton);
@@ -26,7 +26,6 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
 
     // Setup button callbacks
     playButton.onClick = [this] {
-        auto& transport = edit.getTransport();
         auto& tempoSequence = edit.tempoSequence;
 
         if (transport.isPlaying())
@@ -37,10 +36,6 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
             auto position = createPosition (tempoSequence);
             position.set (transport.getPosition());
 
-            // Get current tempo and time signature
-            auto tempo = position.getTempo();
-            auto timeSignature = position.getTimeSignature();
-
             // Update transport to sync with tempo
             transport.setPosition (position.getTime());
             transport.play (false);
@@ -49,14 +44,12 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     };
 
     stopButton.onClick = [this] {
-        auto& transport = edit.getTransport();
         transport.stop (false, false);
         transport.setPosition (tracktion::TimePosition::fromSeconds (0.0));
         updateTransportState();
     };
 
     recordButton.onClick = [this] {
-        auto& transport = edit.getTransport();
         if (transport.isRecording())
             transport.stop (false, false);
         else
@@ -66,7 +59,6 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
 
     loopButton.setClickingTogglesState (true);
     loopButton.onClick = [this] {
-        auto& transport = edit.getTransport();
         transport.looping = loopButton.getToggleState();
         updateTransportState();
     };
@@ -97,8 +89,14 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
 
 TransportComponent::~TransportComponent()
 {
-    edit.getTransport().removeChangeListener (this);
+    // First stop the timer to prevent any callbacks
     stopTimer();
+    
+    // Remove ourselves as a change listener if transport is still valid
+    if (&edit != nullptr && &(edit.getTransport()) != nullptr)
+    {
+        edit.getTransport().removeChangeListener (this);
+    }
 }
 
 void TransportComponent::timerCallback()
@@ -244,13 +242,11 @@ void TransportComponent::resized()
 void TransportComponent::changeListenerCallback (juce::ChangeBroadcaster*)
 {
     updateTransportState();
-    // updateThumbnail(); // Update thumbnail when transport state changes
     repaint();
 }
 
 void TransportComponent::updateTimeDisplay()
 {
-    auto& transport = edit.getTransport();
     auto& tempoSequence = edit.tempoSequence;
     auto position = createPosition (tempoSequence);
     position.set (transport.getPosition());
@@ -278,48 +274,51 @@ void TransportComponent::updatePlayheadPosition()
 {
     if (playhead != nullptr)
     {
+        DBG("Updating playhead position");
         auto bounds = getLocalBounds();
         auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.5)).reduced (2);
 
-        auto& transport = edit.getTransport();
         auto currentPosition = transport.getPosition().inSeconds();
 
-        if (auto track = EngineHelpers::getOrInsertAudioTrackAt (edit, 0))
+        if (currentClip != nullptr)
         {
-            if (!track->getClips().isEmpty())
+            auto sourceLength = currentClip->getSourceLength().inSeconds();
+
+            // Calculate visible time range
+            auto visibleTimeStart = sourceLength * scrollPosition;
+            auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
+
+            // Calculate normalized position within visible range
+            auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
+
+            DBG("Current position: " + juce::String(currentPosition) + "s");
+            DBG("Visible range: " + juce::String(visibleTimeStart) + "s to " + juce::String(visibleTimeEnd) + "s");
+            DBG("Normalized position: " + juce::String(normalizedPosition));
+
+            // Only show playhead if it's in the visible range
+            if (currentPosition >= visibleTimeStart && currentPosition <= visibleTimeEnd)
             {
-                if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*> (track->getClips().getFirst()))
-                {
-                    auto sourceLength = clip->getSourceLength().inSeconds();
-
-                    // Calculate visible time range
-                    auto visibleTimeStart = sourceLength * scrollPosition;
-                    auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
-
-                    // Calculate normalized position within visible range
-                    auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
-
-                    // Only show playhead if it's in the visible range
-                    if (currentPosition >= visibleTimeStart && currentPosition <= visibleTimeEnd)
-                    {
-                        auto playheadX = waveformBounds.getX() + (normalizedPosition * waveformBounds.getWidth());
-                        playhead->setVisible (true);
-                        playhead->setTopLeftPosition (static_cast<int> (playheadX), waveformBounds.getY());
-                    }
-                    else
-                    {
-                        playhead->setVisible (false);
-                    }
-                }
+                auto playheadX = waveformBounds.getX() + (normalizedPosition * waveformBounds.getWidth());
+                playhead->setVisible (true);
+                playhead->setTopLeftPosition (static_cast<int> (playheadX), waveformBounds.getY());
+                DBG("Playhead visible at x: " + juce::String(playheadX));
             }
+            else
+            {
+                playhead->setVisible (false);
+                DBG("Playhead hidden - position outside visible range");
+            }
+        }
+        else
+        {
+            playhead->setVisible (false);
+            DBG("Playhead hidden - no current clip");
         }
     }
 }
 
 void TransportComponent::updateTransportState()
 {
-    auto& transport = edit.getTransport();
-
     playButton.setToggleState (transport.isPlaying(), juce::dontSendNotification);
     recordButton.setToggleState (transport.isRecording(), juce::dontSendNotification);
     loopButton.setToggleState (transport.looping, juce::dontSendNotification);
@@ -382,35 +381,25 @@ void TransportComponent::mouseDown (juce::MouseEvent const& event)
 
     if (waveformBounds.contains (event.getPosition()))
     {
-        auto& transport = edit.getTransport();
+        DBG("Mouse down in waveform bounds");
 
-        if (auto track = EngineHelpers::getOrInsertAudioTrackAt (edit, 0))
+        if (currentClip != nullptr)
         {
-            if (!track->getClips().isEmpty())
-            {
-                if (auto* clip = dynamic_cast<tracktion::engine::WaveAudioClip*> (track->getClips().getFirst()))
-                {
-                    // Calculate normalized position from click
-                    auto clickX = event.position.x - waveformBounds.getX();
-                    auto normalizedPosition = (clickX / waveformBounds.getWidth()) / zoomLevel + scrollPosition;
-                    normalizedPosition = juce::jlimit (0.0, 1.0, normalizedPosition);
+            // Calculate normalized position from click
+            auto clickX = event.position.x - waveformBounds.getX();
+            auto normalizedPosition = (clickX / waveformBounds.getWidth()) / zoomLevel + scrollPosition;
+            normalizedPosition = juce::jlimit (0.0, 1.0, normalizedPosition);
 
-                    auto sourceLength = clip->getSourceLength().inSeconds();
+            auto sourceLength = currentClip->getSourceLength().inSeconds();
+            // Get current tempo for adjustment
+            auto newPosition = (normalizedPosition * sourceLength);
 
-                    // Get current tempo for adjustment
-                    auto& tempoSequence = edit.tempoSequence;
-                    auto position = createPosition (tempoSequence);
-                    position.set (transport.getPosition());
-                    auto currentTempo = position.getTempo();
-                    auto tempoRatio = currentTempo / clip->getLoopInfo().getBpm (clip->getAudioFile().getInfo());
-
-                    // Calculate the actual position accounting for tempo
-                    auto newPosition = (normalizedPosition * sourceLength) / tempoRatio;
-
-                    transport.setPosition (tracktion::TimePosition::fromSeconds (newPosition));
-                    updateTransportState();
-                }
-            }
+            transport.setPosition (tracktion::TimePosition::fromSeconds (newPosition));
+            updateTransportState();
+        }
+        else
+        {
+            DBG("No clip available for position change");
         }
     }
 }
