@@ -79,9 +79,9 @@ public:
         blockSize = info.blockSizeSamples;
         
         // Defer track volume update until after initialization
-        // juce::MessageManager::callAsync([this]() {
-        //     updateTrackVolumes();
-        // });
+        juce::MessageManager::callAsync([this]() {
+            updateTrackVolumes();
+        });
     }
     
     void deinitialise() override {}
@@ -136,37 +136,59 @@ public:
 
     void updateTrackVolumes()
     {
+        const float crossfaderPosition = crossfaderParam->getCurrentValue();
+        DBG("ChopPlugin::updateTrackVolumes - Current crossfader position: " + juce::String(crossfaderPosition));
+        
         // Apply volumes to tracks
         if (auto track1 = EngineHelpers::getAudioTrack(edit, 0))
         {
-            if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(EngineHelpers::getPlugin(*track1, tracktion::engine::VolumeAndPanPlugin::xmlTypeName).get()))
+            DBG("ChopPlugin::updateTrackVolumes - Track 1 found");
+            auto volPanPlugin = EngineHelpers::getPlugin(*track1, tracktion::engine::VolumeAndPanPlugin::xmlTypeName);
+
+            if(volPanPlugin != nullptr)
             {
-                volumeAndPan->volParam->setParameter(getTrack1Volume(), juce::sendNotification);
-                DBG("ChopPlugin::updateTrackVolumes - Track 1 volume set to: " + juce::String(getTrack1Volume()));
+                DBG("ChopPlugin::updateTrackVolumes - Track 1 VolumeAndPanPlugin found: true");
+                
+                if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(volPanPlugin.get()))
+                {
+                    const float volume = getTrack1Volume();
+                    volumeAndPan->volParam->setParameter(volume, juce::sendNotification);
+                    DBG("ChopPlugin::updateTrackVolumes - Track 1 volume set to: " + juce::String(volume) + " (from crossfader: " + juce::String(crossfaderPosition) + ")");
+                }
+                else
+                {
+                    DBG("ChopPlugin::updateTrackVolumes - Failed to cast VolumeAndPanPlugin for Track 1");
+                }
+            }
+            else
+            {
+                DBG("ChopPlugin::updateTrackVolumes - Failed to get VolumeAndPanPlugin for Track 1");
             }
         }
 
         if (auto track2 = EngineHelpers::getAudioTrack(edit, 1))
         {
             DBG("ChopPlugin::updateTrackVolumes - Track 2 found");
-            auto clips = track2->getClips();
-
-            for (auto clip : clips)
+            auto volPanPlugin = EngineHelpers::getPlugin(*track2, tracktion::engine::VolumeAndPanPlugin::xmlTypeName);
+            
+            if(volPanPlugin != nullptr)
             {
-                DBG("ChopPlugin::updateTrackVolumes - Clip found: " << clip->getName());
-                DBG("ChopPlugin::updateTrackVolumes - Clip start time: " << juce::String(clip->getPosition().getStart().inSeconds()));
-                DBG("ChopPlugin::updateTrackVolumes - Clip end time: " << juce::String(clip->getPosition().getEnd().inSeconds()));
-                DBG("ChopPlugin::updateTrackVolumes - Clip length: " << juce::String(clip->getPosition().getLength().inSeconds()));
-                if (auto audioClip = dynamic_cast<tracktion::engine::AudioClipBase*>(clip))
+                DBG("ChopPlugin::updateTrackVolumes - Track 2 VolumeAndPanPlugin found: true");
+                
+                if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(volPanPlugin.get()))
                 {
-                    DBG("ChopPlugin::updateTrackVolumes - Clip gain: " << juce::String(audioClip->getGain()));
+                    const float volume = getTrack2Volume();
+                    volumeAndPan->volParam->setParameter(volume, juce::sendNotification);
+                    DBG("ChopPlugin::updateTrackVolumes - Track 2 volume set to: " + juce::String(volume) + " (from crossfader: " + juce::String(crossfaderPosition) + ")");
+                }
+                else
+                {
+                    DBG("ChopPlugin::updateTrackVolumes - Failed to cast VolumeAndPanPlugin for Track 2");
                 }
             }
-
-            if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(EngineHelpers::getPlugin(*track2, tracktion::engine::VolumeAndPanPlugin::xmlTypeName).get()))
+            else
             {
-                volumeAndPan->volParam->setParameter(getTrack2Volume(), juce::sendNotification);
-                DBG("ChopPlugin::updateTrackVolumes - Track 2 volume set to: " + juce::String(getTrack2Volume()));
+                DBG("ChopPlugin::updateTrackVolumes - Failed to get VolumeAndPanPlugin for Track 2");
             }
         }
     }

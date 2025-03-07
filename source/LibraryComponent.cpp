@@ -336,6 +336,12 @@ void LibraryComponent::addToLibrary (const juce::File& file)
 
             // Add volume and pan plugin
             auto volumeAndPan = track->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0);
+            if (volumeAndPan == nullptr)
+            {
+                DBG("Failed to create VolumeAndPanPlugin for track " + juce::String(trackIndex + 1));
+                continue;
+            }
+            DBG("Successfully created VolumeAndPanPlugin for track " + juce::String(trackIndex + 1));
 
             // Get the audio file length
             te::AudioFile audioFile (engine, file);
@@ -415,6 +421,8 @@ void LibraryComponent::addToLibrary (const juce::File& file)
     }
 
     DBG ("Edit saved to: " + editFile.getFullPathName());
+
+    onEditSelected (std::move (edit));
 
     // Add the Edit file to the project
     auto projectItem = libraryProject->createNewItem (editFile,
@@ -762,6 +770,6 @@ std::unique_ptr<tracktion::engine::Edit> LibraryComponent::loadEditFromProjectIt
 
 // FileBrowserListener methods (no longer used but kept for interface)
 void LibraryComponent::selectionChanged() {}
-void LibraryComponent::fileClicked (const juce::File& file, const juce::MouseEvent& e) {}
-void LibraryComponent::fileDoubleClicked (const juce::File& file) {}
-void LibraryComponent::browserRootChanged (const juce::File& newRoot) {}
+void LibraryComponent::fileClicked (const juce::File&, const juce::MouseEvent&) {}
+void LibraryComponent::fileDoubleClicked (const juce::File&) {}
+void LibraryComponent::browserRootChanged (const juce::File&) {}

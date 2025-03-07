@@ -248,8 +248,6 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
         vinylBrakeComponent = nullptr;
         oscilloscopeComponent = nullptr;
         
-        // Release resources
-        releaseResources();
     }
 
     // Release current edit and assign new one

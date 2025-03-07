@@ -331,37 +331,21 @@ void TransportComponent::updateThumbnail()
     currentClip = nullptr; // Reset current clip reference
 
     DBG("Updating thumbnail");
-    DBG("Number of audio tracks: " + juce::String(audioTracks.size()));
 
     for (auto track : audioTracks)
     {
         auto clips = track->getClips();
-        DBG ("  Number of clips: " + juce::String (clips.size()));
 
         for (auto clip : clips)
         {
-            DBG ("    Clip: " + clip->getName());
-            DBG ("    Start: " + juce::String (clip->getPosition().getStart().inSeconds()));
-            DBG ("    Length: " + juce::String (clip->getPosition().getLength().inSeconds()));
-            DBG ("    Source file: " + clip->getSourceFileReference().getFile().getFullPathName());
-            
             if (auto* waveClip = dynamic_cast<tracktion::engine::WaveAudioClip*>(clip))
             {
                 auto audioFile = waveClip->getAudioFile();
                 
                 if (audioFile.isValid())
                 {
-                    DBG ("    Audio file is valid");
-                    DBG ("    Audio file path: " + audioFile.getFile().getFullPathName());
-                    DBG ("    Audio file length: " + juce::String(audioFile.getLength()));
-                    
-                    // Store the clip reference
                     currentClip = waveClip;
-                    
-                    // Set the new file and force regeneration
                     thumbnail.setNewFile(audioFile);
-                    
-                    // Force a repaint after setting the source
                     repaint();
                     break;
                 }
