@@ -124,15 +124,15 @@ void TransportComponent::paint (juce::Graphics& g)
     // Create drawing bounds
     auto drawBounds = waveformBounds.reduced (2);
     
-    DBG("Paint called - waveformBounds: " + juce::String(waveformBounds.toString()));
-    DBG("drawBounds: " + juce::String(drawBounds.toString()));
+    // DBG("Paint called - waveformBounds: " + juce::String(waveformBounds.toString()));
+    // DBG("drawBounds: " + juce::String(drawBounds.toString()));
 
     // Draw waveform if we have a clip
     if (currentClip != nullptr)
     {
-        DBG("Using stored clip reference");
+        // DBG("Using stored clip reference");
         auto sourceLength = currentClip->getSourceLength().inSeconds();
-        DBG("Source length: " + juce::String(sourceLength));
+        // DBG("Source length: " + juce::String(sourceLength));
         
         auto timeRange = tracktion::TimeRange (
             tracktion::TimePosition::fromSeconds (sourceLength * scrollPosition),
@@ -140,11 +140,11 @@ void TransportComponent::paint (juce::Graphics& g)
         
         if (sourceLength > 0.0)
         {
-            DBG("sourceLength: " + juce::String(sourceLength));
-            DBG("scrollPosition: " + juce::String(scrollPosition));
-            DBG("zoomLevel: " + juce::String(zoomLevel));
-            DBG("timeRange: " + juce::String(timeRange.getStart().inSeconds()) + " to " + juce::String(timeRange.getEnd().inSeconds()));
-            DBG("Thumbnail total length: " + juce::String(thumbnail.getTotalLength()));
+            // DBG("sourceLength: " + juce::String(sourceLength));
+            // DBG("scrollPosition: " + juce::String(scrollPosition));
+            // DBG("zoomLevel: " + juce::String(zoomLevel));
+            // DBG("timeRange: " + juce::String(timeRange.getStart().inSeconds()) + " to " + juce::String(timeRange.getEnd().inSeconds()));
+            // DBG("Thumbnail total length: " + juce::String(thumbnail.getTotalLength()));
 
             // Enable anti-aliasing
             g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
@@ -155,7 +155,7 @@ void TransportComponent::paint (juce::Graphics& g)
             if (thumbnail.getTotalLength() > 0.0)
             {
                 thumbnail.drawChannels (g, drawBounds, timeRange, 0.8f);
-                DBG("Drew thumbnail channels");
+                // DBG("Drew thumbnail channels");
             }
             else
             {
@@ -274,7 +274,7 @@ void TransportComponent::updatePlayheadPosition()
 {
     if (playhead != nullptr)
     {
-        DBG("Updating playhead position");
+        // DBG("Updating playhead position");
         auto bounds = getLocalBounds();
         auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.5)).reduced (2);
 
@@ -291,9 +291,9 @@ void TransportComponent::updatePlayheadPosition()
             // Calculate normalized position within visible range
             auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
 
-            DBG("Current position: " + juce::String(currentPosition) + "s");
-            DBG("Visible range: " + juce::String(visibleTimeStart) + "s to " + juce::String(visibleTimeEnd) + "s");
-            DBG("Normalized position: " + juce::String(normalizedPosition));
+            // DBG("Current position: " + juce::String(currentPosition) + "s");
+            // DBG("Visible range: " + juce::String(visibleTimeStart) + "s to " + juce::String(visibleTimeEnd) + "s");
+            // DBG("Normalized position: " + juce::String(normalizedPosition));
 
             // Only show playhead if it's in the visible range
             if (currentPosition >= visibleTimeStart && currentPosition <= visibleTimeEnd)
@@ -301,7 +301,7 @@ void TransportComponent::updatePlayheadPosition()
                 auto playheadX = waveformBounds.getX() + (normalizedPosition * waveformBounds.getWidth());
                 playhead->setVisible (true);
                 playhead->setTopLeftPosition (static_cast<int> (playheadX), waveformBounds.getY());
-                DBG("Playhead visible at x: " + juce::String(playheadX));
+                // DBG("Playhead visible at x: " + juce::String(playheadX));
             }
             else
             {
