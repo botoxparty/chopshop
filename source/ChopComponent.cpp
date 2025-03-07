@@ -54,6 +54,7 @@ ChopComponent::ChopComponent (tracktion::engine::Edit& editIn)
 
 ChopComponent::~ChopComponent()
 {
+    stopTimer(); // Make sure to stop the timer
     if (commandManager != nullptr)
         commandManager->removeListener (this);
 }
@@ -133,20 +134,55 @@ double ChopComponent::getChopDurationInMs (double currentTempo) const
 
 void ChopComponent::mouseDown (const juce::MouseEvent& event)
 {
-    if (event.eventComponent == &chopButton && onChopButtonPressed)
+    if (event.eventComponent == &chopButton)
     {
         DBG ("Mouse down on chop button");
-        onChopButtonPressed();
+        handleChopButtonPressed();
     }
 }
 
 void ChopComponent::mouseUp (const juce::MouseEvent& event)
 {
-    if (event.eventComponent == &chopButton && onChopButtonReleased)
+    if (event.eventComponent == &chopButton)
     {
         DBG ("Mouse up on chop button");
-        onChopButtonReleased();
+        handleChopButtonReleased();
     }
+}
+
+void ChopComponent::handleChopButtonPressed()
+{
+    chopStartTime = juce::Time::getMillisecondCounterHiRes();
+    float currentPosition = getCrossfaderValue();
+    setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+}
+
+void ChopComponent::handleChopButtonReleased()
+{
+    if (!getTempoCallback)
+        return;
+
+    double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
+    double minimumTime = getChopDurationInMs(getTempoCallback());
+
+    if (elapsedTime >= minimumTime)
+    {
+        float currentPosition = getCrossfaderValue();
+        setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+    }
+    else
+    {
+        chopReleaseDelay = minimumTime - elapsedTime;
+        startTimer(static_cast<int>(chopReleaseDelay));
+    }
+}
+
+void ChopComponent::timerCallback()
+{
+    stopTimer();
+    float currentPosition = getCrossfaderValue();
+    setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+    chopReleaseDelay = 0;
 }
 
 // Implement ApplicationCommandTarget methods
@@ -178,13 +214,11 @@ bool ChopComponent::perform (const juce::ApplicationCommandTarget::InvocationInf
     {
         if (info.isKeyDown)
         {
-            if (onChopButtonPressed)
-                onChopButtonPressed();
+            handleChopButtonPressed();
         }
         else
         {
-            if (onChopButtonReleased)
-                onChopButtonReleased();
+            handleChopButtonReleased();
         }
         return true;
     }

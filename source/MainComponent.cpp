@@ -191,27 +191,9 @@ void MainComponent::setupChopComponent()
     // Add key mappings to the top level component
     addKeyListener(commandManager->getKeyMappings());
 
-    // Restore the mouse handlers
-    chopComponent->onChopButtonPressed = [this]() {
-        chopStartTime = juce::Time::getMillisecondCounterHiRes();
-        float currentPosition = chopComponent->getCrossfaderValue();
-        chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
-    };
-
-    chopComponent->onChopButtonReleased = [this]() {
-        double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-        double minimumTime = chopComponent->getChopDurationInMs(screwComponent->getTempo());
-
-        if (elapsedTime >= minimumTime)
-        {
-            float currentPosition = chopComponent->getCrossfaderValue();
-            chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
-        }
-        else
-        {
-            chopReleaseDelay = minimumTime - elapsedTime;
-            startTimer(static_cast<int>(chopReleaseDelay));
-        }
+    // Set up the tempo callback
+    chopComponent->getTempoCallback = [this]() {
+        return screwComponent->getTempo();
     };
 }
 
@@ -364,74 +346,60 @@ void MainComponent::stopRecording()
     armTrack(0, false);
 }
 
-void MainComponent::gamepadButtonPressed (int buttonId)
+void MainComponent::gamepadButtonPressed(int buttonId)
 {
     float currentPosition;
     switch (buttonId)
     {
         case SDL_GAMEPAD_BUTTON_SOUTH:
-            chopStartTime = juce::Time::getMillisecondCounterHiRes();
-            currentPosition = chopComponent->getCrossfaderValue();
-            chopComponent->setCrossfaderValue (currentPosition <= 0.5f ? 1.0f : 0.0f);
+            if (chopComponent)
+                chopComponent->handleChopButtonPressed();
             break;
         case SDL_GAMEPAD_BUTTON_DPAD_UP:
         {
             if (reverbComponent)
-                reverbComponent->rampMixLevel (true);
+                reverbComponent->rampMixLevel(true);
             break;
         }
         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
         {
             if (delayComponent)
-                delayComponent->rampMixLevel (true);
+                delayComponent->rampMixLevel(true);
             break;
         }
         case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
         {
             if (flangerComponent)
-                flangerComponent->rampMixLevel (true);
+                flangerComponent->rampMixLevel(true);
             break;
         }
     }
 }
 
-void MainComponent::gamepadButtonReleased (int buttonId)
+void MainComponent::gamepadButtonReleased(int buttonId)
 {
     switch (buttonId)
     {
         case SDL_GAMEPAD_BUTTON_SOUTH: // Cross
-        {
-            double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-            double minimumTime = trackOffset;
-
-            if (elapsedTime >= minimumTime)
-            {
-                float currentPosition = chopComponent->getCrossfaderValue();
-                chopComponent->setCrossfaderValue (currentPosition <= 0.5f ? 1.0f : 0.0f);
-            }
-            else
-            {
-                chopReleaseDelay = minimumTime - elapsedTime;
-                startTimer (static_cast<int> (chopReleaseDelay));
-            }
+            if (chopComponent)
+                chopComponent->handleChopButtonReleased();
             break;
-        }
         case SDL_GAMEPAD_BUTTON_DPAD_UP:
         {
             if (reverbComponent)
-                reverbComponent->rampMixLevel (false);
+                reverbComponent->rampMixLevel(false);
             break;
         }
         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
         {
             if (delayComponent)
-                delayComponent->rampMixLevel (false);
+                delayComponent->rampMixLevel(false);
             break;
         }
         case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
         {
             if (flangerComponent)
-                flangerComponent->rampMixLevel (false);
+                flangerComponent->rampMixLevel(false);
             break;
         }
     }

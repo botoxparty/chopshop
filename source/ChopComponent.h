@@ -10,15 +10,15 @@ namespace CommandIDs
 
 class ChopComponent : public BaseEffectComponent, 
                       public juce::ApplicationCommandTarget,
-                      public juce::ApplicationCommandManagerListener
+                      public juce::ApplicationCommandManagerListener,
+                      public juce::Timer
 {
 public:
     explicit ChopComponent(tracktion::engine::Edit&);
     void resized() override;
     
-    std::function<void()> onChopButtonPressed;
-    std::function<void()> onChopButtonReleased;
     std::function<void(float)> onCrossfaderValueChanged;
+    std::function<double()> getTempoCallback;
 
     double getChopDurationInMs(double currentTempo) const;
     float getCrossfaderValue() const { return static_cast<float>(crossfaderSlider.getValue()); }
@@ -39,9 +39,17 @@ public:
     // Required method from ApplicationCommandManagerListener
     void applicationCommandListChanged() override {}
 
+    // Timer callback
+    void timerCallback() override;
+
+    void handleChopButtonPressed();
+    void handleChopButtonReleased();
+
 private:
     void mouseDown(const juce::MouseEvent& event) override;
     void mouseUp(const juce::MouseEvent& event) override;
+
+
     juce::TextButton chopButton{"Chop"};
     juce::ComboBox chopDurationComboBox;
     juce::Label durationLabel;
@@ -53,6 +61,10 @@ private:
     
     // Add this instance variable to track space key state for this instance
     bool wasSpaceDown = false;
+
+    // Timing variables for chop effect
+    double chopStartTime = 0.0;
+    double chopReleaseDelay = 0.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChopComponent)
 }; 
