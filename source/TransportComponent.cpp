@@ -16,9 +16,34 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     addAndMakeVisible (zoomInButton);
     addAndMakeVisible (zoomOutButton);
 
-    // Create and add automation lane
+    // Create and add automation lane for tempo
     automationLane = std::make_unique<AutomationLane> (edit);
     addAndMakeVisible (*automationLane);
+
+    // Create and add crossfader automation lane
+    crossfaderAutomationLane = std::make_unique<AutomationLane> (edit);
+    
+    // Find the crossfader parameter
+    tracktion::engine::AutomatableParameter* crossfaderParam = nullptr;
+    if (auto chopPlugin = EngineHelpers::getPluginFromMasterTrack(edit, ChopPlugin::xmlTypeName))
+    {
+        if (auto* plugin = chopPlugin.get())
+        {
+            crossfaderParam = plugin->getAutomatableParameterByID("crossfader");
+        }
+    }
+    
+    if (crossfaderParam == nullptr)
+    {
+        DBG("No crossfader parameter found");
+    }
+    
+    if (crossfaderParam != nullptr)
+    {
+        crossfaderAutomationLane->setParameter(crossfaderParam);
+    }
+    
+    addAndMakeVisible (*crossfaderAutomationLane);
 
     // Initialize thumbnail
     thumbnail.audioFileChanged();
@@ -217,9 +242,11 @@ void TransportComponent::resized()
     // Reserve space for waveform display (50% of height)
     auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.5));
 
-    // Reserve space for automation lane (30% of original height)
+    // Reserve space for automation lanes (30% of original height, split between the two lanes)
     auto automationBounds = bounds.removeFromTop (static_cast<int> (getHeight() * 0.3));
-    automationLane->setBounds (automationBounds);
+    auto firstLaneBounds = automationBounds.removeFromTop(automationBounds.getHeight() / 2);
+    automationLane->setBounds (firstLaneBounds);
+    crossfaderAutomationLane->setBounds (automationBounds);
 
     // Layout transport controls in remaining space
     auto controlsBounds = bounds.reduced (5);

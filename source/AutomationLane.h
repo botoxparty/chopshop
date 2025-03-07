@@ -8,7 +8,7 @@
 class AutomationLane : public juce::Component
 {
 public:
-    AutomationLane(tracktion::engine::Edit& e);
+    AutomationLane(tracktion::engine::Edit& e, tracktion::engine::AutomatableParameter* param = nullptr);
     ~AutomationLane() override;
 
     void paint(juce::Graphics& g) override;
@@ -17,16 +17,18 @@ public:
     void mouseDrag(const juce::MouseEvent& event) override;
     void mouseUp(const juce::MouseEvent& event) override;
 
+    void setParameter(tracktion::engine::AutomatableParameter* param);
     void updatePoints();
 
 private:
     tracktion::engine::Edit& edit;
+    tracktion::engine::AutomatableParameter* parameter;
     std::vector<std::pair<double, double>> automationPoints; // <time, value> pairs
     
     juce::Point<float> timeToXY(double timeInSeconds, double value) const;
     std::pair<double, double> XYToTime(float x, float y) const;
-    void addPoint(double timeInSeconds, double bpm);
-    void updateTempoAtTime(double timeInSeconds, double bpm);
+    void addPoint(double timeInSeconds, double value);
+    void updateValueAtTime(double timeInSeconds, double value);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AutomationLane)
 }; 

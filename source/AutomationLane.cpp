@@ -1,7 +1,7 @@
 #include "AutomationLane.h"
 
-AutomationLane::AutomationLane(tracktion::engine::Edit& e)
-    : edit(e)
+AutomationLane::AutomationLane(tracktion::engine::Edit& e, tracktion::engine::AutomatableParameter* param)
+    : edit(e), parameter(param)
 {
     updatePoints();
 }
@@ -27,7 +27,7 @@ void AutomationLane::paint(juce::Graphics& g)
     }
     
     // Draw automation points and lines
-    if (automationPoints.size() > 0)
+    if (automationPoints.size() > 0 && parameter != nullptr)
     {
         g.setColour(juce::Colours::orange);
         
@@ -54,16 +54,22 @@ void AutomationLane::resized()
 
 void AutomationLane::mouseDown(const juce::MouseEvent& event)
 {
-    auto [time, bpm] = XYToTime(event.position.x, event.position.y);
-    addPoint(time, bpm);
-    repaint();
+    if (parameter != nullptr)
+    {
+        auto [time, value] = XYToTime(event.position.x, event.position.y);
+        addPoint(time, value);
+        repaint();
+    }
 }
 
 void AutomationLane::mouseDrag(const juce::MouseEvent& event)
 {
-    auto [time, bpm] = XYToTime(event.position.x, event.position.y);
-    updateTempoAtTime(time, bpm);
-    repaint();
+    if (parameter != nullptr)
+    {
+        auto [time, value] = XYToTime(event.position.x, event.position.y);
+        updateValueAtTime(time, value);
+        repaint();
+    }
 }
 
 void AutomationLane::mouseUp(const juce::MouseEvent&)
@@ -71,17 +77,26 @@ void AutomationLane::mouseUp(const juce::MouseEvent&)
     updatePoints();
 }
 
+void AutomationLane::setParameter(tracktion::engine::AutomatableParameter* param)
+{
+    parameter = param;
+    updatePoints();
+    repaint();
+}
+
 void AutomationLane::updatePoints()
 {
     automationPoints.clear();
     
-    // Get all tempo settings from the sequence
-    auto& tempoSequence = edit.tempoSequence;
-    
-    for (int i = 0; i < tempoSequence.getNumTempos(); ++i)
+    if (parameter != nullptr)
     {
-        auto* tempo = tempoSequence.getTempo(i);
-        automationPoints.emplace_back(tempo->getStartTime().inSeconds(), tempo->getBpm());
+        auto& curve = parameter->getCurve();
+        // Get all automation points from the curve
+        for (int i = 0; i < curve.getNumPoints(); ++i)
+        {
+            auto point = curve.getPoint(i);
+            automationPoints.emplace_back(point.time.inSeconds(), point.value);
+        }
     }
     
     repaint();
@@ -94,8 +109,13 @@ juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) 
     // Normalize time to width
     float x = bounds.getX() + (timeInSeconds / 60.0f) * bounds.getWidth(); // Assuming 60 seconds view range
     
-    // Normalize value (BPM) to height (assuming BPM range 60-180)
-    float normalizedValue = (value - 60.0) / (180.0 - 60.0);
+    // Normalize value to height
+    float normalizedValue = 0.0f;
+    if (parameter != nullptr)
+    {
+        auto range = parameter->getValueRange();
+        normalizedValue = (value - range.getStart()) / (range.getEnd() - range.getStart());
+    }
     float y = bounds.getBottom() - (normalizedValue * bounds.getHeight());
     
     return {x, y};
@@ -108,34 +128,46 @@ std::pair<double, double> AutomationLane::XYToTime(float x, float y) const
     // Convert x to time
     double timeInSeconds = (x - bounds.getX()) * 60.0 / bounds.getWidth();
     
-    // Convert y to BPM (60-180 range)
+    // Convert y to parameter value
     float normalizedValue = 1.0f - ((y - bounds.getY()) / bounds.getHeight());
-    double bpm = 60.0 + normalizedValue * (180.0 - 60.0);
+    double value = 0.0;
+    
+    if (parameter != nullptr)
+    {
+        auto range = parameter->getValueRange();
+        value = range.getStart() + normalizedValue * (range.getEnd() - range.getStart());
+        value = parameter->snapToState(value);
+    }
     
     // Clamp values
     timeInSeconds = juce::jlimit(0.0, 60.0, timeInSeconds);
-    bpm = juce::jlimit(60.0, 180.0, bpm);
     
-    return {timeInSeconds, bpm};
+    return {timeInSeconds, value};
 }
 
-void AutomationLane::addPoint(double timeInSeconds, double bpm)
+void AutomationLane::addPoint(double timeInSeconds, double value)
 {
-    auto& tempoSequence = edit.tempoSequence;
-    auto newTempo = tempoSequence.insertTempo(tracktion::TimePosition::fromSeconds(timeInSeconds));
-    if (newTempo != nullptr)
+    if (parameter != nullptr)
     {
-        newTempo->setBpm(bpm);
+        auto& curve = parameter->getCurve();
+        curve.addPoint(tracktion::TimePosition::fromSeconds(timeInSeconds), value, 0.0f);
     }
     updatePoints();
 }
 
-void AutomationLane::updateTempoAtTime(double timeInSeconds, double bpm)
+void AutomationLane::updateValueAtTime(double timeInSeconds, double value)
 {
-    auto& tempoSequence = edit.tempoSequence;
-    if (auto* tempo = tempoSequence.getTempo(timeInSeconds))
+    if (parameter != nullptr)
     {
-        tempo->setBpm(bpm);
+        auto& curve = parameter->getCurve();
+        auto time = tracktion::TimePosition::fromSeconds(timeInSeconds);
+        float val = static_cast<float>(value);
+        int pointIndex = curve.getNearestPoint(time, val, 1.0);
+        if (pointIndex >= 0)
+        {
+            auto point = curve.getPoint(pointIndex);
+            point.value = value;
+        }
     }
     updatePoints();
 } 
