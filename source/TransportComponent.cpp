@@ -74,6 +74,7 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
 
     // Initialize time display
     timeDisplay.setJustificationType (juce::Justification::centred);
+    timeDisplay.setFont(CustomLookAndFeel::getMonospaceFont());
     updateTimeDisplay();
 
     // Setup playhead

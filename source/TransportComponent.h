@@ -7,6 +7,7 @@
 
 #include "Utilities.h"
 #include "AutomationLane.h"
+#include "CustomLookAndFeel.h"
 
 class TransportComponent : public juce::Component,
                          public juce::Timer,

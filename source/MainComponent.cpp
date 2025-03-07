@@ -14,7 +14,7 @@ MainComponent::MainComponent()
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
     LookAndFeel::setDefaultLookAndFeel (customLookAndFeel.get());
     getLookAndFeel().setDefaultSansSerifTypefaceName ("Arial");
-    setSize (1024, 900);
+    setSize (924, 720);
     startTimerHz (30);
 
     // Register our custom plugins with the engine
