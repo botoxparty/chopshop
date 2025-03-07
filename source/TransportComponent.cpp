@@ -195,13 +195,35 @@ void TransportComponent::paint (juce::Graphics& g)
             // Enable anti-aliasing
             g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
 
+            // Calculate gains from clip properties
+            const auto gain = currentClip->getGain();
+            const auto pan = thumbnail.getNumChannels() == 1 ? 0.0f : currentClip->getPan();
+            const float pv = pan * gain;
+            const float leftGain = (gain - pv);
+            const float rightGain = (gain + pv);
+            
             // Draw waveform first (so beat markers appear on top)
             g.setColour (juce::Colours::lightblue.withAlpha (0.7f));
             
             if (thumbnail.getTotalLength() > 0.0)
             {
-                thumbnail.drawChannels (g, drawBounds, timeRange, 0.8f);
-                // DBG("Drew thumbnail channels");
+                // Instead of drawing channels separately, draw a combined view
+                float maxGain = jmax(leftGain, rightGain);
+                
+                // Create a gradient fill for a more modern look
+                g.setGradientFill(juce::ColourGradient(
+                    juce::Colours::lightblue.withAlpha(0.8f),
+                    drawBounds.getTopLeft().toFloat(),
+                    juce::Colours::lightblue.withAlpha(0.3f),
+                    drawBounds.getBottomLeft().toFloat(),
+                    false));
+
+                // Draw combined channels
+                thumbnail.drawChannels(g, drawBounds, timeRange, maxGain);
+                
+                // Add a subtle outline
+                g.setColour(juce::Colours::lightblue.withAlpha(0.4f));
+                g.drawRect(drawBounds.toFloat(), 1.0f);
             }
             else
             {
