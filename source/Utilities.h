@@ -142,44 +142,29 @@ namespace EngineHelpers
             clips.getUnchecked (i)->removeFromParent();
     }
 
-    inline te::AudioTrack* getOrInsertAudioTrackAt (te::Edit& edit, int index)
+    inline te::AudioTrack* getAudioTrack (te::Edit& edit, int index)
     {
         edit.ensureNumberOfAudioTracks (index + 1);
         return te::getAudioTracks (edit)[index];
     }
 
-    inline te::WaveAudioClip::Ptr loadAudioFileAsClip (te::Edit& edit, const File& file)
+    enum class ReturnToStart { no, yes };
+
+    inline te::Plugin::Ptr getPlugin (te::AudioTrack& track, const String& pluginName)
     {
-        // Find the first track and delete all clips from it
-        if (auto track = getOrInsertAudioTrackAt (edit, 0))
-        {
-            removeAllClips (*track);
-
-            // Add a new clip to this track
-            te::AudioFile audioFile (edit.engine, file);
-
-            if (audioFile.isValid())
-                if (auto newClip = track->insertWaveClip (file.getFileNameWithoutExtension(), file,
-                                                          { { {}, te::TimeDuration::fromSeconds (audioFile.getLength()) }, {} }, false))
-                    return newClip;
-        }
-
+        for (auto plugin : track.pluginList)
+            if (plugin->getPluginType() == pluginName)
+                return plugin;
         return {};
     }
 
-    template<typename ClipType>
-    typename ClipType::Ptr loopAroundClip (ClipType& clip)
+    inline te::Plugin::Ptr getPluginFromMasterTrack (te::Edit& edit, const String& pluginName)
     {
-        auto& transport = clip.edit.getTransport();
-        transport.setLoopRange (clip.getEditTimeRange());
-        // transport.looping = true;
-        transport.setPosition (0s);
-        transport.play (false);
-
-        return clip;
+        for (auto plugin : edit.getMasterPluginList().getPlugins())
+            if (plugin->getPluginType() == pluginName)
+                return plugin;
+        return {};
     }
-
-    enum class ReturnToStart { no, yes };
 
     inline void togglePlay (te::Edit& edit, ReturnToStart rts = ReturnToStart::no)
     {
@@ -272,7 +257,6 @@ namespace EngineHelpers
 
         return {};
     }
-
 }
 
 //==============================================================================

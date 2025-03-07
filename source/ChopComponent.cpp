@@ -1,78 +1,99 @@
 #include "ChopComponent.h"
 #include "Plugins/ChopPlugin.h"
 
-ChopComponent::ChopComponent(tracktion::engine::Edit& editIn)
-    : BaseEffectComponent(editIn)
+ChopComponent::ChopComponent (tracktion::engine::Edit& editIn)
+    : BaseEffectComponent (editIn)
 {
-    // Create the plugin
-    plugin = createPlugin("chop");
-    
-    titleLabel.setText("Chop Controls", juce::dontSendNotification);
-    
+    auto track1 = EngineHelpers::getAudioTrack (edit, 0);
+    auto track2 = EngineHelpers::getAudioTrack (edit, 1);
+
+    plugin = EngineHelpers::getPluginFromMasterTrack (edit, ChopPlugin::xmlTypeName);
+
+    if (!plugin)
+    {
+        DBG ("Error: No chop plugin found");
+        return;
+    }
+
+    if (!track1 || !track2)
+    {
+        DBG ("Error: No tracks found");
+        return;
+    }
+
+    auto track1VolumeAndPanPlugin = EngineHelpers::getPlugin (*track1, tracktion::engine::VolumeAndPanPlugin::xmlTypeName);
+    auto track2VolumeAndPanPlugin = EngineHelpers::getPlugin (*track2, tracktion::engine::VolumeAndPanPlugin::xmlTypeName);
+
+    if (!track1VolumeAndPanPlugin || !track2VolumeAndPanPlugin)
+    {
+        // If no chop plugin was found, show an error
+        DBG ("Error: No volume and pan plugin found on the first track");
+        return;
+    }
+
+    titleLabel.setText ("Chop Controls", juce::dontSendNotification);
+
     // Configure labels
-    durationLabel.setText("Duration", juce::dontSendNotification);
-    durationLabel.setJustificationType(juce::Justification::left);
-    
+    durationLabel.setText ("Duration", juce::dontSendNotification);
+    durationLabel.setJustificationType (juce::Justification::left);
+
     // Configure combo box
-    chopDurationComboBox.addItem("1/4 Beat", 1);
-    chopDurationComboBox.addItem("1/2 Beat", 2);
-    chopDurationComboBox.addItem("1 Beat", 3);
-    chopDurationComboBox.addItem("2 Beats", 4);
-    chopDurationComboBox.addItem("4 Beats", 5);
-    chopDurationComboBox.setSelectedId(3, juce::dontSendNotification);
-    
+    chopDurationComboBox.addItem ("1/4 Beat", 1);
+    chopDurationComboBox.addItem ("1/2 Beat", 2);
+    chopDurationComboBox.addItem ("1 Beat", 3);
+    chopDurationComboBox.addItem ("2 Beats", 4);
+    chopDurationComboBox.addItem ("4 Beats", 5);
+    chopDurationComboBox.setSelectedId (3, juce::dontSendNotification);
+
     // Configure chop button
-    chopButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
-    chopButton.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
-    chopButton.addMouseListener(this, false);
-    
+    chopButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
+    chopButton.setColour (juce::TextButton::buttonColourId, juce::Colours::darkred);
+    chopButton.addMouseListener (this, false);
+
     // Configure crossfader
-    crossfaderSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-    crossfaderSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    crossfaderSlider.setRange(0.0, 1.0, 0.01);
-    crossfaderSlider.setValue(0.0, juce::dontSendNotification);
-    crossfaderSlider.setPopupMenuEnabled(false);
+    crossfaderSlider.setSliderStyle (juce::Slider::LinearHorizontal);
+    crossfaderSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+    crossfaderSlider.setRange (0.0, 1.0, 0.01);
+    crossfaderSlider.setValue (0.0, juce::dontSendNotification);
+    crossfaderSlider.setPopupMenuEnabled (false);
 
     // Bind the crossfader parameter
-    if (auto chopPlugin = dynamic_cast<ChopPlugin*>(plugin.get()))
-    {
-        bindSliderToParameter(crossfaderSlider, *chopPlugin->crossfaderParam);
-    }
-    
+    bindSliderToParameter (crossfaderSlider, *plugin->getAutomatableParameterByID("crossfader"));
+
     // Add components to the content component instead of the base
-    contentComponent.addAndMakeVisible(durationLabel);
-    contentComponent.addAndMakeVisible(chopDurationComboBox);
-    contentComponent.addAndMakeVisible(chopButton);
-    contentComponent.addAndMakeVisible(crossfaderSlider);
-    
+    contentComponent.addAndMakeVisible (durationLabel);
+    contentComponent.addAndMakeVisible (chopDurationComboBox);
+    contentComponent.addAndMakeVisible (chopButton);
+    contentComponent.addAndMakeVisible (crossfaderSlider);
+
     // Make sure this component can receive keyboard focus
-    setWantsKeyboardFocus(true);
+    setWantsKeyboardFocus (true);
 }
 
 ChopComponent::~ChopComponent()
 {
     if (commandManager != nullptr)
-        commandManager->removeListener(this);
+        commandManager->removeListener (this);
 }
 
-void ChopComponent::setCommandManager(juce::ApplicationCommandManager* manager)
+void ChopComponent::setCommandManager (juce::ApplicationCommandManager* manager)
 {
     // Remove from previous manager if exists
     if (commandManager != nullptr)
-        commandManager->removeListener(this);
-    
+        commandManager->removeListener (this);
+
     commandManager = manager;
-    
+
     if (commandManager != nullptr)
     {
         // Register commands with the manager
-        commandManager->registerAllCommandsForTarget(this);
-        
+        commandManager->registerAllCommandsForTarget (this);
+
         // Add as key listener
-        addKeyListener(commandManager->getKeyMappings());
-        
+        addKeyListener (commandManager->getKeyMappings());
+
         // Register the space key for the chop command
-        commandManager->getKeyMappings()->addKeyPress(CommandIDs::chopEffect, juce::KeyPress(juce::KeyPress::spaceKey));
+        commandManager->getKeyMappings()->addKeyPress (CommandIDs::chopEffect, juce::KeyPress (juce::KeyPress::spaceKey));
     }
 }
 
@@ -80,39 +101,39 @@ void ChopComponent::resized()
 {
     // First let the base component handle its layout
     BaseEffectComponent::resized();
-    
+
     // Now layout the content within the content component
     auto bounds = contentComponent.getLocalBounds();
-        
+
     // Add left and right padding
-    bounds.removeFromLeft(10);
-    bounds.removeFromRight(10);
-    
+    bounds.removeFromLeft (10);
+    bounds.removeFromRight (10);
+
     // Create a grid layout
     juce::Grid grid;
-    grid.rowGap = juce::Grid::Px(4);
-    grid.columnGap = juce::Grid::Px(4);
-    
+    grid.rowGap = juce::Grid::Px (4);
+    grid.columnGap = juce::Grid::Px (4);
+
     using Track = juce::Grid::TrackInfo;
     using Fr = juce::Grid::Fr;
-    
-    grid.templateRows = { Track(Fr(1)), Track(Fr(1)), Track(Fr(1)) };
-    grid.templateColumns = { Track(Fr(1)), Track(Fr(2)) };
-    
+
+    grid.templateRows = { Track (Fr (1)), Track (Fr (1)), Track (Fr (1)) };
+    grid.templateColumns = { Track (Fr (1)), Track (Fr (2)) };
+
     grid.items = {
-        juce::GridItem(durationLabel).withColumn({1}).withAlignSelf(juce::GridItem::AlignSelf::center),
-        juce::GridItem(chopDurationComboBox).withColumn({2}).withHeight(30).withAlignSelf(juce::GridItem::AlignSelf::center),
-        juce::GridItem(chopButton).withColumn({1, 3}).withHeight(30),
-        juce::GridItem(crossfaderSlider).withColumn({1, 3})
+        juce::GridItem (durationLabel).withColumn ({ 1 }).withAlignSelf (juce::GridItem::AlignSelf::center),
+        juce::GridItem (chopDurationComboBox).withColumn ({ 2 }).withHeight (30).withAlignSelf (juce::GridItem::AlignSelf::center),
+        juce::GridItem (chopButton).withColumn ({ 1, 3 }).withHeight (30),
+        juce::GridItem (crossfaderSlider).withColumn ({ 1, 3 })
     };
-    
-    grid.performLayout(bounds);
+
+    grid.performLayout (bounds);
 }
 
-double ChopComponent::getChopDurationInMs(double currentTempo) const
+double ChopComponent::getChopDurationInMs (double currentTempo) const
 {
     double beatDuration = (60.0 / currentTempo) * 1000.0; // One beat duration in ms
-    
+
     juce::String description = chopDurationComboBox.getText();
     if (description == "1/4 Beat")
         return beatDuration * 0.25;
@@ -124,24 +145,24 @@ double ChopComponent::getChopDurationInMs(double currentTempo) const
         return beatDuration * 2.0;
     else if (description == "4 Beats")
         return beatDuration * 4.0;
-        
+
     return beatDuration; // Default to 1 beat
 }
 
-void ChopComponent::mouseDown(const juce::MouseEvent& event)
+void ChopComponent::mouseDown (const juce::MouseEvent& event)
 {
     if (event.eventComponent == &chopButton && onChopButtonPressed)
     {
-        DBG("Mouse down on chop button");
+        DBG ("Mouse down on chop button");
         onChopButtonPressed();
     }
 }
 
-void ChopComponent::mouseUp(const juce::MouseEvent& event)
+void ChopComponent::mouseUp (const juce::MouseEvent& event)
 {
     if (event.eventComponent == &chopButton && onChopButtonReleased)
     {
-        DBG("Mouse up on chop button");
+        DBG ("Mouse up on chop button");
         onChopButtonReleased();
     }
 }
@@ -152,24 +173,24 @@ juce::ApplicationCommandTarget* ChopComponent::getNextCommandTarget()
     return findFirstTargetParentComponent();
 }
 
-void ChopComponent::getAllCommands(juce::Array<juce::CommandID>& commands)
+void ChopComponent::getAllCommands (juce::Array<juce::CommandID>& commands)
 {
-    commands.add(CommandIDs::chopEffect); // Chop command
+    commands.add (CommandIDs::chopEffect); // Chop command
 }
 
-void ChopComponent::getCommandInfo(juce::CommandID commandID, juce::ApplicationCommandInfo& result)
+void ChopComponent::getCommandInfo (juce::CommandID commandID, juce::ApplicationCommandInfo& result)
 {
     if (commandID == CommandIDs::chopEffect) // Chop command
     {
-        result.setInfo("Chop", "Activates the chop effect", "Chop", 0);
-        result.addDefaultKeypress(juce::KeyPress::spaceKey, 0);
-        
+        result.setInfo ("Chop", "Activates the chop effect", "Chop", 0);
+        result.addDefaultKeypress (juce::KeyPress::spaceKey, 0);
+
         // This is the key line - tell the command manager we want key up/down callbacks
         result.flags |= juce::ApplicationCommandInfo::wantsKeyUpDownCallbacks;
     }
 }
 
-bool ChopComponent::perform(const juce::ApplicationCommandTarget::InvocationInfo& info)
+bool ChopComponent::perform (const juce::ApplicationCommandTarget::InvocationInfo& info)
 {
     if (info.commandID == CommandIDs::chopEffect) // Chop command
     {
@@ -185,6 +206,6 @@ bool ChopComponent::perform(const juce::ApplicationCommandTarget::InvocationInfo
         }
         return true;
     }
-    
+
     return false;
-} 
+}

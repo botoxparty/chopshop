@@ -176,15 +176,6 @@ void MainComponent::updateTempo()
     }
 }
 
-te::WaveAudioClip::Ptr MainComponent::getClip(int trackIndex)
-{
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(*edit, trackIndex))
-        if (auto clip = dynamic_cast<te::WaveAudioClip*>(track->getClips()[0]))
-            return *clip;
-
-    return {};
-}
-
 void MainComponent::setupChopComponent()
 {
     // Create ChopComponent and pass the command manager
@@ -349,7 +340,7 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
 
 void MainComponent::armTrack(int trackIndex, bool arm)
 {
-    if (auto track = EngineHelpers::getOrInsertAudioTrackAt(*edit, trackIndex))
+    if (auto track = EngineHelpers::getAudioTrack(*edit, trackIndex))
     {
         EngineHelpers::armTrack(*track, arm);
     }

@@ -12,7 +12,8 @@ namespace ChopPluginIDs
     };
 }
 
-class ChopPlugin : public tracktion::engine::Plugin
+class ChopPlugin : public tracktion::engine::Plugin,
+                   public tracktion::engine::AutomatableParameter::Listener
 {
 public:
     static const char* getPluginName() { return NEEDS_TRANS("Chop"); }
@@ -49,7 +50,10 @@ public:
 
             crossfaderValue.referTo(state, ChopPluginIDs::IDs::crossfader, um, 0.0f);
             crossfaderParam->attachToCurrentValue(crossfaderValue);
-            
+
+            // Add value listener to crossfader parameter
+            crossfaderParam->addListener(this);
+
             // Initialize track volumes
             updateTrackVolumes();
             
@@ -62,6 +66,8 @@ public:
 
     ~ChopPlugin() override
     {
+        if (crossfaderParam != nullptr)
+            crossfaderParam->removeListener(this);
         notifyListenersOfDeletion();
     }
 
@@ -128,7 +134,6 @@ public:
         return gainTrack2 <= 0.0f ? -60.0f : juce::Decibels::gainToDecibels(gainTrack2);
     }
 
-private:
     void updateTrackVolumes()
     {
         const float position = crossfaderParam->getCurrentValue();
@@ -142,16 +147,21 @@ private:
         float gainDB1 = gainTrack1 <= 0.0f ? minDB : juce::Decibels::gainToDecibels(gainTrack1);
         float gainDB2 = gainTrack2 <= 0.0f ? minDB : juce::Decibels::gainToDecibels(gainTrack2);
 
+        DBG("Gain DB1: " + juce::String(gainDB1));
+        DBG("Gain DB2: " + juce::String(gainDB2));
+
         // Apply volumes to tracks
-        if (auto track1 = EngineHelpers::getOrInsertAudioTrackAt(edit, 0))
+        if (auto track1 = EngineHelpers::getAudioTrack(edit, 0))
         {
+            DBG("Track 1 found");
             if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(track1->pluginList.getPluginsOfType<tracktion::engine::VolumeAndPanPlugin>().getFirst()))
             {
+                DBG("Volume and pan plugin found");
                 volumeAndPan->setVolumeDb(gainDB1);
             }
         }
 
-        if (auto track2 = EngineHelpers::getOrInsertAudioTrackAt(edit, 1))
+        if (auto track2 = EngineHelpers::getAudioTrack(edit, 1))
         {
             if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(track2->pluginList.getPluginsOfType<tracktion::engine::VolumeAndPanPlugin>().getFirst()))
             {
@@ -159,6 +169,18 @@ private:
             }
         }
     }
+
+    // Add value listener interface
+    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override
+    {
+        Plugin::valueTreePropertyChanged(state, ChopPluginIDs::IDs::crossfader);
+        updateTrackVolumes();
+    }
+
+    void currentValueChanged(tracktion::engine::AutomatableParameter&) override { updateTrackVolumes(); }
+    void curveHasChanged(tracktion::engine::AutomatableParameter&) override { updateTrackVolumes(); }
+
+private:
 
     double sampleRate = 44100.0;
     int blockSize = 512;

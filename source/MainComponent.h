@@ -70,7 +70,6 @@ public:
     void play();
     void stop();
     void updateTempo();
-    tracktion::engine::WaveAudioClip::Ptr getClip(int trackIndex);
 
     void timerCallback() override
     {
@@ -178,15 +177,6 @@ private:
     std::unique_ptr<ScrewComponent> screwComponent;
     std::unique_ptr<PhaserComponent> phaserComponent;
     std::unique_ptr<ScratchComponent> scratchComponent;
-    bool isTrackLoaded()
-    {
-        if (!edit)
-            return false;
-        if (auto track = EngineHelpers::getOrInsertAudioTrackAt(*edit, 0))
-            return !track->getClips().isEmpty();
-        return false;
-    }
-
     std::unique_ptr<Component> oscilloscopeComponent;
     tracktion::engine::Plugin::Ptr oscilloscopePlugin;
 

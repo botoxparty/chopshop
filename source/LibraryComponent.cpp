@@ -303,6 +303,7 @@ void LibraryComponent::addToLibrary (const juce::File& file)
     options.editState = te::createEmptyEdit (engine);
     options.editProjectItemID = te::ProjectItemID::fromProperty (options.editState, te::IDs::projectID);
     options.numUndoLevelsToStore = 0;
+    options.numAudioTracks = 2;
     options.role = te::Edit::forEditing;
 
     auto edit = te::Edit::createEdit (std::move (options));
@@ -312,26 +313,30 @@ void LibraryComponent::addToLibrary (const juce::File& file)
         return;
     }
 
+    // add chop plugin to master plugin list
+    // Should use PluginCache::createNewPlugin to create the ones you add here
+
+    auto chopPlugin = edit->getPluginCache().createNewPlugin(ChopPlugin::xmlTypeName, juce::PluginDescription());
+
+    if (chopPlugin != nullptr)
+    {
+        edit->getMasterPluginList().insertPlugin(chopPlugin, -1, nullptr);
+    } else {
+        DBG ("Error: Failed to create chop plugin");
+        return;
+    }
+
     // Create two tracks and import the audio file to both
     bool clipsCreated = false;
-    for (int i = 0; i < 2; i++)
+    for (int trackIndex = 0; trackIndex < 2; trackIndex++)
     {
-        if (auto track = EngineHelpers::getOrInsertAudioTrackAt (*edit, i))
+        if (auto track = EngineHelpers::getAudioTrack (*edit, trackIndex))
         {
-            DBG ("Created track " + juce::String (i + 1));
+            DBG ("Setup track " + juce::String (trackIndex + 1));
+
 
             // Add volume and pan plugin
             auto volumeAndPan = track->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0);
-
-            // Add ChopPlugin to first track
-            if (i == 0) {
-                auto plugin = ChopPlugin::create(*edit);
-                if (plugin != nullptr) {
-                    if (auto chopPlugin = track->pluginList.insertPlugin(plugin->state, -1)) {
-                        DBG("Added ChopPlugin to track " + juce::String(i + 1));
-                    }
-                }
-            }
 
             // Get the audio file length
             te::AudioFile audioFile (engine, file);
@@ -346,7 +351,7 @@ void LibraryComponent::addToLibrary (const juce::File& file)
 
             // Create clip position
             auto timeRange = tracktion::TimeRange (tracktion::TimePosition(), tracktion::TimePosition::fromSeconds (fileLength));
-            auto position = tracktion::engine::createClipPosition (edit->tempoSequence, timeRange, tracktion::TimeDuration::fromSeconds (i == 0 ? 0.0 : beatDuration));
+            auto position = tracktion::engine::createClipPosition (edit->tempoSequence, timeRange, tracktion::TimeDuration::fromSeconds (trackIndex == 0 ? 0.0 : beatDuration));
 
             DBG ("Clip position: " + juce::String (position.time.getStart().inSeconds()) + " to " + juce::String (position.time.getEnd().inSeconds()));
             DBG ("Clip offset: " + juce::String (position.offset.inSeconds()));
@@ -360,18 +365,18 @@ void LibraryComponent::addToLibrary (const juce::File& file)
 
             if (!clip)
             {
-                DBG ("Failed to create clip for track " + juce::String (i + 1));
+                DBG ("Failed to create clip for track " + juce::String (trackIndex + 1));
                 return;
             }
 
-            DBG ("Created clip for track " + juce::String (i + 1) + " with BPM: " + juce::String (detectedBPM) + " and beat duration: " + juce::String (beatDuration) + " at position: " + juce::String (position.time.getStart().inSeconds()) + " to " + juce::String (position.time.getEnd().inSeconds()));
+            DBG ("Created clip for track " + juce::String (trackIndex + 1) + " with BPM: " + juce::String (detectedBPM) + " and beat duration: " + juce::String (beatDuration) + " at position: " + juce::String (position.time.getStart().inSeconds()) + " to " + juce::String (position.time.getEnd().inSeconds()));
 
             clip->setSyncType (te::Clip::syncBarsBeats);
             clip->setAutoPitch (false);
             clip->setTimeStretchMode (te::TimeStretcher::elastiquePro);
             clip->setUsesProxy (false);
             clip->setAutoTempo (true);
-            clip->setGainDB (0.0f);
+            // clip->setGainDB (0.0f);
             clip->getLoopInfo().setBpm (detectedBPM, clip->getAudioFile().getInfo());
 
             // Flush clip state to ValueTree
@@ -380,7 +385,7 @@ void LibraryComponent::addToLibrary (const juce::File& file)
         }
         else
         {
-            DBG ("Failed to create track " + juce::String (i + 1));
+            DBG ("Failed to create track " + juce::String (trackIndex + 1));
         }
     }
 
