@@ -203,7 +203,7 @@ void TransportComponent::paint (juce::Graphics& g)
             const float rightGain = (gain + pv);
             
             // Draw waveform first (so beat markers appear on top)
-            g.setColour (juce::Colours::lightblue.withAlpha (0.7f));
+            g.setColour (juce::Colours::lime.withAlpha (0.7f));
             
             if (thumbnail.getTotalLength() > 0.0)
             {
@@ -212,9 +212,9 @@ void TransportComponent::paint (juce::Graphics& g)
                 
                 // Create a gradient fill for a more modern look
                 g.setGradientFill(juce::ColourGradient(
-                    juce::Colours::lightblue.withAlpha(0.8f),
+                    juce::Colours::lime.withAlpha(0.8f),
                     drawBounds.getTopLeft().toFloat(),
-                    juce::Colours::lightblue.withAlpha(0.3f),
+                    juce::Colours::lime.withAlpha(0.3f),
                     drawBounds.getBottomLeft().toFloat(),
                     false));
 
@@ -222,7 +222,7 @@ void TransportComponent::paint (juce::Graphics& g)
                 thumbnail.drawChannels(g, drawBounds, timeRange, maxGain);
                 
                 // Add a subtle outline
-                g.setColour(juce::Colours::lightblue.withAlpha(0.4f));
+                g.setColour(juce::Colours::lime.withAlpha(0.4f));
                 g.drawRect(drawBounds.toFloat(), 1.0f);
             }
             else
