@@ -78,34 +78,31 @@ void CrossfaderAutomationLane::mouseDown(const juce::MouseEvent& event)
     if (snapEnabled)
         time = snapTimeToGrid(time);
         
-    // Check if we clicked on an existing region
-    activeRegion = getRegionAtTime(time);
-    
-    if (activeRegion == nullptr)
-    {
-        // Create new region
-        bool isASide = value >= 0.5;  // Above center line = A side
-        chopRegions.emplace_back(time, time, isASide);
-        activeRegion = &chopRegions.back();
-    }
+    // Add point directly to automation curve
+    auto& curve = parameter->getCurve();
+    curve.addPoint(tracktion::TimePosition::fromSeconds(time), value >= 0.5f ? 1.0f : 0.0f, 0.0f);
     
     isDragging = true;
+    // Update regions from the new curve
+    updateChopRegionsFromCurve();
+    repaint();
 }
 
 void CrossfaderAutomationLane::mouseDrag(const juce::MouseEvent& event)
 {
-    if (!isDragging || activeRegion == nullptr)
+    if (!isDragging || parameter == nullptr)
         return;
         
     auto [time, value] = XYToTime(event.position.x, event.position.y);
     if (snapEnabled)
         time = snapTimeToGrid(time);
-        
-    // Update region end time
-    activeRegion->endTime = time;
-    activeRegion->isASide = value >= 0.5;  // Allow changing sides during drag
     
-    convertRegionsToAutomation();
+    // Update automation curve directly
+    auto& curve = parameter->getCurve();
+    curve.addPoint(tracktion::TimePosition::fromSeconds(time), value >= 0.5f ? 1.0f : 0.0f, 0.0f);
+    
+    // Update regions from the new curve
+    updateChopRegionsFromCurve();
     repaint();
 }
 
@@ -133,8 +130,27 @@ double CrossfaderAutomationLane::snapTimeToGrid(double time) const
 
 void CrossfaderAutomationLane::addChopRegion(const ChopRegion& region)
 {
-    chopRegions.push_back(region);
-    convertRegionsToAutomation();
+    if (parameter == nullptr)
+        return;
+
+    // Add points directly to automation curve
+    auto& curve = parameter->getCurve();
+    
+    if (region.startTime > 0)
+        curve.addPoint(tracktion::TimePosition::fromSeconds(region.startTime - 0.001), 
+                      region.isASide ? 0.0f : 1.0f, 0.0f);
+                      
+    curve.addPoint(tracktion::TimePosition::fromSeconds(region.startTime), 
+                  region.isASide ? 1.0f : 0.0f, 0.0f);
+    curve.addPoint(tracktion::TimePosition::fromSeconds(region.endTime), 
+                  region.isASide ? 1.0f : 0.0f, 0.0f);
+    
+    if (region.endTime < sourceLength)
+        curve.addPoint(tracktion::TimePosition::fromSeconds(region.endTime + 0.001),
+                      region.isASide ? 0.0f : 1.0f, 0.0f);
+
+    // Regions will be updated from curve
+    updateChopRegionsFromCurve();
     repaint();
 }
 
@@ -143,30 +159,39 @@ void CrossfaderAutomationLane::removeChopRegion(size_t index)
     if (index < chopRegions.size())
     {
         chopRegions.erase(chopRegions.begin() + index);
-        convertRegionsToAutomation();
+        updateChopRegionsFromCurve();
         repaint();
     }
 }
 
 void CrossfaderAutomationLane::clearChopRegions()
 {
+    if (parameter == nullptr)
+        return;
+        
+    // Clear automation curve
+    parameter->getCurve().clear();
     chopRegions.clear();
-    convertRegionsToAutomation();
     repaint();
 }
 
 void CrossfaderAutomationLane::applyAlternatingPattern(double startTime, double endTime, double interval)
 {
-    clearChopRegions();
+    if (parameter == nullptr)
+        return;
+        
+    auto& curve = parameter->getCurve();
+    curve.clear();
     
     bool isASide = true;
     for (double time = startTime; time < endTime; time += interval)
     {
-        chopRegions.emplace_back(time, time + interval, isASide);
+        curve.addPoint(tracktion::TimePosition::fromSeconds(time), isASide ? 1.0f : 0.0f, 0.0f);
+        curve.addPoint(tracktion::TimePosition::fromSeconds(time + interval - 0.001), isASide ? 1.0f : 0.0f, 0.0f);
         isASide = !isASide;
     }
     
-    convertRegionsToAutomation();
+    updateChopRegionsFromCurve();
     repaint();
 }
 
@@ -189,7 +214,7 @@ void CrossfaderAutomationLane::duplicatePattern(double startTime, double endTime
     
     // Add duplicated regions
     chopRegions.insert(chopRegions.end(), patternRegions.begin(), patternRegions.end());
-    convertRegionsToAutomation();
+    updateChopRegionsFromCurve();
     repaint();
 }
 
@@ -201,69 +226,6 @@ CrossfaderAutomationLane::ChopRegion* CrossfaderAutomationLane::getRegionAtTime(
             return &region;
     }
     return nullptr;
-}
-
-void CrossfaderAutomationLane::convertRegionsToAutomation()
-{
-    if (parameter == nullptr)
-        return;
-        
-    auto& curve = parameter->getCurve();
-    curve.clear();
-    
-    // Sort regions by start time
-    std::sort(chopRegions.begin(), chopRegions.end(),
-              [](const ChopRegion& a, const ChopRegion& b) {
-                  return a.startTime < b.startTime;
-              });
-    
-    // Convert regions to automation points
-    for (const auto& region : chopRegions)
-    {
-        float value = region.isASide ? 1.0f : 0.0f;
-        
-        // Add points for sharp transitions
-        if (region.startTime > 0)
-            curve.addPoint(tracktion::TimePosition::fromSeconds(region.startTime - 0.001), 
-                         value == 1.0f ? 0.0f : 1.0f, 0.0f);
-                         
-        curve.addPoint(tracktion::TimePosition::fromSeconds(region.startTime), value, 0.0f);
-        curve.addPoint(tracktion::TimePosition::fromSeconds(region.endTime), value, 0.0f);
-        
-        if (region.endTime < sourceLength)
-            curve.addPoint(tracktion::TimePosition::fromSeconds(region.endTime + 0.001),
-                         value == 1.0f ? 0.0f : 1.0f, 0.0f);
-    }
-    
-    updatePoints();
-}
-
-void CrossfaderAutomationLane::updatePoints()
-{
-    // AutomationLane::updatePoints(); // Call base class implementation
-    // convertRegionsToAutomation();   // Update our chop regions
-    repaint();                      // Trigger redraw
-}
-
-void CrossfaderAutomationLane::curveHasChanged(tracktion::engine::AutomatableParameter& param)
-{
-    // AutomationLane::curveHasChanged(param);
-    // Update our regions from the curve
-    // updateChopRegionsFromCurve();
-    updateChopRegionsFromCurve();
-    repaint();
-}
-
-void CrossfaderAutomationLane::currentValueChanged(tracktion::engine::AutomatableParameter& param)
-{
-    AutomationLane::currentValueChanged(param);
-    repaint();
-}
-
-void CrossfaderAutomationLane::parameterChanged(tracktion::engine::AutomatableParameter& param, float newValue)
-{
-    AutomationLane::parameterChanged(param, newValue);
-    repaint();
 }
 
 void CrossfaderAutomationLane::updateChopRegionsFromCurve()
@@ -300,4 +262,36 @@ void CrossfaderAutomationLane::updateChopRegionsFromCurve()
             currentSide = isASide;
         }
     }
+}
+
+void CrossfaderAutomationLane::curveHasChanged(tracktion::engine::AutomatableParameter& param)
+{
+    // AutomationLane::curveHasChanged(param);
+    // Update our regions from the curve
+    // updateChopRegionsFromCurve();
+    updateChopRegionsFromCurve();
+    repaint();
+}
+
+void CrossfaderAutomationLane::currentValueChanged(tracktion::engine::AutomatableParameter& param)
+{
+    AutomationLane::currentValueChanged(param);
+    repaint();
+}
+
+void CrossfaderAutomationLane::parameterChanged(tracktion::engine::AutomatableParameter& param, float newValue)
+{
+    AutomationLane::parameterChanged(param, newValue);
+    repaint();
+}
+
+void CrossfaderAutomationLane::updatePoints()
+{
+    // Call base class implementation to handle basic automation point updates
+    // AutomationLane::updatePoints();
+    DBG("updatePoints");
+    
+    // Update our visual representation based on the current automation data
+    updateChopRegionsFromCurve();
+    repaint();
 } 

@@ -137,7 +137,6 @@ public:
     void updateTrackVolumes()
     {
         const float crossfaderPosition = crossfaderParam->getCurrentValue();
-        DBG("ChopPlugin::updateTrackVolumes - Current crossfader position: " + juce::String(crossfaderPosition));
         
         // Apply volumes to tracks
         if (auto track1 = EngineHelpers::getAudioTrack(edit, 0))
@@ -149,7 +148,7 @@ public:
                 if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(volPanPlugin.get()))
                 {
                     const float volume = getTrack1Volume();
-                    volumeAndPan->volParam->setParameter(volume, juce::sendNotification);
+                    volumeAndPan->volParam->setParameter(volume, juce::dontSendNotification);
                 }
                 else
                 {
@@ -171,8 +170,7 @@ public:
                 if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(volPanPlugin.get()))
                 {
                     const float volume = getTrack2Volume();
-                    volumeAndPan->volParam->setParameter(volume, juce::sendNotification);
-                    DBG("ChopPlugin::updateTrackVolumes - Track 2 volume set to: " + juce::String(volume) + " (from crossfader: " + juce::String(crossfaderPosition) + ")");
+                    volumeAndPan->volParam->setParameter(volume, juce::dontSendNotification);
                 }
                 else
                 {
@@ -194,7 +192,7 @@ public:
     }
 
     void currentValueChanged(tracktion::engine::AutomatableParameter&) override { updateTrackVolumes(); }
-    void curveHasChanged(tracktion::engine::AutomatableParameter&) override { updateTrackVolumes(); }
+    void curveHasChanged(tracktion::engine::AutomatableParameter&) override { }
 
 private:
     double sampleRate = 44100.0;
