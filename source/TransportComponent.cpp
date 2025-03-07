@@ -16,10 +16,39 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     addAndMakeVisible (zoomOutButton);
     addAndMakeVisible (automationReadButton);
     addAndMakeVisible (automationWriteButton);
+    addAndMakeVisible (gridSizeComboBox);
 
-    // Create and add automation lane for tempo
-    automationLane = std::make_unique<AutomationLane> (edit);
-    addAndMakeVisible (*automationLane);
+    // Set up play and stop button shapes
+    playButton.setShape(getPlayPath(), false, true, false);
+    playButton.setOutline(juce::Colours::white, 1.0f);
+    playButton.setColours(juce::Colours::white, juce::Colours::lightgrey.darker(0.2f), juce::Colours::white.darker(0.2f));
+    playButton.setClickingTogglesState(true);
+
+    stopButton.setShape(getStopPath(), false, true, false);
+    stopButton.setOutline(juce::Colours::white, 1.0f);
+    stopButton.setColours(juce::Colours::white, juce::Colours::lightgrey.darker(0.2f), juce::Colours::white.darker(0.2f));
+
+    // Setup grid size combo box
+    gridSizeComboBox.addItem("1/16", 1);  // 0.0625
+    gridSizeComboBox.addItem("1/8", 2);   // 0.125
+    gridSizeComboBox.addItem("1/4", 3);   // 0.25
+    gridSizeComboBox.addItem("1/2", 4);   // 0.5
+    gridSizeComboBox.addItem("1", 5);     // 1.0
+    gridSizeComboBox.setSelectedId(3);    // Default to 1/4
+    
+    gridSizeComboBox.onChange = [this] {
+        if (crossfaderAutomationLane != nullptr) {
+            float division = 0.25f; // Default
+            switch (gridSizeComboBox.getSelectedId()) {
+                case 1: division = 0.0625f; break; // 1/16
+                case 2: division = 0.125f; break;  // 1/8
+                case 3: division = 0.25f; break;   // 1/4
+                case 4: division = 0.5f; break;    // 1/2
+                case 5: division = 1.0f; break;    // 1
+            }
+            crossfaderAutomationLane->setGridDivision(division);
+        }
+    };
 
     // Create and add crossfader automation lane
     crossfaderAutomationLane = std::make_unique<CrossfaderAutomationLane> (edit);
@@ -46,6 +75,10 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     
     addAndMakeVisible (*crossfaderAutomationLane);
 
+    // Create and add automation lane for tempo
+    automationLane = std::make_unique<AutomationLane> (edit);
+    addAndMakeVisible (*automationLane);
+    
     // Initialize thumbnail
     thumbnail.audioFileChanged();
     startTimerHz(30);
@@ -339,15 +372,16 @@ void TransportComponent::resized()
     // Reserve space for automation lanes (30% of original height, split between the two lanes)
     auto automationBounds = bounds.removeFromTop(static_cast<int>(getHeight() * 0.3));
     auto firstLaneBounds = automationBounds.removeFromTop(automationBounds.getHeight() / 2);
-    automationLane->setBounds(firstLaneBounds);
-    crossfaderAutomationLane->setBounds(automationBounds);
+    automationLane->setBounds(automationBounds);
+    crossfaderAutomationLane->setBounds(firstLaneBounds);
 
     // Layout transport controls in remaining space
     auto controlsBounds = bounds.reduced(5);
     
-    // Give more space to the time display
-    auto timeDisplayWidth = controlsBounds.getWidth() * 0.4; // 40% of the width
-    auto buttonsWidth = controlsBounds.getWidth() - timeDisplayWidth;
+    // Give more space to the time display and grid control
+    auto timeDisplayWidth = controlsBounds.getWidth() * 0.3; // 30% of the width
+    auto gridControlWidth = controlsBounds.getWidth() * 0.1; // 10% of the width
+    auto buttonsWidth = controlsBounds.getWidth() - timeDisplayWidth - gridControlWidth;
     auto buttonWidth = buttonsWidth / 7; // 7 buttons
     
     auto buttonBounds = controlsBounds.removeFromLeft(buttonsWidth);
@@ -360,6 +394,7 @@ void TransportComponent::resized()
     zoomInButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
     zoomOutButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
     
+    gridSizeComboBox.setBounds(controlsBounds.removeFromLeft(gridControlWidth).reduced(2));
     timeDisplay.setBounds(controlsBounds.reduced(2));
 
     if (playhead != nullptr)
@@ -449,8 +484,10 @@ void TransportComponent::updatePlayheadPosition()
 
 void TransportComponent::updateTransportState()
 {
-    playButton.setToggleState (transport.isPlaying(), juce::dontSendNotification);
-    loopButton.setToggleState (transport.looping, juce::dontSendNotification);
+    bool isPlaying = transport.isPlaying();
+    playButton.setToggleState(isPlaying, juce::dontSendNotification);
+    playButton.setShape(isPlaying ? getPausePath() : getPlayPath(), false, true, false);
+    loopButton.setToggleState(transport.looping, juce::dontSendNotification);
 }
 
 void TransportComponent::updateThumbnail()

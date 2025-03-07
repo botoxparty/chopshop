@@ -34,15 +34,18 @@ private:
     tracktion::engine::TransportControl& transport;
     
     // Transport controls
-    juce::TextButton playButton{"Play"};
-    juce::TextButton stopButton{"Stop"};
+    juce::ShapeButton playButton{"Play", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
+    juce::ShapeButton stopButton{"Stop", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
     juce::TextButton loopButton{"Loop"};
     juce::TextButton automationReadButton{"Auto Read"};
     juce::TextButton automationWriteButton{"Auto Write"};
     
     // Zoom controls
-    juce::TextButton zoomInButton{"+"}; 
+    juce::TextButton zoomInButton{"+"};
     juce::TextButton zoomOutButton{"-"};
+    
+    // Grid controls
+    juce::ComboBox gridSizeComboBox;
     
     // Timeline and position display
     juce::Label timeDisplay;
@@ -69,6 +72,29 @@ private:
     void setZoomLevel(double newLevel);
     void setScrollPosition(double newPosition);
     double getMaxScrollPosition() const;
+
+    // Icon path functions
+    static juce::Path getPlayPath()
+    {
+        juce::Path path;
+        path.addTriangle(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.5f);
+        return path;
+    }
+
+    static juce::Path getPausePath()
+    {
+        juce::Path path;
+        path.addRectangle(0.0f, 0.0f, 0.3f, 1.0f);
+        path.addRectangle(0.7f, 0.0f, 0.3f, 1.0f);
+        return path;
+    }
+
+    static juce::Path getStopPath()
+    {
+        juce::Path path;
+        path.addRectangle(0.0f, 0.0f, 1.0f, 1.0f);
+        return path;
+    }
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TransportComponent)
 }; 
