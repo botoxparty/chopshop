@@ -92,7 +92,9 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
 
     // Initialize time display
     timeDisplay.setJustificationType (juce::Justification::centred);
-    timeDisplay.setFont(CustomLookAndFeel::getMonospaceFont());
+    timeDisplay.setFont(CustomLookAndFeel::getMonospaceFont().withHeight(18.0f));
+    timeDisplay.setColour(juce::Label::textColourId, juce::Colours::white);
+    timeDisplay.setColour(juce::Label::backgroundColourId, juce::Colours::darkgrey.darker(0.7f));
     updateTimeDisplay();
 
     // Setup playhead
@@ -268,15 +270,22 @@ void TransportComponent::resized()
 
     // Layout transport controls in remaining space
     auto controlsBounds = bounds.reduced(5);
-    auto buttonWidth = controlsBounds.getWidth() / 7; // 7 buttons now
-
-    playButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
-    stopButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
-    loopButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
-    automationReadButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
-    automationWriteButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
-    zoomInButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
-    zoomOutButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    
+    // Give more space to the time display
+    auto timeDisplayWidth = controlsBounds.getWidth() * 0.4; // 40% of the width
+    auto buttonsWidth = controlsBounds.getWidth() - timeDisplayWidth;
+    auto buttonWidth = buttonsWidth / 7; // 7 buttons
+    
+    auto buttonBounds = controlsBounds.removeFromLeft(buttonsWidth);
+    
+    playButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
+    stopButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
+    loopButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
+    automationReadButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
+    automationWriteButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
+    zoomInButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
+    zoomOutButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
+    
     timeDisplay.setBounds(controlsBounds.reduced(2));
 
     if (playhead != nullptr)
@@ -391,6 +400,14 @@ void TransportComponent::updateThumbnail()
                 {
                     currentClip = waveClip;
                     thumbnail.setNewFile(audioFile);
+                    
+                    // Update automation lanes with the new source length
+                    auto sourceLength = waveClip->getSourceLength().inSeconds();
+                    if (automationLane != nullptr)
+                        automationLane->setSourceLength(sourceLength);
+                    if (crossfaderAutomationLane != nullptr)
+                        crossfaderAutomationLane->setSourceLength(sourceLength);
+                        
                     repaint();
                     break;
                 }
@@ -471,6 +488,13 @@ void TransportComponent::mouseWheelMove (const juce::MouseEvent& event, const ju
 void TransportComponent::setZoomLevel (double newLevel)
 {
     zoomLevel = juce::jlimit (minZoom, maxZoom, newLevel);
+    
+    // Update automation lanes
+    if (automationLane != nullptr)
+        automationLane->setZoomLevel(zoomLevel);
+    if (crossfaderAutomationLane != nullptr)
+        crossfaderAutomationLane->setZoomLevel(zoomLevel);
+        
     repaint();
 }
 
@@ -479,6 +503,13 @@ void TransportComponent::setScrollPosition (double newPosition)
     // Limit scrolling based on zoom level
     auto maxScroll = getMaxScrollPosition();
     scrollPosition = juce::jlimit (0.0, maxScroll, newPosition);
+    
+    // Update automation lanes
+    if (automationLane != nullptr)
+        automationLane->setScrollPosition(scrollPosition);
+    if (crossfaderAutomationLane != nullptr)
+        crossfaderAutomationLane->setScrollPosition(scrollPosition);
+        
     repaint();
 }
 

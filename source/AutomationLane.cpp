@@ -14,6 +14,33 @@ AutomationLane::~AutomationLane()
         parameter->removeListener(this);
 }
 
+void AutomationLane::setZoomLevel(double newZoomLevel)
+{
+    if (zoomLevel != newZoomLevel)
+    {
+        zoomLevel = newZoomLevel;
+        repaint();
+    }
+}
+
+void AutomationLane::setScrollPosition(double newScrollPosition)
+{
+    if (scrollPosition != newScrollPosition)
+    {
+        scrollPosition = newScrollPosition;
+        repaint();
+    }
+}
+
+void AutomationLane::setSourceLength(double lengthInSeconds)
+{
+    if (sourceLength != lengthInSeconds)
+    {
+        sourceLength = lengthInSeconds;
+        repaint();
+    }
+}
+
 void AutomationLane::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
@@ -113,7 +140,41 @@ void AutomationLane::updatePoints()
 
 void AutomationLane::curveHasChanged(tracktion::engine::AutomatableParameter&)
 {
-    DBG("Curve has changed");
+    if (parameter != nullptr)
+    {
+        auto& curve = parameter->getCurve();
+        std::vector<std::pair<double, double>> newPoints;
+        
+        // Get current points
+        for (int i = 0; i < curve.getNumPoints(); ++i)
+        {
+            auto point = curve.getPoint(i);
+            newPoints.emplace_back(point.time.inSeconds(), point.value);
+        }
+        
+        // Compare with previous points to show changes
+        if (newPoints.size() > automationPoints.size())
+        {
+            DBG("Points added: Previous count=" << automationPoints.size() << ", New count=" << newPoints.size());
+        }
+        else if (newPoints.size() < automationPoints.size())
+        {
+            DBG("Points removed: Previous count=" << automationPoints.size() << ", New count=" << newPoints.size());
+        }
+        
+        // Check for value changes in existing points
+        size_t minSize = std::min(newPoints.size(), automationPoints.size());
+        for (size_t i = 0; i < minSize; ++i)
+        {
+            if (std::abs(newPoints[i].second - automationPoints[i].second) > 0.0001)
+            {
+                DBG("Point " << i << " value changed from " << automationPoints[i].second 
+                    << " to " << newPoints[i].second 
+                    << " at time " << newPoints[i].first << "s");
+            }
+        }
+    }
+    
     updatePoints();
 }
 
@@ -143,8 +204,13 @@ juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) 
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Normalize time to width
-    float x = bounds.getX() + (timeInSeconds / 60.0f) * bounds.getWidth(); // Assuming 60 seconds view range
+    // Calculate visible time range
+    auto visibleTimeStart = sourceLength * scrollPosition;
+    auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
+    
+    // Normalize time to width using the visible time range
+    float normalizedTime = (timeInSeconds - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
+    float x = bounds.getX() + (normalizedTime * bounds.getWidth());
     
     // Normalize value to height
     float normalizedValue = 0.0f;
@@ -162,8 +228,13 @@ std::pair<double, double> AutomationLane::XYToTime(float x, float y) const
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Convert x to time
-    double timeInSeconds = (x - bounds.getX()) * 60.0 / bounds.getWidth();
+    // Calculate visible time range
+    auto visibleTimeStart = sourceLength * scrollPosition;
+    auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
+    
+    // Convert x to time using the visible time range
+    double normalizedX = (x - bounds.getX()) / bounds.getWidth();
+    double timeInSeconds = visibleTimeStart + (normalizedX * (visibleTimeEnd - visibleTimeStart));
     
     // Convert y to parameter value
     float normalizedValue = 1.0f - ((y - bounds.getY()) / bounds.getHeight());
@@ -177,7 +248,7 @@ std::pair<double, double> AutomationLane::XYToTime(float x, float y) const
     }
     
     // Clamp values
-    timeInSeconds = juce::jlimit(0.0, 60.0, timeInSeconds);
+    timeInSeconds = juce::jlimit(0.0, sourceLength, timeInSeconds);
     
     return {timeInSeconds, value};
 }

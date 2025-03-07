@@ -20,6 +20,11 @@ public:
 
     void setParameter(tracktion::engine::AutomatableParameter* param);
     void updatePoints();
+    
+    // Add zoom and scroll control methods
+    void setZoomLevel(double newZoomLevel);
+    void setScrollPosition(double newScrollPosition);
+    void setSourceLength(double lengthInSeconds);
 
     // AutomatableParameter::Listener methods
     void curveHasChanged(tracktion::engine::AutomatableParameter&) override;
@@ -32,6 +37,11 @@ private:
     tracktion::engine::Edit& edit;
     tracktion::engine::AutomatableParameter* parameter;
     std::vector<std::pair<double, double>> automationPoints; // <time, value> pairs
+    
+    // Add zoom and scroll state
+    double zoomLevel = 1.0;
+    double scrollPosition = 0.0;
+    double sourceLength = 60.0; // Default to 60 seconds if not set
     
     juce::Point<float> timeToXY(double timeInSeconds, double value) const;
     std::pair<double, double> XYToTime(float x, float y) const;
