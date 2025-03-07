@@ -156,7 +156,6 @@ private:
     PlayState playState{PlayState::Stopped};
 
     void updateCrossfader();
-    void setTrackVolume(int trackIndex, float volume);
 
     void armTrack(int trackIndex, bool arm);
     void startRecording();

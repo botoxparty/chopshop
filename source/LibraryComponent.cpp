@@ -334,7 +334,6 @@ void LibraryComponent::addToLibrary (const juce::File& file)
         {
             DBG ("Setup track " + juce::String (trackIndex + 1));
 
-
             // Add volume and pan plugin
             auto volumeAndPan = track->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0);
 

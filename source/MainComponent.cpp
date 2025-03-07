@@ -213,10 +213,6 @@ void MainComponent::setupChopComponent()
             startTimer(static_cast<int>(chopReleaseDelay));
         }
     };
-
-    chopComponent->onCrossfaderValueChanged = [this](float) {
-        // The ChopPlugin now handles the volume changes directly
-    };
 }
 
 void MainComponent::setupLibraryComponent()

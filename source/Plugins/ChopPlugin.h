@@ -134,34 +134,37 @@ public:
 
     void updateTrackVolumes()
     {
-        const float position = crossfaderParam->getCurrentValue();
-        
-        // Simple linear crossfade with slight curve for smoother transition
-        // When position is 0, track1 is full volume and track2 is silent
-        // When position is 1, track1 is silent and track2 is full volume
-        float gainTrack1 = std::sqrt(1.0f - position); // Square root for smoother curve
-        float gainTrack2 = std::sqrt(position);
-
-        DBG("ChopPlugin::updateTrackVolumes - Crossfader position: " + juce::String(position));
-        DBG("ChopPlugin::updateTrackVolumes - Track1 gain: " + juce::String(gainTrack1));
-        DBG("ChopPlugin::updateTrackVolumes - Track2 gain: " + juce::String(gainTrack2));
-
         // Apply volumes to tracks
         if (auto track1 = EngineHelpers::getAudioTrack(edit, 0))
         {
             if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(EngineHelpers::getPlugin(*track1, tracktion::engine::VolumeAndPanPlugin::xmlTypeName).get()))
             {
-                volumeAndPan->volParam->setParameter(gainTrack1, juce::sendNotification);
-                DBG("ChopPlugin::updateTrackVolumes - Track 1 volume set to: " + juce::String(gainTrack1));
+                volumeAndPan->volParam->setParameter(getTrack1Volume(), juce::sendNotification);
+                DBG("ChopPlugin::updateTrackVolumes - Track 1 volume set to: " + juce::String(getTrack1Volume()));
             }
         }
 
         if (auto track2 = EngineHelpers::getAudioTrack(edit, 1))
         {
+            DBG("ChopPlugin::updateTrackVolumes - Track 2 found");
+            auto clips = track2->getClips();
+
+            for (auto clip : clips)
+            {
+                DBG("ChopPlugin::updateTrackVolumes - Clip found: " << clip->getName());
+                DBG("ChopPlugin::updateTrackVolumes - Clip start time: " << juce::String(clip->getPosition().getStart().inSeconds()));
+                DBG("ChopPlugin::updateTrackVolumes - Clip end time: " << juce::String(clip->getPosition().getEnd().inSeconds()));
+                DBG("ChopPlugin::updateTrackVolumes - Clip length: " << juce::String(clip->getPosition().getLength().inSeconds()));
+                if (auto audioClip = dynamic_cast<tracktion::engine::AudioClipBase*>(clip))
+                {
+                    DBG("ChopPlugin::updateTrackVolumes - Clip gain: " << juce::String(audioClip->getGain()));
+                }
+            }
+
             if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(EngineHelpers::getPlugin(*track2, tracktion::engine::VolumeAndPanPlugin::xmlTypeName).get()))
             {
-                volumeAndPan->volParam->setParameter(gainTrack2, juce::sendNotification);
-                DBG("ChopPlugin::updateTrackVolumes - Track 2 volume set to: " + juce::String(gainTrack2));
+                volumeAndPan->volParam->setParameter(getTrack2Volume(), juce::sendNotification);
+                DBG("ChopPlugin::updateTrackVolumes - Track 2 volume set to: " + juce::String(getTrack2Volume()));
             }
         }
     }
