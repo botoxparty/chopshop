@@ -207,23 +207,75 @@ void TransportComponent::paint (juce::Graphics& g)
             
             if (thumbnail.getTotalLength() > 0.0)
             {
+                // Get crossfader parameter
+                tracktion::engine::AutomatableParameter* crossfaderParam = nullptr;
+                if (auto chopPlugin = EngineHelpers::getPluginFromMasterTrack(edit, ChopPlugin::xmlTypeName))
+                {
+                    if (auto* plugin = chopPlugin.get())
+                    {
+                        crossfaderParam = plugin->getAutomatableParameterByID("crossfader");
+                    }
+                }
+
                 // Instead of drawing channels separately, draw a combined view
                 float maxGain = jmax(leftGain, rightGain);
-                
-                // Create a gradient fill for a more modern look
-                g.setGradientFill(juce::ColourGradient(
-                    juce::Colours::lime.withAlpha(0.8f),
-                    drawBounds.getTopLeft().toFloat(),
-                    juce::Colours::lime.withAlpha(0.3f),
-                    drawBounds.getBottomLeft().toFloat(),
-                    false));
 
-                // Draw combined channels
-                thumbnail.drawChannels(g, drawBounds, timeRange, maxGain);
-                
-                // Add a subtle outline
-                g.setColour(juce::Colours::lime.withAlpha(0.4f));
-                g.drawRect(drawBounds.toFloat(), 1.0f);
+                if (crossfaderParam != nullptr)
+                {
+                    // Calculate visible time range
+                    auto visibleTimeStart = timeRange.getStart().inSeconds();
+                    auto visibleTimeEnd = timeRange.getEnd().inSeconds();
+                    
+                    // Draw in small segments to capture crossfader changes
+                    const int numSegments = drawBounds.getWidth();
+                    const double timePerSegment = (visibleTimeEnd - visibleTimeStart) / numSegments;
+                    
+                    for (int i = 0; i < numSegments; i++)
+                    {
+                        auto segmentTime = visibleTimeStart + (i * timePerSegment);
+                        auto segmentEndTime = segmentTime + timePerSegment;
+                        
+                        // Get crossfader value at this time
+                        auto crossfaderValue = crossfaderParam->getCurve().getValueAt(tracktion::TimePosition::fromSeconds(segmentTime));
+                        
+                        // Create segment bounds
+                        auto segmentBounds = drawBounds.withWidth(1).withX(drawBounds.getX() + i);
+                        
+                        // Set color based on crossfader value
+                        juce::Colour waveformColor = crossfaderValue >= 0.5f ? juce::Colours::purple : juce::Colours::lime;
+                        
+                        // Create gradient for this segment
+                        g.setGradientFill(juce::ColourGradient(
+                            waveformColor.withAlpha(0.8f),
+                            segmentBounds.getTopLeft().toFloat(),
+                            waveformColor.withAlpha(0.3f),
+                            segmentBounds.getBottomLeft().toFloat(),
+                            false));
+                        
+                        // Draw this segment
+                        thumbnail.drawChannels(g, 
+                                            segmentBounds,
+                                            tracktion::TimeRange(tracktion::TimePosition::fromSeconds(segmentTime),
+                                                               tracktion::TimePosition::fromSeconds(segmentEndTime)),
+                                            maxGain);
+                    }
+                    
+                    // Add a subtle outline
+                    g.setColour(juce::Colours::grey.withAlpha(0.4f));
+                    g.drawRect(drawBounds.toFloat(), 1.0f);
+                }
+                else
+                {
+                    // Fallback if no crossfader parameter
+                    g.setGradientFill(juce::ColourGradient(
+                        juce::Colours::lime.withAlpha(0.8f),
+                        drawBounds.getTopLeft().toFloat(),
+                        juce::Colours::lime.withAlpha(0.3f),
+                        drawBounds.getBottomLeft().toFloat(),
+                        false));
+                        
+                    thumbnail.drawChannels(g, drawBounds, timeRange, maxGain);
+                }
             }
             else
             {
