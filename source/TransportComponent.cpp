@@ -10,11 +10,12 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     // Add and make visible all buttons
     addAndMakeVisible (playButton);
     addAndMakeVisible (stopButton);
-    addAndMakeVisible (recordButton);
     addAndMakeVisible (loopButton);
     addAndMakeVisible (timeDisplay);
     addAndMakeVisible (zoomInButton);
     addAndMakeVisible (zoomOutButton);
+    addAndMakeVisible (automationReadButton);
+    addAndMakeVisible (automationWriteButton);
 
     // Create and add automation lane for tempo
     automationLane = std::make_unique<AutomationLane> (edit);
@@ -74,14 +75,6 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
         updateTransportState();
     };
 
-    recordButton.onClick = [this] {
-        if (transport.isRecording())
-            transport.stop (false, false);
-        else
-            transport.record (false);
-        updateTransportState();
-    };
-
     loopButton.setClickingTogglesState (true);
     loopButton.onClick = [this] {
         transport.looping = loopButton.getToggleState();
@@ -111,6 +104,28 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     edit.getTransport().addChangeListener (this);
 
     updateThumbnail();
+
+    // Set up automation buttons
+    automationReadButton.setClickingTogglesState(true);
+    automationWriteButton.setClickingTogglesState(true);
+    
+    // Set up colors for automation buttons
+    automationReadButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::green.darker());
+    automationWriteButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::red.darker());
+    
+    automationReadButton.setToggleState(edit.getAutomationRecordManager().isReadingAutomation(), juce::dontSendNotification);
+    automationWriteButton.setToggleState(edit.getAutomationRecordManager().isWritingAutomation(), juce::dontSendNotification);
+    
+    automationReadButton.onClick = [this] {
+        edit.getAutomationRecordManager().setReadingAutomation(automationReadButton.getToggleState());
+    };
+    
+    automationWriteButton.onClick = [this] {
+        edit.getAutomationRecordManager().setWritingAutomation(automationWriteButton.getToggleState());
+    };
+    
+    // Register as automation listener
+    edit.getAutomationRecordManager().addListener(this);
 }
 
 TransportComponent::~TransportComponent()
@@ -123,6 +138,9 @@ TransportComponent::~TransportComponent()
     {
         edit.getTransport().removeChangeListener (this);
     }
+
+    // Remove automation listener
+    edit.getAutomationRecordManager().removeListener(this);
 }
 
 void TransportComponent::timerCallback()
@@ -240,29 +258,30 @@ void TransportComponent::resized()
     auto bounds = getLocalBounds();
 
     // Reserve space for waveform display (50% of height)
-    auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.5));
+    auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.5));
 
     // Reserve space for automation lanes (30% of original height, split between the two lanes)
-    auto automationBounds = bounds.removeFromTop (static_cast<int> (getHeight() * 0.3));
+    auto automationBounds = bounds.removeFromTop(static_cast<int>(getHeight() * 0.3));
     auto firstLaneBounds = automationBounds.removeFromTop(automationBounds.getHeight() / 2);
-    automationLane->setBounds (firstLaneBounds);
-    crossfaderAutomationLane->setBounds (automationBounds);
+    automationLane->setBounds(firstLaneBounds);
+    crossfaderAutomationLane->setBounds(automationBounds);
 
     // Layout transport controls in remaining space
-    auto controlsBounds = bounds.reduced (5);
-    auto buttonWidth = controlsBounds.getWidth() / 7; // Updated to accommodate zoom buttons
+    auto controlsBounds = bounds.reduced(5);
+    auto buttonWidth = controlsBounds.getWidth() / 7; // 7 buttons now
 
-    playButton.setBounds (controlsBounds.removeFromLeft (buttonWidth).reduced (2));
-    stopButton.setBounds (controlsBounds.removeFromLeft (buttonWidth).reduced (2));
-    recordButton.setBounds (controlsBounds.removeFromLeft (buttonWidth).reduced (2));
-    loopButton.setBounds (controlsBounds.removeFromLeft (buttonWidth).reduced (2));
-    zoomOutButton.setBounds (controlsBounds.removeFromLeft (buttonWidth).reduced (2));
-    zoomInButton.setBounds (controlsBounds.removeFromLeft (buttonWidth).reduced (2));
-    timeDisplay.setBounds (controlsBounds.reduced (2));
+    playButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    stopButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    loopButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    automationReadButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    automationWriteButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    zoomInButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    zoomOutButton.setBounds(controlsBounds.removeFromLeft(buttonWidth).reduced(2));
+    timeDisplay.setBounds(controlsBounds.reduced(2));
 
     if (playhead != nullptr)
     {
-        playhead->setRectangle (juce::Rectangle<float> (2.0f, (float) waveformBounds.getY(), 2.0f, (float) waveformBounds.getHeight()));
+        playhead->setRectangle(juce::Rectangle<float>(2.0f, (float)waveformBounds.getY(), 2.0f, (float)waveformBounds.getHeight()));
         updatePlayheadPosition();
     }
 }
@@ -348,9 +367,7 @@ void TransportComponent::updatePlayheadPosition()
 void TransportComponent::updateTransportState()
 {
     playButton.setToggleState (transport.isPlaying(), juce::dontSendNotification);
-    recordButton.setToggleState (transport.isRecording(), juce::dontSendNotification);
     loopButton.setToggleState (transport.looping, juce::dontSendNotification);
-
 }
 
 void TransportComponent::updateThumbnail()
@@ -468,4 +485,16 @@ void TransportComponent::setScrollPosition (double newPosition)
 double TransportComponent::getMaxScrollPosition() const
 {
     return zoomLevel > 1.0 ? 1.0 - (1.0 / zoomLevel) : 0.0;
+}
+
+void TransportComponent::automationModeChanged()
+{
+    bool isReading = edit.getAutomationRecordManager().isReadingAutomation();
+    bool isWriting = edit.getAutomationRecordManager().isWritingAutomation();
+    
+    automationReadButton.setToggleState(isReading, juce::dontSendNotification);
+    automationWriteButton.setToggleState(isWriting, juce::dontSendNotification);
+    
+    automationReadButton.setColour(juce::TextButton::textColourOnId, isReading ? juce::Colours::white : juce::Colours::grey);
+    automationWriteButton.setColour(juce::TextButton::textColourOnId, isWriting ? juce::Colours::white : juce::Colours::grey);
 }

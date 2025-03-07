@@ -142,18 +142,14 @@ public:
         // Apply volumes to tracks
         if (auto track1 = EngineHelpers::getAudioTrack(edit, 0))
         {
-            DBG("ChopPlugin::updateTrackVolumes - Track 1 found");
             auto volPanPlugin = EngineHelpers::getPlugin(*track1, tracktion::engine::VolumeAndPanPlugin::xmlTypeName);
 
             if(volPanPlugin != nullptr)
             {
-                DBG("ChopPlugin::updateTrackVolumes - Track 1 VolumeAndPanPlugin found: true");
-                
                 if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(volPanPlugin.get()))
                 {
                     const float volume = getTrack1Volume();
                     volumeAndPan->volParam->setParameter(volume, juce::sendNotification);
-                    DBG("ChopPlugin::updateTrackVolumes - Track 1 volume set to: " + juce::String(volume) + " (from crossfader: " + juce::String(crossfaderPosition) + ")");
                 }
                 else
                 {
@@ -168,13 +164,10 @@ public:
 
         if (auto track2 = EngineHelpers::getAudioTrack(edit, 1))
         {
-            DBG("ChopPlugin::updateTrackVolumes - Track 2 found");
             auto volPanPlugin = EngineHelpers::getPlugin(*track2, tracktion::engine::VolumeAndPanPlugin::xmlTypeName);
             
             if(volPanPlugin != nullptr)
             {
-                DBG("ChopPlugin::updateTrackVolumes - Track 2 VolumeAndPanPlugin found: true");
-                
                 if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(volPanPlugin.get()))
                 {
                     const float volume = getTrack2Volume();

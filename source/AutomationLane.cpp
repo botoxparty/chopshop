@@ -3,11 +3,15 @@
 AutomationLane::AutomationLane(tracktion::engine::Edit& e, tracktion::engine::AutomatableParameter* param)
     : edit(e), parameter(param)
 {
+    if (parameter != nullptr)
+        parameter->addListener(this);
     updatePoints();
 }
 
 AutomationLane::~AutomationLane()
 {
+    if (parameter != nullptr)
+        parameter->removeListener(this);
 }
 
 void AutomationLane::paint(juce::Graphics& g)
@@ -58,7 +62,6 @@ void AutomationLane::mouseDown(const juce::MouseEvent& event)
     {
         auto [time, value] = XYToTime(event.position.x, event.position.y);
         addPoint(time, value);
-        repaint();
     }
 }
 
@@ -68,18 +71,24 @@ void AutomationLane::mouseDrag(const juce::MouseEvent& event)
     {
         auto [time, value] = XYToTime(event.position.x, event.position.y);
         updateValueAtTime(time, value);
-        repaint();
     }
 }
 
 void AutomationLane::mouseUp(const juce::MouseEvent&)
 {
-    updatePoints();
+    // No need to call updatePoints here as curveHasChanged will be called
 }
 
 void AutomationLane::setParameter(tracktion::engine::AutomatableParameter* param)
 {
+    if (parameter != nullptr)
+        parameter->removeListener(this);
+        
     parameter = param;
+    
+    if (parameter != nullptr)
+        parameter->addListener(this);
+        
     updatePoints();
     repaint();
 }
@@ -100,6 +109,34 @@ void AutomationLane::updatePoints()
     }
     
     repaint();
+}
+
+void AutomationLane::curveHasChanged(tracktion::engine::AutomatableParameter&)
+{
+    DBG("Curve has changed");
+    updatePoints();
+}
+
+void AutomationLane::currentValueChanged(tracktion::engine::AutomatableParameter& param)
+{
+    // No need to handle this as we're only interested in curve point changes
+}
+
+void AutomationLane::parameterChanged(tracktion::engine::AutomatableParameter& param, float)
+{
+    // No need to handle this as we're only interested in curve point changes
+}
+
+void AutomationLane::parameterChangeGestureBegin(tracktion::engine::AutomatableParameter&)
+{
+    // Called when a parameter change gesture begins (e.g., when the user starts dragging)
+    // We don't need to do anything here as we're only interested in curve point changes
+}
+
+void AutomationLane::parameterChangeGestureEnd(tracktion::engine::AutomatableParameter&)
+{
+    // Called when a parameter change gesture ends (e.g., when the user stops dragging)
+    // We don't need to do anything here as we're only interested in curve point changes
 }
 
 juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) const
@@ -151,8 +188,8 @@ void AutomationLane::addPoint(double timeInSeconds, double value)
     {
         auto& curve = parameter->getCurve();
         curve.addPoint(tracktion::TimePosition::fromSeconds(timeInSeconds), value, 0.0f);
+        // No need to call updatePoints here as curveHasChanged will be called
     }
-    updatePoints();
 }
 
 void AutomationLane::updateValueAtTime(double timeInSeconds, double value)

@@ -12,7 +12,8 @@
 
 class TransportComponent : public juce::Component,
                          public juce::Timer,
-                         public juce::ChangeListener
+                         public juce::ChangeListener,
+                         public tracktion::engine::AutomationRecordManager::Listener
 {
 public:
     TransportComponent(tracktion::engine::Edit& e);
@@ -26,6 +27,7 @@ public:
     void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
     
     void updateThumbnail();
+    void automationModeChanged() override;
 
 private:
     tracktion::engine::Edit& edit;
@@ -34,8 +36,9 @@ private:
     // Transport controls
     juce::TextButton playButton{"Play"};
     juce::TextButton stopButton{"Stop"};
-    juce::TextButton recordButton{"Record"};
     juce::TextButton loopButton{"Loop"};
+    juce::TextButton automationReadButton{"Auto Read"};
+    juce::TextButton automationWriteButton{"Auto Write"};
     
     // Zoom controls
     juce::TextButton zoomInButton{"+"}; 

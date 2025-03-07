@@ -39,8 +39,12 @@ ChopComponent::ChopComponent (tracktion::engine::Edit& editIn)
     crossfaderSlider.setValue (0.0, juce::dontSendNotification);
     crossfaderSlider.setPopupMenuEnabled (false);
 
-    // Bind the crossfader parameter
-    bindSliderToParameter (crossfaderSlider, *plugin->getAutomatableParameterByID("crossfader"));
+    // Get the crossfader parameter
+    if (auto crossfaderParam = plugin->getAutomatableParameterByID("crossfader"))
+    {
+        // Bind the crossfader parameter
+        bindSliderToParameter(crossfaderSlider, *crossfaderParam);
+    }
 
     // Add components to the content component instead of the base
     contentComponent.addAndMakeVisible (durationLabel);

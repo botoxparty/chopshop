@@ -5,7 +5,8 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <tracktion_engine/tracktion_engine.h>
 
-class AutomationLane : public juce::Component
+class AutomationLane : public juce::Component,
+                     public tracktion::engine::AutomatableParameter::Listener
 {
 public:
     AutomationLane(tracktion::engine::Edit& e, tracktion::engine::AutomatableParameter* param = nullptr);
@@ -20,6 +21,13 @@ public:
     void setParameter(tracktion::engine::AutomatableParameter* param);
     void updatePoints();
 
+    // AutomatableParameter::Listener methods
+    void curveHasChanged(tracktion::engine::AutomatableParameter&) override;
+    void currentValueChanged(tracktion::engine::AutomatableParameter&) override;
+    void parameterChanged(tracktion::engine::AutomatableParameter&, float) override;
+    void parameterChangeGestureBegin(tracktion::engine::AutomatableParameter&) override;
+    void parameterChangeGestureEnd(tracktion::engine::AutomatableParameter&) override;
+
 private:
     tracktion::engine::Edit& edit;
     tracktion::engine::AutomatableParameter* parameter;
@@ -29,6 +37,10 @@ private:
     std::pair<double, double> XYToTime(float x, float y) const;
     void addPoint(double timeInSeconds, double value);
     void updateValueAtTime(double timeInSeconds, double value);
+
+    // Debounce timer to prevent rapid updates
+    juce::int64 lastUpdateTime = 0;
+    static constexpr juce::int64 minimumUpdateInterval = 50; // milliseconds
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AutomationLane)
 }; 
