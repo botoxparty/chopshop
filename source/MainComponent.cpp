@@ -270,7 +270,11 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     reverbComponent = std::make_unique<ReverbComponent>(*edit);
     addAndMakeVisible(*reverbComponent);
 
+    DBG("Setup reverb component");
+
     setupChopComponent();
+
+    DBG("Setup chop component");
 
     flangerComponent = std::make_unique<FlangerComponent>(*edit);
     addAndMakeVisible(*flangerComponent);
@@ -280,6 +284,8 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
 
     phaserComponent = std::make_unique<PhaserComponent>(*edit);
     addAndMakeVisible(*phaserComponent);
+
+    DBG("Setup phaser component");
 
     setupVinylBrakeComponent();
     setupScrewComponent();

@@ -376,7 +376,6 @@ void LibraryComponent::addToLibrary (const juce::File& file)
             clip->setTimeStretchMode (te::TimeStretcher::elastiquePro);
             clip->setUsesProxy (false);
             clip->setAutoTempo (true);
-            // clip->setGainDB (0.0f);
             clip->getLoopInfo().setBpm (detectedBPM, clip->getAudioFile().getInfo());
 
             // Flush clip state to ValueTree

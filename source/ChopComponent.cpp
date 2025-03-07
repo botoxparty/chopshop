@@ -4,30 +4,12 @@
 ChopComponent::ChopComponent (tracktion::engine::Edit& editIn)
     : BaseEffectComponent (editIn)
 {
-    auto track1 = EngineHelpers::getAudioTrack (edit, 0);
-    auto track2 = EngineHelpers::getAudioTrack (edit, 1);
-
     plugin = EngineHelpers::getPluginFromMasterTrack (edit, ChopPlugin::xmlTypeName);
 
     if (!plugin)
     {
+        titleLabel.setText ("Error loading Chop", juce::dontSendNotification);
         DBG ("Error: No chop plugin found");
-        return;
-    }
-
-    if (!track1 || !track2)
-    {
-        DBG ("Error: No tracks found");
-        return;
-    }
-
-    auto track1VolumeAndPanPlugin = EngineHelpers::getPlugin (*track1, tracktion::engine::VolumeAndPanPlugin::xmlTypeName);
-    auto track2VolumeAndPanPlugin = EngineHelpers::getPlugin (*track2, tracktion::engine::VolumeAndPanPlugin::xmlTypeName);
-
-    if (!track1VolumeAndPanPlugin || !track2VolumeAndPanPlugin)
-    {
-        // If no chop plugin was found, show an error
-        DBG ("Error: No volume and pan plugin found on the first track");
         return;
     }
 

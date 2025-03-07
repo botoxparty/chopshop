@@ -123,49 +123,45 @@ public:
     float getTrack1Volume() const 
     { 
         const float position = crossfaderParam->getCurrentValue();
-        float gainTrack1 = std::cos(position * juce::MathConstants<float>::halfPi);
-        return gainTrack1 <= 0.0f ? -60.0f : juce::Decibels::gainToDecibels(gainTrack1);
+        return std::sqrt(1.0f - position);
     }
     
     float getTrack2Volume() const 
     { 
         const float position = crossfaderParam->getCurrentValue();
-        float gainTrack2 = std::sin(position * juce::MathConstants<float>::halfPi);
-        return gainTrack2 <= 0.0f ? -60.0f : juce::Decibels::gainToDecibels(gainTrack2);
+        return std::sqrt(position);
     }
 
     void updateTrackVolumes()
     {
         const float position = crossfaderParam->getCurrentValue();
-        const float minDB = -60.0f; // Effectively silent
+        
+        // Simple linear crossfade with slight curve for smoother transition
+        // When position is 0, track1 is full volume and track2 is silent
+        // When position is 1, track1 is silent and track2 is full volume
+        float gainTrack1 = std::sqrt(1.0f - position); // Square root for smoother curve
+        float gainTrack2 = std::sqrt(position);
 
-        // Calculate volume curves that give equal power at center position
-        float gainTrack1 = std::cos(position * juce::MathConstants<float>::halfPi);
-        float gainTrack2 = std::sin(position * juce::MathConstants<float>::halfPi);
-
-        // Convert linear gains to dB
-        float gainDB1 = gainTrack1 <= 0.0f ? minDB : juce::Decibels::gainToDecibels(gainTrack1);
-        float gainDB2 = gainTrack2 <= 0.0f ? minDB : juce::Decibels::gainToDecibels(gainTrack2);
-
-        DBG("Gain DB1: " + juce::String(gainDB1));
-        DBG("Gain DB2: " + juce::String(gainDB2));
+        DBG("ChopPlugin::updateTrackVolumes - Crossfader position: " + juce::String(position));
+        DBG("ChopPlugin::updateTrackVolumes - Track1 gain: " + juce::String(gainTrack1));
+        DBG("ChopPlugin::updateTrackVolumes - Track2 gain: " + juce::String(gainTrack2));
 
         // Apply volumes to tracks
         if (auto track1 = EngineHelpers::getAudioTrack(edit, 0))
         {
-            DBG("Track 1 found");
-            if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(track1->pluginList.getPluginsOfType<tracktion::engine::VolumeAndPanPlugin>().getFirst()))
+            if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(EngineHelpers::getPlugin(*track1, tracktion::engine::VolumeAndPanPlugin::xmlTypeName).get()))
             {
-                DBG("Volume and pan plugin found");
-                volumeAndPan->setVolumeDb(gainDB1);
+                volumeAndPan->volParam->setParameter(gainTrack1, juce::sendNotification);
+                DBG("ChopPlugin::updateTrackVolumes - Track 1 volume set to: " + juce::String(gainTrack1));
             }
         }
 
         if (auto track2 = EngineHelpers::getAudioTrack(edit, 1))
         {
-            if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(track2->pluginList.getPluginsOfType<tracktion::engine::VolumeAndPanPlugin>().getFirst()))
+            if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(EngineHelpers::getPlugin(*track2, tracktion::engine::VolumeAndPanPlugin::xmlTypeName).get()))
             {
-                volumeAndPan->setVolumeDb(gainDB2);
+                volumeAndPan->volParam->setParameter(gainTrack2, juce::sendNotification);
+                DBG("ChopPlugin::updateTrackVolumes - Track 2 volume set to: " + juce::String(gainTrack2));
             }
         }
     }
