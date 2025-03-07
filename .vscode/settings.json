@@ -70,6 +70,7 @@
     "unordered_set": "cpp",
     "variant": "cpp",
     "algorithm": "cpp",
-    "*.mm": "cpp"
+    "*.mm": "cpp",
+    "__config": "cpp"
   }
 }

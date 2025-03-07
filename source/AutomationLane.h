@@ -19,7 +19,7 @@ public:
     void mouseUp(const juce::MouseEvent& event) override;
 
     void setParameter(tracktion::engine::AutomatableParameter* param);
-    void updatePoints();
+    virtual void updatePoints();
     
     // Add zoom and scroll control methods
     void setZoomLevel(double newZoomLevel);
@@ -35,6 +35,8 @@ public:
 
 private:
     tracktion::engine::Edit& edit;
+
+protected:
     tracktion::engine::AutomatableParameter* parameter;
     std::vector<std::pair<double, double>> automationPoints; // <time, value> pairs
     

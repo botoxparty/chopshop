@@ -9,7 +9,7 @@
 #include "AutomationLane.h"
 #include "CustomLookAndFeel.h"
 #include "Plugins/ChopPlugin.h"
-
+#include "CrossfaderAutomationLane.h"
 class TransportComponent : public juce::Component,
                          public juce::Timer,
                          public juce::ChangeListener,
@@ -52,7 +52,7 @@ private:
     tracktion::engine::SmartThumbnail thumbnail;
     
     std::unique_ptr<AutomationLane> automationLane;
-    std::unique_ptr<AutomationLane> crossfaderAutomationLane;
+    std::unique_ptr<CrossfaderAutomationLane> crossfaderAutomationLane;
     
     // Zoom and scroll state
     double zoomLevel = 1.0;

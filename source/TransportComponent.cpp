@@ -22,7 +22,7 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     addAndMakeVisible (*automationLane);
 
     // Create and add crossfader automation lane
-    crossfaderAutomationLane = std::make_unique<AutomationLane> (edit);
+    crossfaderAutomationLane = std::make_unique<CrossfaderAutomationLane> (edit);
     
     // Find the crossfader parameter
     tracktion::engine::AutomatableParameter* crossfaderParam = nullptr;
