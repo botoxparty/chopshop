@@ -144,7 +144,7 @@ namespace EngineHelpers
 
     inline te::AudioTrack* getAudioTrack (te::Edit& edit, int index)
     {
-        // edit.ensureNumberOfAudioTracks (index + 1);
+        edit.ensureNumberOfAudioTracks (index + 1);
         return te::getAudioTracks (edit)[index];
     }
 

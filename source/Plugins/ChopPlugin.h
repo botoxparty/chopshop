@@ -53,9 +53,6 @@ public:
 
             // Add value listener to crossfader parameter
             crossfaderParam->addListener(this);
-
-            // Initialize track volumes
-            updateTrackVolumes();
             
             DBG("ChopPlugin constructor complete");
         }
@@ -80,6 +77,11 @@ public:
     { 
         sampleRate = info.sampleRate;
         blockSize = info.blockSizeSamples;
+        
+        // Defer track volume update until after initialization
+        // juce::MessageManager::callAsync([this]() {
+        //     updateTrackVolumes();
+        // });
     }
     
     void deinitialise() override {}
@@ -180,7 +182,6 @@ public:
     void curveHasChanged(tracktion::engine::AutomatableParameter&) override { updateTrackVolumes(); }
 
 private:
-
     double sampleRate = 44100.0;
     int blockSize = 512;
 
