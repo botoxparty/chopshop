@@ -138,9 +138,7 @@ void AutomationLane::mouseDrag(const juce::MouseEvent& event)
         {
             // Update the existing point's position
             auto& curve = parameter->getCurve();
-            curve.removePoint(draggedPointIndex); // Remove old point
-            curve.addPoint(tracktion::TimePosition::fromSeconds(time), value, 0.0f); // Add updated point
-            updatePoints(); // Refresh our point cache
+            curve.movePoint(draggedPointIndex, tracktion::TimePosition::fromSeconds(time), value, 0.0f); // Remove old point
         }
         else
         {

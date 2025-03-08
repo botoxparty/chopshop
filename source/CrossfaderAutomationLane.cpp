@@ -123,11 +123,13 @@ void CrossfaderAutomationLane::mouseDrag(const juce::MouseEvent& event)
     
     auto& curve = parameter->getCurve();
     
-    // Update the end point of the current region
-    curve.addPoint(tracktion::TimePosition::fromSeconds(time), 1.0f, 0.0f);
-    
-    // Add a terminating point right after the region
-    curve.addPoint(tracktion::TimePosition::fromSeconds(time + 0.001), 0.0f, 0.0f);
+    int numPoints = curve.getNumPoints();
+    if (numPoints >= 2)
+    {
+        // Move the end point and its terminator
+        curve.movePoint(numPoints - 2, tracktion::TimePosition::fromSeconds(time), 1.0f, false);
+        curve.movePoint(numPoints - 1, tracktion::TimePosition::fromSeconds(time + 0.001), 0.0f, false);
+    }
     
     updateChopRegionsFromCurve();
     repaint();
