@@ -160,6 +160,21 @@ void AutomationLane::mouseUp(const juce::MouseEvent&)
     }
 }
 
+void AutomationLane::mouseDoubleClick(const juce::MouseEvent& event)
+{
+    if (parameter != nullptr)
+    {
+        int pointIndex = findPointNear(event.position.x, event.position.y);
+        if (pointIndex != -1)
+        {
+            auto& curve = parameter->getCurve();
+            curve.removePoint(pointIndex);
+            updatePoints();
+            repaint();
+        }
+    }
+}
+
 void AutomationLane::setParameter(tracktion::engine::AutomatableParameter* param)
 {
     if (parameter != nullptr)

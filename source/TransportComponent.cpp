@@ -67,7 +67,7 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     
     if (crossfaderParam == nullptr)
     {
-        DBG("No crossfader parameter found");
+        // ... existing code ...
     }
     
     if (crossfaderParam != nullptr)
@@ -86,20 +86,12 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
         reverbAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, reverbPlugin.get());
         pluginAutomationContainer.addAndMakeVisible(*reverbAutomationComponent);
     }
-    else
-    {
-        DBG("No reverb plugin found");
-    }
 
     // Find the delay plugin and create automation component
     if (auto delayPlugin = EngineHelpers::getPluginFromRack(edit, AutoDelayPlugin::xmlTypeName))
     {
         delayAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, delayPlugin.get());
         pluginAutomationContainer.addAndMakeVisible(*delayAutomationComponent);
-    }
-    else
-    {
-        DBG("No delay plugin found");
     }
 
     // Find the phaser plugin and create automation component
@@ -108,20 +100,12 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
         phaserAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, phaserPlugin.get());
         pluginAutomationContainer.addAndMakeVisible(*phaserAutomationComponent);
     }
-    else
-    {
-        DBG("No phaser plugin found");
-    }
 
     // Find the flanger plugin and create automation component
     if (auto flangerPlugin = EngineHelpers::getPluginFromRack(edit, FlangerPlugin::xmlTypeName))
     {
         flangerAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, flangerPlugin.get());
         pluginAutomationContainer.addAndMakeVisible(*flangerAutomationComponent);
-    }
-    else
-    {
-        DBG("No flanger plugin found");
     }
 
     // Setup plugin automation viewport
@@ -360,12 +344,12 @@ void TransportComponent::paint (juce::Graphics& g)
             }
             else
             {
-                DBG("Error: Thumbnail has no length");
+                // ... existing code ...
             }
         }
         else
         {
-            DBG("Error: Source has no length");
+            // ... existing code ...
         }
 
         // Draw center line
@@ -406,7 +390,7 @@ void TransportComponent::paint (juce::Graphics& g)
     }
     else
     {
-        DBG("No clip reference available");
+        // ... existing code ...
     }
 }
 
@@ -458,7 +442,6 @@ void TransportComponent::resized()
     
     auto totalHeight = flangerAutomationComponent->getHeight() + phaserAutomationComponent->getHeight() + delayAutomationComponent->getHeight() + reverbAutomationComponent->getHeight();
 
-    DBG("Total height: " + juce::String(totalHeight));
     // Set container bounds and perform flex layout
     pluginAutomationContainer.setBounds(0, 0, pluginAutomationBounds.getWidth(), pluginAutomationBounds.getHeight() * 4);
     flex.performLayout(pluginAutomationContainer.getBounds().withHeight(pluginAutomationBounds.getHeight() * 4));
@@ -546,7 +529,6 @@ void TransportComponent::updatePlayheadPosition()
 {
     if (playhead != nullptr)
     {
-        DBG("Updating playhead position");
         auto bounds = getLocalBounds();
         auto waveformBounds = bounds.removeFromTop(60).reduced(2);
 
@@ -567,15 +549,8 @@ void TransportComponent::updatePlayheadPosition()
             auto visibleTimeStart = sourceLength * scrollPosition;
             auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
 
-            DBG("Current tempo: " + juce::String(currentTempo) + " BPM");
-            DBG("Original tempo: " + juce::String(currentTempo) + " BPM");
-
             // Calculate normalized position directly in source time domain
             auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
-
-            DBG("Current position: " + juce::String(currentPosition) + "s");
-            DBG("Visible range (source): " + juce::String(visibleTimeStart) + "s to " + juce::String(visibleTimeEnd) + "s");
-            DBG("Normalized position: " + juce::String(normalizedPosition));
 
             // Only show playhead if it's in the visible range
             if (currentPosition >= visibleTimeStart && currentPosition <= visibleTimeEnd)
@@ -583,18 +558,15 @@ void TransportComponent::updatePlayheadPosition()
                 auto playheadX = waveformBounds.getX() + (normalizedPosition * waveformBounds.getWidth());
                 playhead->setVisible(true);
                 playhead->setTopLeftPosition(static_cast<int>(playheadX), waveformBounds.getY());
-                DBG("Playhead visible at x: " + juce::String(playheadX));
             }
             else
             {
                 playhead->setVisible(false);
-                DBG("Playhead hidden - position outside visible range");
             }
         }
         else
         {
             playhead->setVisible(false);
-            DBG("Playhead hidden - no current clip");
         }
     }
 }
@@ -611,8 +583,6 @@ void TransportComponent::updateThumbnail()
 {
     auto audioTracks = te::getAudioTracks(edit);
     currentClip = nullptr; // Reset current clip reference
-
-    DBG("Updating thumbnail");
 
     for (auto track : audioTracks)
     {
@@ -643,10 +613,6 @@ void TransportComponent::updateThumbnail()
                         
                     repaint();
                     break;
-                }
-                else
-                {
-                    DBG("Error: Invalid audio file");
                 }
             }
         }
