@@ -17,6 +17,9 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     addAndMakeVisible (automationReadButton);
     addAndMakeVisible (gridSizeComboBox);
 
+    // Listen to transport changes
+    edit.getTransport().addChangeListener(this);
+    
     // Set up play and stop button shapes
     playButton.setShape(getPlayPath(), false, true, false);
     playButton.setOutline(juce::Colours::white, 1.0f);
@@ -182,11 +185,6 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     playhead->setFill (juce::FillType (juce::Colours::red));
     addAndMakeVisible (*playhead);
 
-    // Listen to transport changes
-    edit.getTransport().addChangeListener (this);
-
-    updateThumbnail();
-
     // Set up automation buttons
     automationReadButton.setClickingTogglesState(true);
     automationWriteButton.setClickingTogglesState(true);
@@ -232,7 +230,7 @@ TransportComponent::~TransportComponent()
     // Remove ourselves as a change listener if transport is still valid
     if (&edit != nullptr && &(edit.getTransport()) != nullptr)
     {
-        edit.getTransport().removeChangeListener (this);
+        edit.getTransport().removeChangeListener(this);
     }
 
     // Remove automation listener
@@ -510,10 +508,13 @@ void TransportComponent::resized()
     }
 }
 
-void TransportComponent::changeListenerCallback (juce::ChangeBroadcaster*)
+void TransportComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
-    updateTransportState();
-    repaint();
+    if (source == &(edit.getTransport()))
+    {
+        updateTransportState();
+        repaint();
+    }
 }
 
 void TransportComponent::updateTimeDisplay()
@@ -628,18 +629,17 @@ void TransportComponent::updateThumbnail()
                     currentClip = waveClip;
                     thumbnail.setNewFile(audioFile);
                     
-                    // Update automation lanes with the new source length
-                    auto sourceLength = waveClip->getSourceLength().inSeconds();
+                    // Update automation lanes with the clip reference
                     if (crossfaderAutomationLane != nullptr)
-                        crossfaderAutomationLane->setSourceLength(sourceLength);
+                        crossfaderAutomationLane->setClip(currentClip);
                     if (reverbAutomationComponent != nullptr)
-                        reverbAutomationComponent->setSourceLength(sourceLength);
+                        reverbAutomationComponent->setClip(currentClip);
                     if (delayAutomationComponent != nullptr)
-                        delayAutomationComponent->setSourceLength(sourceLength);
+                        delayAutomationComponent->setClip(currentClip);
                     if (phaserAutomationComponent != nullptr)
-                        phaserAutomationComponent->setSourceLength(sourceLength);
+                        phaserAutomationComponent->setClip(currentClip);
                     if (flangerAutomationComponent != nullptr)
-                        flangerAutomationComponent->setSourceLength(sourceLength);
+                        flangerAutomationComponent->setClip(currentClip);
                         
                     repaint();
                     break;

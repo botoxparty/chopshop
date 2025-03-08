@@ -24,7 +24,15 @@ public:
     // Add zoom and scroll control methods
     void setZoomLevel(double newZoomLevel);
     void setScrollPosition(double newScrollPosition);
-    void setSourceLength(double lengthInSeconds);
+    
+    // Clip handling
+    void setClip(tracktion::engine::WaveAudioClip* clip) { currentClip = clip; }
+    double getSourceLength() const 
+    { 
+        if (currentClip != nullptr)
+            return currentClip->getPosition().getLength().inSeconds();
+        return 60.0; // Default length if no clip
+    }
 
     // AutomatableParameter::Listener methods
     void curveHasChanged(tracktion::engine::AutomatableParameter&) override;
@@ -38,12 +46,12 @@ private:
 
 protected:
     tracktion::engine::AutomatableParameter* parameter;
+    tracktion::engine::WaveAudioClip* currentClip = nullptr;
     std::vector<std::pair<double, double>> automationPoints; // <time, value> pairs
     
     // Add zoom and scroll state
     double zoomLevel = 1.0;
     double scrollPosition = 0.0;
-    double sourceLength = 60.0; // Default to 60 seconds if not set
     
     juce::Point<float> timeToXY(double timeInSeconds, double value) const;
     std::pair<double, double> XYToTime(float x, float y) const;

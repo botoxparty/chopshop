@@ -78,13 +78,13 @@ void PluginAutomationComponent::setScrollPosition(double newScrollPosition)
             laneInfo.lane->setScrollPosition(scrollPosition);
 }
 
-void PluginAutomationComponent::setSourceLength(double lengthInSeconds)
+
+void PluginAutomationComponent::setClip(tracktion::engine::WaveAudioClip* clip)
 {
-    sourceLength = lengthInSeconds;
-    
+    currentClip = clip;
     for (auto& laneInfo : automationLanes)
         if (laneInfo.lane != nullptr)
-            laneInfo.lane->setSourceLength(sourceLength);
+            laneInfo.lane->setClip(currentClip);
 }
 
 void PluginAutomationComponent::updateAutomationLanes()
@@ -119,7 +119,7 @@ void PluginAutomationComponent::createAutomationLaneForParameter(tracktion::engi
     laneInfo.lane = std::make_unique<AutomationLane>(edit, param);
     laneInfo.lane->setZoomLevel(zoomLevel);
     laneInfo.lane->setScrollPosition(scrollPosition);
-    laneInfo.lane->setSourceLength(sourceLength);
+    laneInfo.lane->setClip(currentClip);
     addAndMakeVisible(*laneInfo.lane);
     
     // Setup label

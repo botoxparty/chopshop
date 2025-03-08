@@ -36,6 +36,13 @@ public:
 
     void deleteSelectedChopRegion();
 
+    void updateTimeDisplay();
+    void updatePlayheadPosition();
+    void updateTransportState();
+    void setZoomLevel(double newLevel);
+    void setScrollPosition(double newPosition);
+    double getMaxScrollPosition() const;
+
 private:
     tracktion::engine::Edit& edit;
     tracktion::engine::TransportControl& transport;
@@ -82,13 +89,6 @@ private:
     // Current clip reference
     tracktion::engine::WaveAudioClip* currentClip = nullptr;
     
-    void updateTimeDisplay();
-    void updatePlayheadPosition();
-    void updateTransportState();
-    void setZoomLevel(double newLevel);
-    void setScrollPosition(double newPosition);
-    double getMaxScrollPosition() const;
-
     // Icon path functions
     static juce::Path getPlayPath()
     {

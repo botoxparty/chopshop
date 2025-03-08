@@ -22,8 +22,8 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
     g.setColour(juce::Colours::grey.withAlpha(0.5f));
     
     // Calculate visible time range
-    auto visibleTimeStart = sourceLength * scrollPosition;
-    auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
+    auto visibleTimeStart = getSourceLength() * scrollPosition;
+    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
     
     // Draw vertical grid lines based on gridDivision
     double gridTime = std::floor(visibleTimeStart / gridDivision) * gridDivision;
@@ -123,9 +123,6 @@ void CrossfaderAutomationLane::mouseDrag(const juce::MouseEvent& event)
     
     auto& curve = parameter->getCurve();
     
-    // Get the start point of the current drag operation
-    auto startPoint = curve.getPoint(curve.getNumPoints() - 1);
-    
     // Update the end point of the current region
     curve.addPoint(tracktion::TimePosition::fromSeconds(time), 1.0f, 0.0f);
     
@@ -175,7 +172,7 @@ void CrossfaderAutomationLane::addChopRegion(const ChopRegion& region)
     curve.addPoint(tracktion::TimePosition::fromSeconds(region.endTime), 
                   region.isASide ? 1.0f : 0.0f, 0.0f);
     
-    if (region.endTime < sourceLength)
+    if (region.endTime < getSourceLength())
         curve.addPoint(tracktion::TimePosition::fromSeconds(region.endTime + 0.001),
                       region.isASide ? 0.0f : 1.0f, 0.0f);
 

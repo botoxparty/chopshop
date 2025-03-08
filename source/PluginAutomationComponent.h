@@ -17,7 +17,7 @@ public:
     void setPlugin(tracktion::engine::Plugin* plugin);
     void setZoomLevel(double newZoomLevel);
     void setScrollPosition(double newScrollPosition);
-    void setSourceLength(double lengthInSeconds);
+    void setClip(tracktion::engine::WaveAudioClip* clip);
 
 private:
     void updateAutomationLanes();
@@ -25,6 +25,7 @@ private:
 
     tracktion::engine::Edit& edit;
     tracktion::engine::Plugin* plugin = nullptr;
+    tracktion::engine::WaveAudioClip* currentClip = nullptr;
     
     struct AutomationLaneInfo {
         std::unique_ptr<AutomationLane> lane;
@@ -49,7 +50,6 @@ private:
     
     double zoomLevel = 1.0;
     double scrollPosition = 0.0;
-    double sourceLength = 60.0;
     
     const float laneHeight = 60.0f;
     const float labelWidth = 150.0f;

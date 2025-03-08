@@ -16,7 +16,7 @@ AutomationLane::~AutomationLane()
 
 void AutomationLane::setZoomLevel(double newZoomLevel)
 {
-    if (zoomLevel != newZoomLevel)
+    if (std::abs(zoomLevel - newZoomLevel) > 0.0001)
     {
         zoomLevel = newZoomLevel;
         repaint();
@@ -25,18 +25,9 @@ void AutomationLane::setZoomLevel(double newZoomLevel)
 
 void AutomationLane::setScrollPosition(double newScrollPosition)
 {
-    if (scrollPosition != newScrollPosition)
+    if (std::abs(scrollPosition - newScrollPosition) > 0.0001)
     {
         scrollPosition = newScrollPosition;
-        repaint();
-    }
-}
-
-void AutomationLane::setSourceLength(double lengthInSeconds)
-{
-    if (sourceLength != lengthInSeconds)
-    {
-        sourceLength = lengthInSeconds;
         repaint();
     }
 }
@@ -178,12 +169,12 @@ void AutomationLane::curveHasChanged(tracktion::engine::AutomatableParameter&)
     updatePoints();
 }
 
-void AutomationLane::currentValueChanged(tracktion::engine::AutomatableParameter& param)
+void AutomationLane::currentValueChanged(tracktion::engine::AutomatableParameter&)
 {
     // No need to handle this as we're only interested in curve point changes
 }
 
-void AutomationLane::parameterChanged(tracktion::engine::AutomatableParameter& param, float)
+void AutomationLane::parameterChanged(tracktion::engine::AutomatableParameter&, float)
 {
     // No need to handle this as we're only interested in curve point changes
 }
@@ -205,8 +196,8 @@ juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) 
     auto bounds = getLocalBounds().toFloat();
     
     // Calculate visible time range
-    auto visibleTimeStart = sourceLength * scrollPosition;
-    auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
+    auto visibleTimeStart = getSourceLength() * scrollPosition;
+    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
     
     // Normalize time to width using the visible time range
     float normalizedTime = (timeInSeconds - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
@@ -217,7 +208,7 @@ juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) 
     if (parameter != nullptr)
     {
         auto range = parameter->getValueRange();
-        normalizedValue = (value - range.getStart()) / (range.getEnd() - range.getStart());
+        normalizedValue = static_cast<float>((value - range.getStart()) / (range.getEnd() - range.getStart()));
     }
     float y = bounds.getBottom() - (normalizedValue * bounds.getHeight());
     
@@ -229,8 +220,8 @@ std::pair<double, double> AutomationLane::XYToTime(float x, float y) const
     auto bounds = getLocalBounds().toFloat();
     
     // Calculate visible time range
-    auto visibleTimeStart = sourceLength * scrollPosition;
-    auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
+    auto visibleTimeStart = getSourceLength() * scrollPosition;
+    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
     
     // Convert x to time using the visible time range
     double normalizedX = (x - bounds.getX()) / bounds.getWidth();
@@ -244,11 +235,11 @@ std::pair<double, double> AutomationLane::XYToTime(float x, float y) const
     {
         auto range = parameter->getValueRange();
         value = range.getStart() + normalizedValue * (range.getEnd() - range.getStart());
-        value = parameter->snapToState(value);
+        value = static_cast<double>(parameter->snapToState(static_cast<float>(value)));
     }
     
     // Clamp values
-    timeInSeconds = juce::jlimit(0.0, sourceLength, timeInSeconds);
+    timeInSeconds = juce::jlimit(0.0, getSourceLength(), timeInSeconds);
     
     return {timeInSeconds, value};
 }
@@ -278,4 +269,4 @@ void AutomationLane::updateValueAtTime(double timeInSeconds, double value)
         }
     }
     updatePoints();
-} 
+}
