@@ -10,6 +10,8 @@
 #include "CustomLookAndFeel.h"
 #include "Plugins/ChopPlugin.h"
 #include "CrossfaderAutomationLane.h"
+#include "PluginAutomationComponent.h"
+
 class TransportComponent : public juce::Component,
                          public juce::Timer,
                          public juce::ChangeListener,
@@ -59,6 +61,9 @@ private:
     std::unique_ptr<AutomationLane> automationLane;
     std::unique_ptr<CrossfaderAutomationLane> crossfaderAutomationLane;
     std::unique_ptr<AutomationLane> reverbWetAutomationLane;
+    
+    // Plugin automation components
+    std::unique_ptr<PluginAutomationComponent> reverbAutomationComponent;
     
     // Zoom and scroll state
     double zoomLevel = 1.0;

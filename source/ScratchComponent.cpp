@@ -4,7 +4,7 @@
 ScratchComponent::ScratchComponent(tracktion::engine::Edit& e) : BaseEffectComponent(e)
 {
     // Create the scratch plugin
-    plugin = getPluginFromRack(edit, ScratchPlugin::xmlTypeName);
+    plugin = EngineHelpers::getPluginFromRack(edit, ScratchPlugin::xmlTypeName);
     setMixParameterId("mix");
 
     // Create and setup the scratch slider

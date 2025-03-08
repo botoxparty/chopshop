@@ -15,6 +15,7 @@
 #include <juce_graphics/juce_graphics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <tracktion_engine/tracktion_engine.h>
+#include "Utilities.h"
 
 
 class BaseEffectComponent : public juce::Component
@@ -63,29 +64,6 @@ protected:
     
     float storedMixLevel = 0.0f;
     juce::String mixParameterId = "mix"; // Default ID, can be overridden by derived classes
-    
-    inline tracktion::engine::Plugin::Ptr getPluginFromRack(tracktion::engine::Edit& edit, const juce::String& pluginName)
-    {
-        if (auto masterTrack = edit.getMasterTrack())
-        {
-            tracktion::engine::RackInstance::Ptr rackInstance = masterTrack->pluginList.getPluginsOfType<tracktion::engine::RackInstance>()[0];
-            tracktion::engine::RackType::Ptr rackType = rackInstance->type;
-            juce::Array<tracktion::engine::Plugin*> plugins = rackType->getPlugins();
-            for (auto& plugin : plugins)
-            {
-                DBG("Plugin: " + plugin->getPluginType());
-                DBG("Plugin NAME LOOKING FOR: " + pluginName);
-                if (plugin->getPluginType() == pluginName)
-                {
-                    DBG("Loaded plugin: " + plugin->getPluginType());
-                    return plugin;
-                }
-            }
-        }
-
-        DBG("Error: No plugin found in rack for " + pluginName);
-        return nullptr;
-    }
     
 private:
     void drawScrew(juce::Graphics& g, float x, float y);

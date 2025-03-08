@@ -15,7 +15,7 @@ ReverbComponent::ReverbComponent(tracktion::engine::Edit& edit)
     contentComponent.addAndMakeVisible(wetSlider);
 
     // Create and setup plugin
-    plugin = getPluginFromRack(edit, tracktion::engine::ReverbPlugin::xmlTypeName);
+    plugin = EngineHelpers::getPluginFromRack(edit, tracktion::engine::ReverbPlugin::xmlTypeName);
     
     if (plugin != nullptr)
     {

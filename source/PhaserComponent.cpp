@@ -24,7 +24,7 @@ PhaserComponent::PhaserComponent(tracktion::engine::Edit& edit)
     contentComponent.addAndMakeVisible(feedbackSlider);
 
     // Create and setup plugin
-    plugin = getPluginFromRack(edit, AutoPhaserPlugin::xmlTypeName);
+    plugin = EngineHelpers::getPluginFromRack(edit, AutoPhaserPlugin::xmlTypeName);
     
     if (plugin != nullptr)
     {

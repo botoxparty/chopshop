@@ -47,7 +47,7 @@ DelayComponent::DelayComponent(tracktion::engine::Edit& edit)
     contentComponent.addAndMakeVisible(noteValueBox);
 
     // Create and setup plugin
-    plugin = getPluginFromRack(edit, AutoDelayPlugin::xmlTypeName);
+    plugin = EngineHelpers::getPluginFromRack(edit, AutoDelayPlugin::xmlTypeName);
     
     if (plugin != nullptr)
     {
