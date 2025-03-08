@@ -53,6 +53,16 @@ void AutomationLane::paint(juce::Graphics& g)
     {
         g.setColour(juce::Colours::orange);
         
+        // Draw horizontal line from start to first point
+        auto firstPoint = timeToXY(automationPoints[0].first, automationPoints[0].second);
+        g.drawLine(bounds.getX(), firstPoint.y, firstPoint.x, firstPoint.y, 2.0f);
+
+        // If there's only one point, draw a horizontal line to the end
+        if (automationPoints.size() == 1)
+        {
+            g.drawLine(firstPoint.x, firstPoint.y, bounds.getRight(), firstPoint.y, 2.0f);
+        }
+        
         for (size_t i = 0; i < automationPoints.size(); ++i)
         {
             auto point = timeToXY(automationPoints[i].first, automationPoints[i].second);
@@ -75,6 +85,11 @@ void AutomationLane::paint(juce::Graphics& g)
             {
                 auto nextPoint = timeToXY(automationPoints[i + 1].first, automationPoints[i + 1].second);
                 g.drawLine(point.x, point.y, nextPoint.x, nextPoint.y, 2.0f);
+            }
+            // Draw horizontal line from last point to end
+            else if (i == automationPoints.size() - 1)
+            {
+                g.drawLine(point.x, point.y, bounds.getRight(), point.y, 2.0f);
             }
         }
     }
