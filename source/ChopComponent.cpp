@@ -111,7 +111,7 @@ void ChopComponent::resized()
         juce::GridItem (durationLabel).withColumn ({ 1 }).withAlignSelf (juce::GridItem::AlignSelf::center),
         juce::GridItem (chopDurationComboBox).withColumn ({ 2 }).withHeight (30).withAlignSelf (juce::GridItem::AlignSelf::center),
         juce::GridItem (chopButton).withColumn ({ 1, 3 }).withHeight (30),
-        juce::GridItem (crossfaderSlider).withColumn ({ 1, 3 })
+        // juce::GridItem (crossfaderSlider).withColumn ({ 1, 3 })
     };
 
     grid.performLayout (bounds);

@@ -15,7 +15,12 @@ public:
         setContentOwned(libraryComponent.get(), true);
         setResizable(true, true);
         centreWithSize(600, 400);
+        
+        // Add to desktop and make visible
+        setUsingNativeTitleBar(true);
+        addToDesktop();    // Explicitly add to desktop
         setVisible(true);
+        toFront(true);     // Bring to front
     }
 
     ~LibraryWindow() override = default;

@@ -122,46 +122,52 @@ void MainComponent::resized()
         libraryBar->setBounds(libraryBounds);
     }
 
-    // Row 3: Main section with three columns
+    // Main layout using FlexBox
     juce::FlexBox mainBox;
-    mainBox.flexDirection = juce::FlexBox::Direction::row;
+    mainBox.flexDirection = juce::FlexBox::Direction::column;
     mainBox.flexWrap = juce::FlexBox::Wrap::noWrap;
-    mainBox.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
+    mainBox.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
 
-    // Column 1 (Tempo and crossfader)
-    juce::FlexBox column1;
-    column1.flexDirection = juce::FlexBox::Direction::column;
-    if (screwComponent) column1.items.add(juce::FlexItem(*screwComponent).withFlex(0.25f).withMargin(5));
-    if (chopComponent) column1.items.add(juce::FlexItem(*chopComponent).withFlex(0.5f).withMargin(5));
-    if (scratchComponent) column1.items.add(juce::FlexItem(*scratchComponent).withFlex(0.25f).withMargin(5));
-    if (vinylBrakeComponent) column1.items.add(juce::FlexItem(*vinylBrakeComponent).withFlex(0.25f).withMargin(5));
+    // Row 1: Screw and Chop components
+    juce::FlexBox topRow;
+    topRow.flexDirection = juce::FlexBox::Direction::row;
+    topRow.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    if (chopComponent) topRow.items.add(juce::FlexItem(*chopComponent).withFlex(1.0f).withMargin(5));
+    if (screwComponent) topRow.items.add(juce::FlexItem(*screwComponent).withFlex(1.0f).withMargin(5));
 
-    // Column 2 (Effects)
-    juce::FlexBox column2;
-    column2.flexDirection = juce::FlexBox::Direction::row;
-    column2.flexWrap = juce::FlexBox::Wrap::wrap;
-    column2.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
+    // Row 2: Effects Box with three columns
+    juce::FlexBox effectsBox;
+    effectsBox.flexDirection = juce::FlexBox::Direction::row;
+    effectsBox.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
 
-    // Create two sub-columns for effects
-    juce::FlexBox leftColumn;
-    leftColumn.flexDirection = juce::FlexBox::Direction::column;
-    if (reverbComponent) leftColumn.items.add(juce::FlexItem(*reverbComponent).withFlex(1.0f).withMargin(5));
-    if (delayComponent) leftColumn.items.add(juce::FlexItem(*delayComponent).withFlex(1.0f).withMargin(5));
+    // Column 1: Scratch and Vinyl Brake
+    juce::FlexBox effectsColumn1;
+    effectsColumn1.flexDirection = juce::FlexBox::Direction::column;
+    if (scratchComponent) effectsColumn1.items.add(juce::FlexItem(*scratchComponent).withFlex(1.0f).withMargin(5));
+    if (vinylBrakeComponent) effectsColumn1.items.add(juce::FlexItem(*vinylBrakeComponent).withFlex(1.0f).withMargin(5));
 
-    juce::FlexBox rightColumn;
-    rightColumn.flexDirection = juce::FlexBox::Direction::column;
-    if (flangerComponent) rightColumn.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMargin(5));
-    if (phaserComponent) rightColumn.items.add(juce::FlexItem(*phaserComponent).withFlex(1.0f).withMargin(5));
+    // Column 2: Reverb and Delay
+    juce::FlexBox effectsColumn2;
+    effectsColumn2.flexDirection = juce::FlexBox::Direction::column;
+    if (reverbComponent) effectsColumn2.items.add(juce::FlexItem(*reverbComponent).withFlex(1.0f).withMargin(5));
+    if (delayComponent) effectsColumn2.items.add(juce::FlexItem(*delayComponent).withFlex(1.0f).withMargin(5));
 
-    // Add sub-columns to main column2
-    column2.items.add(juce::FlexItem(leftColumn).withFlex(1.0f));
-    column2.items.add(juce::FlexItem(rightColumn).withFlex(1.0f));
+    // Column 3: Flanger and Phaser
+    juce::FlexBox effectsColumn3;
+    effectsColumn3.flexDirection = juce::FlexBox::Direction::column;
+    if (flangerComponent) effectsColumn3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMargin(5));
+    if (phaserComponent) effectsColumn3.items.add(juce::FlexItem(*phaserComponent).withFlex(1.0f).withMargin(5));
 
-    // Add columns to main box
-    mainBox.items.add(juce::FlexItem(column1).withFlex(0.4f));
-    mainBox.items.add(juce::FlexItem(column2).withFlex(0.6f));
+    // Add columns to effects box
+    effectsBox.items.add(juce::FlexItem(effectsColumn1).withFlex(1.0f));
+    effectsBox.items.add(juce::FlexItem(effectsColumn2).withFlex(1.0f));
+    effectsBox.items.add(juce::FlexItem(effectsColumn3).withFlex(1.0f));
 
-    // Perform the layout for the main box
+    // Add rows to main box
+    mainBox.items.add(juce::FlexItem(topRow).withFlex(0.3f));
+    mainBox.items.add(juce::FlexItem(effectsBox).withFlex(0.7f));
+
+    // Perform the layout
     mainBox.performLayout(bounds);
 }
 
@@ -237,8 +243,12 @@ void MainComponent::setupLibraryComponent()
     
     // Set up the show library button callback
     libraryBar->getShowLibraryButton().onClick = [this]() {
-        libraryWindow->setVisible(true);
-        libraryWindow->toFront(true);
+        if (libraryWindow)
+        {
+            libraryWindow->setVisible(true);
+            libraryWindow->toFront(true);
+            libraryWindow->grabKeyboardFocus();
+        }
     };
     
     // Update to use Edit selection instead of File selection
@@ -247,7 +257,8 @@ void MainComponent::setupLibraryComponent()
     };
 
     // Show library window by default since no edit is loaded
-    libraryWindow->setVisible(true);
+    // Use a timer to ensure window is shown after component is fully initialized
+  
 }
 
 void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit> newEdit)
