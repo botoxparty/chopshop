@@ -133,7 +133,11 @@ private:
     tracktion::engine::Engine engine{ProjectInfo::projectName};
     std::unique_ptr<tracktion::engine::Edit> edit;
     std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
-    juce::TextButton audioSettingsButton{"Audio Settings"};
+    
+    // Settings icon path data
+    static const uint8 settingsIconPathData[486];
+    
+    std::unique_ptr<juce::DrawableButton> audioSettingsButton;
 
     double baseTempo = 120.0;
     double trackOffset = 0.0;

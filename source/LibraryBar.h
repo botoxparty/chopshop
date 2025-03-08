@@ -17,9 +17,22 @@ public:
 
     void resized() override
     {
-        auto bounds = getLocalBounds().reduced(5);
-        showLibraryButton.setBounds(bounds.removeFromRight(100));
-        currentTrackLabel.setBounds(bounds);
+        auto bounds = getLocalBounds();
+        DBG("LibraryBar bounds: " + juce::String(bounds.getWidth()) + "x" + juce::String(bounds.getHeight()));
+        
+        // Set minimum height for the component
+        auto buttonHeight = 30;
+        auto reducedBounds = bounds.reduced(5);
+        
+        // Layout using manual positioning first to ensure components have size
+        auto labelBounds = reducedBounds.withTrimmedRight(110); // Space for button
+        currentTrackLabel.setBounds(labelBounds);
+        
+        auto buttonBounds = reducedBounds.removeFromRight(100);
+        showLibraryButton.setBounds(buttonBounds);
+        
+        DBG("Label bounds: " + juce::String(labelBounds.getWidth()) + "x" + juce::String(labelBounds.getHeight()));
+        DBG("Button bounds: " + juce::String(buttonBounds.getWidth()) + "x" + juce::String(buttonBounds.getHeight()));
     }
 
     void paint(juce::Graphics& g) override

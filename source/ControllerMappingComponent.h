@@ -51,7 +51,7 @@ private:
     void drawButton(juce::Graphics& g, juce::Point<float> center, float radius, 
                    const juce::String& label, bool isHighlighted);
     
-    juce::TextButton mappingButton {"Game Controller"};
+    juce::DrawableButton mappingButton {"Game Controller", juce::DrawableButton::ImageFitted};
     juce::DialogWindow* mappingDialog = nullptr;
     
     std::vector<ControllerMapping> mappings;
@@ -87,6 +87,8 @@ private:
     void checkControllerConnection();
     
     void updateButtonAppearance();
+    
+    std::unique_ptr<juce::Drawable> createControllerIcon(bool connected);
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ControllerMappingComponent)
 }; 
