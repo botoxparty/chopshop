@@ -113,26 +113,17 @@ public:
         });
     }
 
-    // Add these required methods from ApplicationCommandTarget
-    juce::ApplicationCommandTarget* getNextCommandTarget() override
+    // Command IDs
+    enum CommandIDs
     {
-        return chopComponent.get();
-    }
-    
-    void getAllCommands([[maybe_unused]] juce::Array<juce::CommandID>& commands) override
-    {
-        // Add any commands your main component handles
-    }
-    
-    void getCommandInfo([[maybe_unused]] juce::CommandID commandID, [[maybe_unused]] juce::ApplicationCommandInfo& result) override
-    {
-        // Provide info for your commands
-    }
-    
-    bool perform([[maybe_unused]] const juce::ApplicationCommandTarget::InvocationInfo& info) override
-    {
-        return false; // Return true if you handle the command
-    }
+        DeleteSelectedRegion = 1001
+    };
+
+    // Command handler
+    juce::ApplicationCommandTarget* getNextCommandTarget() override { return nullptr; }
+    void getAllCommands(juce::Array<juce::CommandID>& commands) override;
+    void getCommandInfo(juce::CommandID commandID, juce::ApplicationCommandInfo& result) override;
+    bool perform(const juce::ApplicationCommandTarget::InvocationInfo& info) override;
 
     void setupAudioGraph();
 

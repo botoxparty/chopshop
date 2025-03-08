@@ -29,6 +29,8 @@ public:
     void updateThumbnail();
     void automationModeChanged() override;
 
+    void deleteSelectedChopRegion();
+
 private:
     tracktion::engine::Edit& edit;
     tracktion::engine::TransportControl& transport;

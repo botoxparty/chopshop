@@ -320,6 +320,12 @@ void LibraryComponent::addToLibrary (const juce::File& file)
 
     if (chopPlugin != nullptr)
     {
+        auto crossfaderParameter = chopPlugin->getAutomatableParameterByID("crossfader");
+        if (crossfaderParameter != nullptr)
+        {
+            crossfaderParameter->getCurve().addPoint(tracktion::TimePosition::fromSeconds(0.0), 0.0f, 0.0f);
+        }
+
         edit->getMasterPluginList().insertPlugin(chopPlugin, -1, nullptr);
     } else {
         DBG ("Error: Failed to create chop plugin");

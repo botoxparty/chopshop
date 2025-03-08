@@ -640,3 +640,11 @@ void TransportComponent::automationModeChanged()
     automationReadButton.setColour(juce::TextButton::textColourOnId, isReading ? juce::Colours::white : juce::Colours::grey);
     automationWriteButton.setColour(juce::TextButton::textColourOnId, isWriting ? juce::Colours::white : juce::Colours::grey);
 }
+
+void TransportComponent::deleteSelectedChopRegion()
+{
+    if (crossfaderAutomationLane != nullptr)
+    {
+        crossfaderAutomationLane->deleteSelectedRegion();
+    }
+}

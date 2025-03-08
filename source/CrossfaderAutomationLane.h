@@ -2,6 +2,7 @@
 
 #include "AutomationLane.h"
 #include <vector>
+#include <optional>
 
 class CrossfaderAutomationLane : public AutomationLane
 {
@@ -39,10 +40,8 @@ public:
     void addChopRegion(const ChopRegion& region);
     void removeChopRegion(size_t index);
     void clearChopRegions();
-    
-    // Pattern methods
-    void applyAlternatingPattern(double startTime, double endTime, double interval);
-    void duplicatePattern(double startTime, double endTime, double targetTime);
+
+    void deleteSelectedRegion();
 
 private:
     std::vector<ChopRegion> chopRegions;
@@ -58,6 +57,8 @@ private:
     void updateAutomationPoints();
     void convertRegionsToAutomation();
     void updateChopRegionsFromCurve();
+
+    std::optional<size_t> selectedRegionIndex;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CrossfaderAutomationLane)
 }; 

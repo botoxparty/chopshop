@@ -651,3 +651,39 @@ void MainComponent::releaseResources()
         gamepadManager->removeListener (this);
     gamepadManager = nullptr;
 }
+
+void MainComponent::getAllCommands(juce::Array<juce::CommandID>& commands)
+{
+    commands.add(CommandIDs::DeleteSelectedRegion);
+}
+
+void MainComponent::getCommandInfo(juce::CommandID commandID, juce::ApplicationCommandInfo& result)
+{
+    switch (commandID)
+    {
+        case CommandIDs::DeleteSelectedRegion:
+            result.setInfo("Delete Selected Region", "Deletes the currently selected crossfader region", "Editing", 0);
+            result.addDefaultKeypress(juce::KeyPress::deleteKey, 0);
+            result.addDefaultKeypress(juce::KeyPress::backspaceKey, 0);
+            break;
+        default:
+            break;
+    }
+}
+
+bool MainComponent::perform(const juce::ApplicationCommandTarget::InvocationInfo& info)
+{
+    switch (info.commandID)
+    {
+        case CommandIDs::DeleteSelectedRegion:
+            if (transportComponent != nullptr)
+            {
+                transportComponent->deleteSelectedChopRegion();
+                return true;
+            }
+            break;
+        default:
+            break;
+    }
+    return false;
+}
