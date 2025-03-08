@@ -20,7 +20,6 @@
 #include "Plugins/AutoDelayPlugin.h"
 #include "Plugins/FlangerPlugin.h"
 #include "Plugins/AutoPhaserPlugin.h"
-#include "Plugins/ReverbPlugin.h"
 #include "Utilities.h"
 
 // We'll use ProjectItem instead of PlaylistEntry
@@ -63,7 +62,7 @@ private:
     void removeFromLibrary(int index);
     void loadLibrary();
     void showBpmEditorWindow(int rowIndex);
-    void createPluginRack(te::Edit* edit);
+    void createPluginRack(std::unique_ptr<tracktion::engine::Edit>& edit);
     
     tracktion::engine::ProjectItem::Ptr getProjectItemForFile(const juce::File& file) const;
     

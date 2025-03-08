@@ -247,22 +247,22 @@ void LibraryComponent::sortOrderChanged (int newSortColumnId, bool isForwards)
     }
 }
 
-void LibraryComponent::createPluginRack(te::Edit* edit)
+void LibraryComponent::createPluginRack(std::unique_ptr<tracktion::engine::Edit>& edit)
 {
     if (auto masterTrack = edit->getMasterTrack())
     {
         tracktion::engine::Plugin::Array plugins;
 
-        auto reverbPlugin = EngineHelpers::createPlugin(edit, tracktion::engine::ReverbPlugin::xmlTypeName);
+        auto reverbPlugin = EngineHelpers::createPlugin(*edit, tracktion::engine::ReverbPlugin::xmlTypeName);
         plugins.add (reverbPlugin);
 
-        auto delayPlugin = EngineHelpers::createPlugin(edit, AutoDelayPlugin::xmlTypeName);
+        auto delayPlugin = EngineHelpers::createPlugin(*edit, AutoDelayPlugin::xmlTypeName);
         plugins.add (delayPlugin);
 
-        auto flangerPlugin = EngineHelpers::createPlugin(edit, FlangerPlugin::xmlTypeName);
+        auto flangerPlugin = EngineHelpers::createPlugin(*edit, FlangerPlugin::xmlTypeName);
         plugins.add (flangerPlugin);
 
-        auto phaserPlugin = EngineHelpers::createPlugin(edit, AutoPhaserPlugin::xmlTypeName);
+        auto phaserPlugin = EngineHelpers::createPlugin(*edit, AutoPhaserPlugin::xmlTypeName);
         plugins.add (phaserPlugin);
 
         // Create the rack type with proper channel connections
@@ -325,7 +325,7 @@ void LibraryComponent::addToLibrary (const juce::File& file)
     double beatDuration = 60.0 / detectedBPM;
 
     // Create a new Edit for this file
-    auto options = te::Edit::Options (engine);
+    auto options = te::Edit::Options {engine};
     options.editState = te::createEmptyEdit (engine);
     options.editProjectItemID = te::ProjectItemID::fromProperty (options.editState, te::IDs::projectID);
     options.numUndoLevelsToStore = 0;
