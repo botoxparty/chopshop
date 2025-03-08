@@ -41,7 +41,7 @@ FlangerComponent::FlangerComponent(tracktion::engine::Edit &edit)
     contentComponent.addAndMakeVisible(mixSlider);
 
     // Create and setup plugin
-    plugin = createPlugin(FlangerPlugin::xmlTypeName);
+    plugin = getPluginFromRack(edit, FlangerPlugin::xmlTypeName);
 
     if (plugin != nullptr)
     {

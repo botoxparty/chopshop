@@ -21,9 +21,9 @@ public:
     std::function<double()> getCurrentTempoAdjustment;
     std::function<double()> getEffectiveTempo;
     
-    void setScratchValue(float value);
+    void setScratchValue(double value);
     
-    float getScratchValue() const
+    double getScratchValue() const
     {
         return scratchSlider->getValue();
     }
@@ -31,7 +31,7 @@ public:
     void startSpringAnimation();
     
     // Audio processing method
-    void processAudioBuffer(juce::AudioBuffer<float>& buffer);
+    void processAudioBuffer(juce::AudioBuffer<double>& buffer);
     
     // Plugin interface methods
     void prepareToPlay(double sampleRate, int samplesPerBlock);
@@ -62,7 +62,7 @@ private:
     // Audio processing components
     juce::IIRFilter resonantFilter;
     juce::IIRFilter stateFilter;
-    juce::dsp::WaveShaper<float> distortion;
+    juce::dsp::WaveShaper<double> distortion;
     
     // Filter parameters
     double resonanceAmount = 2.0;

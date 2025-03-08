@@ -296,12 +296,6 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
         delayComponent->setTempo(baseTempo);
     }
 
-    // Reset crossfader to first track
-    if (chopComponent)
-    {
-        chopComponent->setCrossfaderValue(0.0f);
-    }
-
     // Update plugin components
     if (oscilloscopePlugin)
         oscilloscopePlugin->setEnabled(true);

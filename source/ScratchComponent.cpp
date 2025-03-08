@@ -4,7 +4,7 @@
 ScratchComponent::ScratchComponent(tracktion::engine::Edit& e) : BaseEffectComponent(e)
 {
     // Create the scratch plugin
-    plugin = createPlugin(ScratchPlugin::xmlTypeName);
+    plugin = getPluginFromRack(edit, ScratchPlugin::xmlTypeName);
     setMixParameterId("mix");
 
     // Create and setup the scratch slider
@@ -56,7 +56,7 @@ void ScratchComponent::paint(juce::Graphics& g)
     g.drawText("Mix", bounds, juce::Justification::centredLeft);
 }
 
-void ScratchComponent::setScratchValue(float value)
+void ScratchComponent::setScratchValue(double value)
 {
     if (auto* scratchPlugin = dynamic_cast<ScratchPlugin*>(plugin.get()))
     {
