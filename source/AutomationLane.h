@@ -58,6 +58,11 @@ protected:
     void addPoint(double timeInSeconds, double value);
     void updateValueAtTime(double timeInSeconds, double value);
 
+    // New members for point dragging
+    int draggedPointIndex = -1;
+    static constexpr float pointHitRadius = 5.0f; // Radius in pixels for hit detection
+    int findPointNear(float x, float y) const;
+
     // Debounce timer to prevent rapid updates
     juce::int64 lastUpdateTime = 0;
     static constexpr juce::int64 minimumUpdateInterval = 50; // milliseconds

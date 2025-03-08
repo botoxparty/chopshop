@@ -57,8 +57,18 @@ void AutomationLane::paint(juce::Graphics& g)
         {
             auto point = timeToXY(automationPoints[i].first, automationPoints[i].second);
             
-            // Draw point
-            g.fillEllipse(point.x - 4, point.y - 4, 8, 8);
+            // Make points more visible
+            const float pointSize = 8.0f;
+            g.fillEllipse(point.x - pointSize/2, point.y - pointSize/2, pointSize, pointSize);
+            
+            // Highlight dragged point
+            if (static_cast<int>(i) == draggedPointIndex)
+            {
+                g.setColour(juce::Colours::yellow);
+                g.drawEllipse(point.x - pointSize/2 - 2, point.y - pointSize/2 - 2, 
+                            pointSize + 4, pointSize + 4, 2.0f);
+                g.setColour(juce::Colours::orange);
+            }
             
             // Draw line to next point
             if (i < automationPoints.size() - 1)
@@ -74,12 +84,47 @@ void AutomationLane::resized()
 {
 }
 
+int AutomationLane::findPointNear(float x, float y) const
+{
+    if (automationPoints.empty())
+        return -1;
+
+    // Increase hit radius for easier selection
+    const float hitRadius = 10.0f;
+    
+    for (size_t i = 0; i < automationPoints.size(); ++i)
+    {
+        auto point = timeToXY(automationPoints[i].first, automationPoints[i].second);
+        float distance = std::hypot(point.x - x, point.y - y);
+        
+        DBG("Point " << i << " at (" << point.x << "," << point.y << ") distance: " << distance 
+            << " from click (" << x << "," << y << ")");
+            
+        if (distance <= hitRadius)
+            return static_cast<int>(i);
+    }
+    
+    return -1;
+}
+
 void AutomationLane::mouseDown(const juce::MouseEvent& event)
 {
     if (parameter != nullptr)
     {
-        auto [time, value] = XYToTime(event.position.x, event.position.y);
-        addPoint(time, value);
+        // Check if we clicked on an existing point
+        draggedPointIndex = findPointNear(event.position.x, event.position.y);
+        
+        if (draggedPointIndex == -1)
+        {
+            // If we didn't click on a point, add a new one
+            auto [time, value] = XYToTime(event.position.x, event.position.y);
+            addPoint(time, value);
+        }
+        else
+        {
+            // Start a change gesture if we're dragging an existing point
+            parameterChangeGestureBegin(*parameter);
+        }
     }
 }
 
@@ -88,13 +133,31 @@ void AutomationLane::mouseDrag(const juce::MouseEvent& event)
     if (parameter != nullptr)
     {
         auto [time, value] = XYToTime(event.position.x, event.position.y);
-        updateValueAtTime(time, value);
+        
+        if (draggedPointIndex != -1 && draggedPointIndex < static_cast<int>(automationPoints.size()))
+        {
+            // Update the existing point's position
+            auto& curve = parameter->getCurve();
+            curve.removePoint(draggedPointIndex); // Remove old point
+            curve.addPoint(tracktion::TimePosition::fromSeconds(time), value, 0.0f); // Add updated point
+            updatePoints(); // Refresh our point cache
+        }
+        else
+        {
+            // Update or add a new point at the current position
+            updateValueAtTime(time, value);
+        }
     }
 }
 
 void AutomationLane::mouseUp(const juce::MouseEvent&)
 {
-    // No need to call updatePoints here as curveHasChanged will be called
+    if (parameter != nullptr && draggedPointIndex != -1)
+    {
+        // End the change gesture if we were dragging a point
+        parameterChangeGestureEnd(*parameter);
+        draggedPointIndex = -1;
+    }
 }
 
 void AutomationLane::setParameter(tracktion::engine::AutomatableParameter* param)
