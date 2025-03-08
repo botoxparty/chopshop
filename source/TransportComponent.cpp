@@ -267,7 +267,7 @@ void TransportComponent::paint (juce::Graphics& g)
     // Draw waveform if we have a clip
     if (currentClip != nullptr)
     {
-        auto sourceLength = currentClip->getSourceLength().inSeconds();
+        auto sourceLength = currentClip->getPosition().getLength().inSeconds();
         
         auto timeRange = tracktion::TimeRange (
             tracktion::TimePosition::fromSeconds (sourceLength * scrollPosition),
@@ -554,7 +554,7 @@ void TransportComponent::updatePlayheadPosition()
 
         if (currentClip != nullptr)
         {
-            auto sourceLength = currentClip->getSourceLength().inSeconds();
+            auto sourceLength = currentClip->getPosition().getLength().inSeconds();
 
             // Get current tempo information
             auto& tempoSequence = edit.tempoSequence;
@@ -562,32 +562,22 @@ void TransportComponent::updatePlayheadPosition()
             position.set(transport.getPosition());
             auto currentTempo = position.getTempo();
 
-            // Get original clip tempo and calculate ratio
-            auto originalTempo = currentClip->getLoopInfo().getBpm(currentClip->getAudioFile().getInfo());
-            auto tempoRatio = originalTempo / currentTempo; // Inverted ratio to adjust visible range
-            
-            DBG("Current tempo: " + juce::String(currentTempo) + " BPM");
-            DBG("Original tempo: " + juce::String(originalTempo) + " BPM");
-            DBG("Tempo ratio: " + juce::String(tempoRatio));
-
-            // Calculate visible time range in source time domain
+            // Calculate visible time range in source time domain first
             auto visibleTimeStart = sourceLength * scrollPosition;
             auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
 
-            // Adjust visible range to match transport time domain
-            auto adjustedVisibleStart = visibleTimeStart * tempoRatio;
-            auto adjustedVisibleEnd = visibleTimeEnd * tempoRatio;
+            DBG("Current tempo: " + juce::String(currentTempo) + " BPM");
+            DBG("Original tempo: " + juce::String(currentTempo) + " BPM");
+
+            // Calculate normalized position directly in source time domain
+            auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
 
             DBG("Current position: " + juce::String(currentPosition) + "s");
             DBG("Visible range (source): " + juce::String(visibleTimeStart) + "s to " + juce::String(visibleTimeEnd) + "s");
-            DBG("Visible range (adjusted): " + juce::String(adjustedVisibleStart) + "s to " + juce::String(adjustedVisibleEnd) + "s");
-
-            // Calculate normalized position within adjusted visible range
-            auto normalizedPosition = (currentPosition - adjustedVisibleStart) / (adjustedVisibleEnd - adjustedVisibleStart);
             DBG("Normalized position: " + juce::String(normalizedPosition));
 
             // Only show playhead if it's in the visible range
-            if (currentPosition >= adjustedVisibleStart && currentPosition <= adjustedVisibleEnd)
+            if (currentPosition >= visibleTimeStart && currentPosition <= visibleTimeEnd)
             {
                 auto playheadX = waveformBounds.getX() + (normalizedPosition * waveformBounds.getWidth());
                 playhead->setVisible(true);
@@ -677,7 +667,7 @@ void TransportComponent::mouseDown (juce::MouseEvent const& event)
             auto normalizedPosition = (clickX / waveformBounds.getWidth()) / zoomLevel + scrollPosition;
             normalizedPosition = juce::jlimit(0.0, 1.0, normalizedPosition);
 
-            auto sourceLength = currentClip->getSourceLength().inSeconds();
+            auto sourceLength = currentClip->getPosition().getLength().inSeconds();
             auto newPosition = (normalizedPosition * sourceLength);
 
             transport.setPosition(tracktion::TimePosition::fromSeconds(newPosition));
