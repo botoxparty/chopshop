@@ -9,6 +9,9 @@
 #include "AutomationLane.h"
 #include "CustomLookAndFeel.h"
 #include "Plugins/ChopPlugin.h"
+#include "Plugins/AutoDelayPlugin.h"
+#include "Plugins/AutoPhaserPlugin.h"
+#include "Plugins/FlangerPlugin.h"
 #include "CrossfaderAutomationLane.h"
 #include "PluginAutomationComponent.h"
 
@@ -58,12 +61,17 @@ private:
     // Waveform thumbnail
     tracktion::engine::SmartThumbnail thumbnail;
     
-    std::unique_ptr<AutomationLane> automationLane;
     std::unique_ptr<CrossfaderAutomationLane> crossfaderAutomationLane;
     std::unique_ptr<AutomationLane> reverbWetAutomationLane;
     
     // Plugin automation components
     std::unique_ptr<PluginAutomationComponent> reverbAutomationComponent;
+    std::unique_ptr<PluginAutomationComponent> delayAutomationComponent;
+    std::unique_ptr<PluginAutomationComponent> phaserAutomationComponent;
+    std::unique_ptr<PluginAutomationComponent> flangerAutomationComponent;
+    
+    juce::Viewport pluginAutomationViewport;
+    juce::Component pluginAutomationContainer;
     
     // Zoom and scroll state
     double zoomLevel = 1.0;

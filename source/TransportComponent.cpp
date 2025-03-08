@@ -82,17 +82,51 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     if (auto reverbPlugin = EngineHelpers::getPluginFromRack(edit, tracktion::engine::ReverbPlugin::xmlTypeName))
     {
         reverbAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, reverbPlugin.get());
-        addAndMakeVisible(*reverbAutomationComponent);
+        pluginAutomationContainer.addAndMakeVisible(*reverbAutomationComponent);
     }
     else
     {
         DBG("No reverb plugin found");
     }
 
-    // Create and add automation lane for tempo
-    automationLane = std::make_unique<AutomationLane> (edit);
-    addAndMakeVisible (*automationLane);
-    
+    // Find the delay plugin and create automation component
+    if (auto delayPlugin = EngineHelpers::getPluginFromRack(edit, AutoDelayPlugin::xmlTypeName))
+    {
+        delayAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, delayPlugin.get());
+        pluginAutomationContainer.addAndMakeVisible(*delayAutomationComponent);
+    }
+    else
+    {
+        DBG("No delay plugin found");
+    }
+
+    // Find the phaser plugin and create automation component
+    if (auto phaserPlugin = EngineHelpers::getPluginFromRack(edit, AutoPhaserPlugin::xmlTypeName))
+    {
+        phaserAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, phaserPlugin.get());
+        pluginAutomationContainer.addAndMakeVisible(*phaserAutomationComponent);
+    }
+    else
+    {
+        DBG("No phaser plugin found");
+    }
+
+    // Find the flanger plugin and create automation component
+    if (auto flangerPlugin = EngineHelpers::getPluginFromRack(edit, FlangerPlugin::xmlTypeName))
+    {
+        flangerAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, flangerPlugin.get());
+        pluginAutomationContainer.addAndMakeVisible(*flangerAutomationComponent);
+    }
+    else
+    {
+        DBG("No flanger plugin found");
+    }
+
+    // Setup plugin automation viewport
+    addAndMakeVisible(pluginAutomationViewport);
+    pluginAutomationViewport.setViewedComponent(&pluginAutomationContainer, false);
+    pluginAutomationViewport.setScrollBarsShown(true, false);
+
     // Initialize thumbnail
     thumbnail.audioFileChanged();
     startTimerHz(30);
@@ -209,23 +243,18 @@ void TransportComponent::paint (juce::Graphics& g)
     // Draw background
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
 
-    // Draw waveform area
-    auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.5));
+    // Draw waveform area - fixed at 60 pixels
+    auto waveformBounds = bounds.removeFromTop(60);
     g.setColour (juce::Colours::darkgrey.darker (0.7f));
     g.fillRect (waveformBounds);
 
     // Create drawing bounds
     auto drawBounds = waveformBounds.reduced (2);
     
-    // DBG("Paint called - waveformBounds: " + juce::String(waveformBounds.toString()));
-    // DBG("drawBounds: " + juce::String(drawBounds.toString()));
-
     // Draw waveform if we have a clip
     if (currentClip != nullptr)
     {
-        // DBG("Using stored clip reference");
         auto sourceLength = currentClip->getSourceLength().inSeconds();
-        // DBG("Source length: " + juce::String(sourceLength));
         
         auto timeRange = tracktion::TimeRange (
             tracktion::TimePosition::fromSeconds (sourceLength * scrollPosition),
@@ -233,12 +262,6 @@ void TransportComponent::paint (juce::Graphics& g)
         
         if (sourceLength > 0.0)
         {
-            // DBG("sourceLength: " + juce::String(sourceLength));
-            // DBG("scrollPosition: " + juce::String(scrollPosition));
-            // DBG("zoomLevel: " + juce::String(zoomLevel));
-            // DBG("timeRange: " + juce::String(timeRange.getStart().inSeconds()) + " to " + juce::String(timeRange.getEnd().inSeconds()));
-            // DBG("Thumbnail total length: " + juce::String(thumbnail.getTotalLength()));
-
             // Enable anti-aliasing
             g.setImageResamplingQuality (juce::Graphics::highResamplingQuality);
 
@@ -380,53 +403,97 @@ void TransportComponent::resized()
 {
     auto bounds = getLocalBounds();
     
-    // Reserve space for waveform display (50% of height)
-    auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.5));
-
-    // Reserve space for automation lanes (30% of original height)
-    auto automationBounds = bounds.removeFromTop(static_cast<int>(getHeight() * 0.3));
+    // Constants for layout
+    const int controlBarHeight = 26;  // Fixed control bar height
+    const int crossfaderHeight = 25;  // Fixed crossfader height
+    const int thumbnailHeight = 60;   // Fixed thumbnail height
     
-    // Split automation bounds evenly between all automation components
-    const int numAutomationComponents = 3; // reverbAutomation, crossfaderAutomation, and regular automation
-    const int automationHeight = automationBounds.getHeight() / numAutomationComponents;
+    // Remove the control bar from bottom first
+    auto controlBarBounds = bounds.removeFromBottom(controlBarHeight).reduced(5, 0);
     
-    if (reverbAutomationComponent != nullptr)
+    // 1. Thumbnail section (fixed height)
+    auto thumbnailBounds = bounds.removeFromTop(thumbnailHeight);
+    
+    // 2. Crossfader Automation Lane (fixed height)
+    auto crossfaderBounds = bounds.removeFromTop(crossfaderHeight);
+    if (crossfaderAutomationLane != nullptr)
     {
-        auto reverbBounds = automationBounds.removeFromTop(automationHeight);
-        reverbAutomationComponent->setBounds(reverbBounds);
+        crossfaderAutomationLane->setBounds(crossfaderBounds);
     }
     
-    auto crossfaderBounds = automationBounds.removeFromTop(automationHeight);
-    crossfaderAutomationLane->setBounds(crossfaderBounds);
+    // 3. Plugin Automation Components (remaining height for plugins)
+    auto pluginAutomationBounds = bounds;
     
-    // Remaining space goes to the main automation lane
-    automationLane->setBounds(automationBounds);
+    // Set viewport bounds
+    pluginAutomationViewport.setBounds(pluginAutomationBounds);
+    
+    // Create a FlexBox for vertical layout
+    juce::FlexBox flex;
+    flex.flexDirection = juce::FlexBox::Direction::column;
+    flex.flexWrap = juce::FlexBox::Wrap::noWrap;
+    
+    // Add automation components to flex layout
+    if (reverbAutomationComponent != nullptr)
+        flex.items.add(juce::FlexItem(*reverbAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+    
+    if (delayAutomationComponent != nullptr)
+        flex.items.add(juce::FlexItem(*delayAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+    
+    if (phaserAutomationComponent != nullptr)
+        flex.items.add(juce::FlexItem(*phaserAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+    
+    if (flangerAutomationComponent != nullptr)
+        flex.items.add(juce::FlexItem(*flangerAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+    
+    auto totalHeight = flangerAutomationComponent->getHeight() + phaserAutomationComponent->getHeight() + delayAutomationComponent->getHeight() + reverbAutomationComponent->getHeight();
 
-    // Layout transport controls in remaining space
-    auto controlsBounds = bounds.reduced(5);
+    DBG("Total height: " + juce::String(totalHeight));
+    // Set container bounds and perform flex layout
+    pluginAutomationContainer.setBounds(0, 0, pluginAutomationBounds.getWidth(), pluginAutomationBounds.getHeight() * 4);
+    flex.performLayout(pluginAutomationContainer.getBounds().withHeight(pluginAutomationBounds.getHeight() * 4));
     
-    // Give more space to the time display and grid control
-    auto timeDisplayWidth = controlsBounds.getWidth() * 0.3; // 30% of the width
-    auto gridControlWidth = controlsBounds.getWidth() * 0.1; // 10% of the width
-    auto buttonsWidth = controlsBounds.getWidth() - timeDisplayWidth - gridControlWidth;
-    auto buttonWidth = buttonsWidth / 7; // 7 buttons
+    // 4. Control Bar Layout
+    const int controlSpacing = 4;  // Spacing between controls
+    const int verticalPadding = 2; // Vertical padding for control bar
     
-    auto buttonBounds = controlsBounds.removeFromLeft(buttonsWidth);
+    // Adjust control bar bounds for vertical padding
+    controlBarBounds = controlBarBounds.reduced(0, verticalPadding);
     
-    playButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
-    stopButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
-    loopButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
-    automationReadButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
-    automationWriteButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
-    zoomInButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
-    zoomOutButton.setBounds(buttonBounds.removeFromLeft(buttonWidth).reduced(2));
+    // Calculate widths for time display and grid control
+    const int timeDisplayWidth = controlBarBounds.getWidth() * 0.3;  // 30% for time display
+    const int gridControlWidth = controlBarBounds.getWidth() * 0.1;  // 10% for grid control
     
-    gridSizeComboBox.setBounds(controlsBounds.removeFromLeft(gridControlWidth).reduced(2));
-    timeDisplay.setBounds(controlsBounds.reduced(2));
-
+    // Create FlexBox for button layout
+    juce::FlexBox buttonFlex;
+    buttonFlex.flexDirection = juce::FlexBox::Direction::row;
+    buttonFlex.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    buttonFlex.alignItems = juce::FlexBox::AlignItems::center;
+    
+    // Calculate remaining width for buttons
+    const int remainingWidth = controlBarBounds.getWidth() - timeDisplayWidth - gridControlWidth;
+    const int buttonWidth = (remainingWidth - (controlSpacing * 7)) / 8; // 8 controls, 7 spaces
+    
+    // Add buttons to flex layout with spacing
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), playButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), stopButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), loopButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), automationReadButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), automationWriteButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), zoomInButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), zoomOutButton));
+    
+    // Create area for buttons
+    auto buttonArea = controlBarBounds.removeFromLeft(remainingWidth);
+    buttonFlex.performLayout(buttonArea);
+    
+    // Layout grid control and time display
+    gridSizeComboBox.setBounds(controlBarBounds.removeFromLeft(gridControlWidth));
+    timeDisplay.setBounds(controlBarBounds);
+    
+    // Update playhead if it exists
     if (playhead != nullptr)
     {
-        playhead->setRectangle(juce::Rectangle<float>(2.0f, (float)waveformBounds.getY(), 2.0f, (float)waveformBounds.getHeight()));
+        playhead->setRectangle(juce::Rectangle<float>(2.0f, (float)thumbnailBounds.getY(), 2.0f, (float)thumbnailBounds.getHeight()));
         updatePlayheadPosition();
     }
 }
@@ -466,9 +533,8 @@ void TransportComponent::updatePlayheadPosition()
 {
     if (playhead != nullptr)
     {
-        // DBG("Updating playhead position");
         auto bounds = getLocalBounds();
-        auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.5)).reduced (2);
+        auto waveformBounds = bounds.removeFromTop(60).reduced(2);
 
         auto currentPosition = transport.getPosition().inSeconds();
 
@@ -483,28 +549,21 @@ void TransportComponent::updatePlayheadPosition()
             // Calculate normalized position within visible range
             auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
 
-            // DBG("Current position: " + juce::String(currentPosition) + "s");
-            // DBG("Visible range: " + juce::String(visibleTimeStart) + "s to " + juce::String(visibleTimeEnd) + "s");
-            // DBG("Normalized position: " + juce::String(normalizedPosition));
-
             // Only show playhead if it's in the visible range
             if (currentPosition >= visibleTimeStart && currentPosition <= visibleTimeEnd)
             {
                 auto playheadX = waveformBounds.getX() + (normalizedPosition * waveformBounds.getWidth());
-                playhead->setVisible (true);
-                playhead->setTopLeftPosition (static_cast<int> (playheadX), waveformBounds.getY());
-                // DBG("Playhead visible at x: " + juce::String(playheadX));
+                playhead->setVisible(true);
+                playhead->setTopLeftPosition(static_cast<int>(playheadX), waveformBounds.getY());
             }
             else
             {
-                playhead->setVisible (false);
-                DBG("Playhead hidden - position outside visible range");
+                playhead->setVisible(false);
             }
         }
         else
         {
-            playhead->setVisible (false);
-            DBG("Playhead hidden - no current clip");
+            playhead->setVisible(false);
         }
     }
 }
@@ -541,12 +600,16 @@ void TransportComponent::updateThumbnail()
                     
                     // Update automation lanes with the new source length
                     auto sourceLength = waveClip->getSourceLength().inSeconds();
-                    if (automationLane != nullptr)
-                        automationLane->setSourceLength(sourceLength);
                     if (crossfaderAutomationLane != nullptr)
                         crossfaderAutomationLane->setSourceLength(sourceLength);
                     if (reverbAutomationComponent != nullptr)
                         reverbAutomationComponent->setSourceLength(sourceLength);
+                    if (delayAutomationComponent != nullptr)
+                        delayAutomationComponent->setSourceLength(sourceLength);
+                    if (phaserAutomationComponent != nullptr)
+                        phaserAutomationComponent->setSourceLength(sourceLength);
+                    if (flangerAutomationComponent != nullptr)
+                        flangerAutomationComponent->setSourceLength(sourceLength);
                         
                     repaint();
                     break;
@@ -563,46 +626,39 @@ void TransportComponent::updateThumbnail()
 void TransportComponent::mouseDown (juce::MouseEvent const& event)
 {
     auto bounds = getLocalBounds();
-    auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.7));
+    auto waveformBounds = bounds.removeFromTop(60);
 
-    if (waveformBounds.contains (event.getPosition()))
+    if (waveformBounds.contains(event.getPosition()))
     {
-        DBG("Mouse down in waveform bounds");
-
         if (currentClip != nullptr)
         {
             // Calculate normalized position from click
             auto clickX = event.position.x - waveformBounds.getX();
             auto normalizedPosition = (clickX / waveformBounds.getWidth()) / zoomLevel + scrollPosition;
-            normalizedPosition = juce::jlimit (0.0, 1.0, normalizedPosition);
+            normalizedPosition = juce::jlimit(0.0, 1.0, normalizedPosition);
 
             auto sourceLength = currentClip->getSourceLength().inSeconds();
-            // Get current tempo for adjustment
             auto newPosition = (normalizedPosition * sourceLength);
 
-            transport.setPosition (tracktion::TimePosition::fromSeconds (newPosition));
+            transport.setPosition(tracktion::TimePosition::fromSeconds(newPosition));
             updateTransportState();
-        }
-        else
-        {
-            DBG("No clip available for position change");
         }
     }
 }
 
-void TransportComponent::mouseWheelMove (const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
+void TransportComponent::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
 {
     auto bounds = getLocalBounds();
-    auto waveformBounds = bounds.removeFromTop (static_cast<int> (bounds.getHeight() * 0.7));
+    auto waveformBounds = bounds.removeFromTop(60);
 
-    if (waveformBounds.contains (event.getPosition()))
+    if (waveformBounds.contains(event.getPosition()))
     {
         // Handle horizontal scrolling with shift key or horizontal wheel
         if (event.mods.isShiftDown() || wheel.deltaX != 0.0f)
         {
             auto delta = wheel.deltaX != 0.0f ? wheel.deltaX : wheel.deltaY;
             auto newScrollPos = scrollPosition - (delta * 0.1);
-            setScrollPosition (newScrollPos);
+            setScrollPosition(newScrollPos);
         }
         // Handle zooming
         else if (wheel.deltaY != 0.0f)
@@ -610,17 +666,17 @@ void TransportComponent::mouseWheelMove (const juce::MouseEvent& event, const ju
             auto zoomFactor = wheel.deltaY > 0 ? 1.1 : 0.9;
 
             // Calculate the position under the mouse as a fraction of the visible width
-            auto mouseXProportion = (event.position.x - waveformBounds.getX()) / (float) waveformBounds.getWidth();
+            auto mouseXProportion = (event.position.x - waveformBounds.getX()) / (float)waveformBounds.getWidth();
 
             // Get the time position under the mouse
             auto oldTimePosition = (mouseXProportion + scrollPosition) / zoomLevel;
 
             // Apply the new zoom level
-            setZoomLevel (zoomLevel * zoomFactor);
+            setZoomLevel(zoomLevel * zoomFactor);
 
             // Calculate and set the new scroll position to keep the mouse point steady
             auto newScrollPos = oldTimePosition * zoomLevel - mouseXProportion;
-            setScrollPosition (newScrollPos);
+            setScrollPosition(newScrollPos);
         }
     }
 }
@@ -630,12 +686,16 @@ void TransportComponent::setZoomLevel(double newLevel)
     zoomLevel = juce::jlimit(minZoom, maxZoom, newLevel);
     
     // Update automation lanes
-    if (automationLane != nullptr)
-        automationLane->setZoomLevel(zoomLevel);
     if (crossfaderAutomationLane != nullptr)
         crossfaderAutomationLane->setZoomLevel(zoomLevel);
     if (reverbAutomationComponent != nullptr)
         reverbAutomationComponent->setZoomLevel(zoomLevel);
+    if (delayAutomationComponent != nullptr)
+        delayAutomationComponent->setZoomLevel(zoomLevel);
+    if (phaserAutomationComponent != nullptr)
+        phaserAutomationComponent->setZoomLevel(zoomLevel);
+    if (flangerAutomationComponent != nullptr)
+        flangerAutomationComponent->setZoomLevel(zoomLevel);
         
     repaint();
 }
@@ -647,12 +707,16 @@ void TransportComponent::setScrollPosition(double newPosition)
     scrollPosition = juce::jlimit(0.0, maxScroll, newPosition);
     
     // Update automation lanes
-    if (automationLane != nullptr)
-        automationLane->setScrollPosition(scrollPosition);
     if (crossfaderAutomationLane != nullptr)
         crossfaderAutomationLane->setScrollPosition(scrollPosition);
     if (reverbAutomationComponent != nullptr)
         reverbAutomationComponent->setScrollPosition(scrollPosition);
+    if (delayAutomationComponent != nullptr)
+        delayAutomationComponent->setScrollPosition(scrollPosition);
+    if (phaserAutomationComponent != nullptr)
+        phaserAutomationComponent->setScrollPosition(scrollPosition);
+    if (flangerAutomationComponent != nullptr)
+        flangerAutomationComponent->setScrollPosition(scrollPosition);
         
     repaint();
 }

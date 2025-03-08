@@ -35,12 +35,21 @@ void PluginAutomationComponent::resized()
     {
         auto laneBounds = bounds.removeFromTop(laneHeight);
         
-        // Position label
-        laneInfo.nameLabel->setBounds(laneBounds.removeFromLeft(labelWidth));
-        
-        // Position automation lane
+        // Position automation lane to take full width
         if (laneInfo.lane != nullptr)
             laneInfo.lane->setBounds(laneBounds);
+            
+        // Position label as a tag in top left corner of the lane
+        if (laneInfo.nameLabel != nullptr)
+        {
+            const int tagWidth = 100;  // Adjust width as needed
+            const int tagHeight = 20;   // Adjust height as needed
+            const int margin = 5;       // Margin from the edges
+            laneInfo.nameLabel->setBounds(laneBounds.getX() + margin, 
+                                        laneBounds.getY() + margin, 
+                                        tagWidth, 
+                                        tagHeight);
+        }
     }
 }
 

@@ -51,7 +51,7 @@ private:
     double scrollPosition = 0.0;
     double sourceLength = 60.0;
     
-    const float laneHeight = 100.0f;
+    const float laneHeight = 60.0f;
     const float labelWidth = 150.0f;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginAutomationComponent)

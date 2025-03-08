@@ -38,8 +38,6 @@ public:
     void paint(juce::Graphics& g) override
     {
         g.fillAll(juce::Colours::black);
-        g.setColour(juce::Colours::darkgrey);
-        g.drawRect(getLocalBounds(), 1);
     }
 
     void setCurrentTrackName(const juce::String& name)

@@ -93,7 +93,7 @@ void MainComponent::resized()
     // Row 1: Transport control
     if (transportComponent != nullptr)
     {
-        auto transportHeight = bounds.getHeight() / 4;  // 1/4 of total height
+        auto transportHeight = bounds.getHeight() / 2;  // 1/2 of total height
         transportComponent->setBounds(bounds.removeFromTop(transportHeight));
     }
 
@@ -103,20 +103,24 @@ void MainComponent::resized()
         auto libraryHeight = 40;
         auto libraryBounds = bounds.removeFromTop(libraryHeight);
         
-        // Position settings button on the right
-        if (audioSettingsButton != nullptr)
+        // Position settings button and controller mapping button on the right
+        if (audioSettingsButton != nullptr && controllerMappingComponent != nullptr)
         {
             auto buttonSize = 30;
-            auto buttonBounds = libraryBounds.removeFromRight(buttonSize + 5).withSizeKeepingCentre(buttonSize, buttonSize);
-            audioSettingsButton->setBounds(buttonBounds);
+            auto buttonSpacing = 5;
+            
+            // Position controller mapping button first (rightmost)
+            auto controllerBounds = libraryBounds.removeFromRight(buttonSize + buttonSpacing).withSizeKeepingCentre(buttonSize, buttonSize);
+            controllerMappingComponent->setBounds(controllerBounds);
+            
+            // Then position settings button to its left
+            auto settingsBounds = libraryBounds.removeFromRight(buttonSize + buttonSpacing).withSizeKeepingCentre(buttonSize, buttonSize);
+            audioSettingsButton->setBounds(settingsBounds);
         }
         
         // Position library bar in remaining space
         libraryBar->setBounds(libraryBounds);
     }
-
-    // Add some spacing
-    bounds.removeFromTop(10);
 
     // Row 3: Main section with three columns
     juce::FlexBox mainBox;
@@ -124,31 +128,38 @@ void MainComponent::resized()
     mainBox.flexWrap = juce::FlexBox::Wrap::noWrap;
     mainBox.justifyContent = juce::FlexBox::JustifyContent::spaceAround;
 
-    // Column 1 (controller mapping)
+    // Column 1 (Tempo and crossfader)
     juce::FlexBox column1;
     column1.flexDirection = juce::FlexBox::Direction::column;
-    column1.items.add(juce::FlexItem(*controllerMappingComponent).withHeight(30).withMargin(5));
+    if (screwComponent) column1.items.add(juce::FlexItem(*screwComponent).withFlex(0.25f).withMargin(5));
+    if (chopComponent) column1.items.add(juce::FlexItem(*chopComponent).withFlex(0.5f).withMargin(5));
+    if (scratchComponent) column1.items.add(juce::FlexItem(*scratchComponent).withFlex(0.25f).withMargin(5));
+    if (vinylBrakeComponent) column1.items.add(juce::FlexItem(*vinylBrakeComponent).withFlex(0.25f).withMargin(5));
 
-    // Column 2 (Tempo and crossfader)
+    // Column 2 (Effects)
     juce::FlexBox column2;
-    column2.flexDirection = juce::FlexBox::Direction::column;
-    if (screwComponent) column2.items.add(juce::FlexItem(*screwComponent).withFlex(0.25f).withMargin(5));
-    if (chopComponent) column2.items.add(juce::FlexItem(*chopComponent).withFlex(0.5f).withMargin(5));
-    if (scratchComponent) column2.items.add(juce::FlexItem(*scratchComponent).withFlex(0.25f).withMargin(5));
-    if (vinylBrakeComponent) column2.items.add(juce::FlexItem(*vinylBrakeComponent).withFlex(0.25f).withMargin(5));
+    column2.flexDirection = juce::FlexBox::Direction::row;
+    column2.flexWrap = juce::FlexBox::Wrap::wrap;
+    column2.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
 
-    // Column 3 (Effects)
-    juce::FlexBox column3;
-    column3.flexDirection = juce::FlexBox::Direction::column;
-    if (reverbComponent) column3.items.add(juce::FlexItem(*reverbComponent).withFlex(1.0f).withMargin(5));
-    if (delayComponent) column3.items.add(juce::FlexItem(*delayComponent).withFlex(1.0f).withMargin(5));
-    if (flangerComponent) column3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMargin(5));
-    if (phaserComponent) column3.items.add(juce::FlexItem(*phaserComponent).withFlex(1.0f).withMargin(5));
+    // Create two sub-columns for effects
+    juce::FlexBox leftColumn;
+    leftColumn.flexDirection = juce::FlexBox::Direction::column;
+    if (reverbComponent) leftColumn.items.add(juce::FlexItem(*reverbComponent).withFlex(1.0f).withMargin(5));
+    if (delayComponent) leftColumn.items.add(juce::FlexItem(*delayComponent).withFlex(1.0f).withMargin(5));
+
+    juce::FlexBox rightColumn;
+    rightColumn.flexDirection = juce::FlexBox::Direction::column;
+    if (flangerComponent) rightColumn.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMargin(5));
+    if (phaserComponent) rightColumn.items.add(juce::FlexItem(*phaserComponent).withFlex(1.0f).withMargin(5));
+
+    // Add sub-columns to main column2
+    column2.items.add(juce::FlexItem(leftColumn).withFlex(1.0f));
+    column2.items.add(juce::FlexItem(rightColumn).withFlex(1.0f));
 
     // Add columns to main box
-    mainBox.items.add(juce::FlexItem(column1).withFlex(1.0f));
-    mainBox.items.add(juce::FlexItem(column2).withFlex(1.0f));
-    mainBox.items.add(juce::FlexItem(column3).withFlex(1.0f));
+    mainBox.items.add(juce::FlexItem(column1).withFlex(0.4f));
+    mainBox.items.add(juce::FlexItem(column2).withFlex(0.6f));
 
     // Perform the layout for the main box
     mainBox.performLayout(bounds);
