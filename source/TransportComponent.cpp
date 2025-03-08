@@ -545,37 +545,65 @@ void TransportComponent::updatePlayheadPosition()
 {
     if (playhead != nullptr)
     {
+        DBG("Updating playhead position");
         auto bounds = getLocalBounds();
         auto waveformBounds = bounds.removeFromTop(60).reduced(2);
 
+        // Get current position from transport (this is already in the correct time domain)
         auto currentPosition = transport.getPosition().inSeconds();
 
         if (currentClip != nullptr)
         {
             auto sourceLength = currentClip->getSourceLength().inSeconds();
 
-            // Calculate visible time range
+            // Get current tempo information
+            auto& tempoSequence = edit.tempoSequence;
+            auto position = createPosition(tempoSequence);
+            position.set(transport.getPosition());
+            auto currentTempo = position.getTempo();
+
+            // Get original clip tempo and calculate ratio
+            auto originalTempo = currentClip->getLoopInfo().getBpm(currentClip->getAudioFile().getInfo());
+            auto tempoRatio = originalTempo / currentTempo; // Inverted ratio to adjust visible range
+            
+            DBG("Current tempo: " + juce::String(currentTempo) + " BPM");
+            DBG("Original tempo: " + juce::String(originalTempo) + " BPM");
+            DBG("Tempo ratio: " + juce::String(tempoRatio));
+
+            // Calculate visible time range in source time domain
             auto visibleTimeStart = sourceLength * scrollPosition;
             auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
 
-            // Calculate normalized position within visible range
-            auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
+            // Adjust visible range to match transport time domain
+            auto adjustedVisibleStart = visibleTimeStart * tempoRatio;
+            auto adjustedVisibleEnd = visibleTimeEnd * tempoRatio;
+
+            DBG("Current position: " + juce::String(currentPosition) + "s");
+            DBG("Visible range (source): " + juce::String(visibleTimeStart) + "s to " + juce::String(visibleTimeEnd) + "s");
+            DBG("Visible range (adjusted): " + juce::String(adjustedVisibleStart) + "s to " + juce::String(adjustedVisibleEnd) + "s");
+
+            // Calculate normalized position within adjusted visible range
+            auto normalizedPosition = (currentPosition - adjustedVisibleStart) / (adjustedVisibleEnd - adjustedVisibleStart);
+            DBG("Normalized position: " + juce::String(normalizedPosition));
 
             // Only show playhead if it's in the visible range
-            if (currentPosition >= visibleTimeStart && currentPosition <= visibleTimeEnd)
+            if (currentPosition >= adjustedVisibleStart && currentPosition <= adjustedVisibleEnd)
             {
                 auto playheadX = waveformBounds.getX() + (normalizedPosition * waveformBounds.getWidth());
                 playhead->setVisible(true);
                 playhead->setTopLeftPosition(static_cast<int>(playheadX), waveformBounds.getY());
+                DBG("Playhead visible at x: " + juce::String(playheadX));
             }
             else
             {
                 playhead->setVisible(false);
+                DBG("Playhead hidden - position outside visible range");
             }
         }
         else
         {
             playhead->setVisible(false);
+            DBG("Playhead hidden - no current clip");
         }
     }
 }
