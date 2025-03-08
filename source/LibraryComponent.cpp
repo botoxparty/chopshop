@@ -719,7 +719,7 @@ std::unique_ptr<tracktion::engine::Edit> LibraryComponent::loadEditFromProjectIt
     DBG("Edit state loaded successfully");
 
     // Create edit options
-    auto options = te::Edit::Options(engine);
+    auto options = te::Edit::Options{engine};
     options.editState = editState;
     options.editProjectItemID = projectItem->getID();
     options.numUndoLevelsToStore = 0;

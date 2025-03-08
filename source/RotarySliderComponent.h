@@ -27,8 +27,8 @@ public:
         const int labelHeight = 20;
         label.setBounds(bounds.removeFromTop(labelHeight));
         
-        // Center the slider in remaining space
-        auto sliderSize = juce::jmin(bounds.getWidth(), bounds.getHeight() - 20); // Account for text box
+        // Center the slider in remaining space with minimum size of 50
+        auto sliderSize = juce::jmax(50, juce::jmin(bounds.getWidth(), bounds.getHeight() - 20)); // Account for text box
         auto sliderBounds = bounds.withSizeKeepingCentre(sliderSize, sliderSize);
         slider.setBounds(sliderBounds);
     }

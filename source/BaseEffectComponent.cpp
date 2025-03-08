@@ -14,7 +14,7 @@ BaseEffectComponent::BaseEffectComponent(tracktion::engine::Edit& e)
     : edit(e)
 {
     // Configure title label
-    titleLabel.setFont(juce::FontOptions(16.0f).withStyle("Bold"));
+    titleLabel.setFont(juce::FontOptions(10.0f).withStyle("Bold"));
     titleLabel.setJustificationType(juce::Justification::centred);
     addAndMakeVisible(titleLabel);
     
@@ -121,7 +121,7 @@ void BaseEffectComponent::resized()
     
     // Add title with fixed height
     flexBox.items.add(juce::FlexItem(titleLabel)
-        .withHeight(25.0f)
+        .withHeight(14.0f)
         .withWidth(effectiveArea.getWidth())
         .withMargin(juce::FlexItem::Margin(0, 0, 5, 0))  // Bottom margin of 5
         .withFlex(0));  // Don't flex
