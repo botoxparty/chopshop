@@ -58,6 +58,7 @@ private:
     
     std::unique_ptr<AutomationLane> automationLane;
     std::unique_ptr<CrossfaderAutomationLane> crossfaderAutomationLane;
+    std::unique_ptr<AutomationLane> reverbWetAutomationLane;
     
     // Zoom and scroll state
     double zoomLevel = 1.0;

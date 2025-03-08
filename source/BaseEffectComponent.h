@@ -54,7 +54,6 @@ public:
     
 protected:
     void bindSliderToParameter(juce::Slider& slider, tracktion::engine::AutomatableParameter& param);
-    tracktion::engine::Plugin::Ptr createPlugin(const juce::String& xmlType);
     juce::Rectangle<float> getEffectiveArea() const;
     
     tracktion::engine::Edit& edit;

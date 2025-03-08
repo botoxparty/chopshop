@@ -247,6 +247,32 @@ void LibraryComponent::sortOrderChanged (int newSortColumnId, bool isForwards)
     }
 }
 
+void LibraryComponent::createPluginRack(te::Edit* edit)
+{
+    if (auto masterTrack = edit->getMasterTrack())
+    {
+        tracktion::engine::Plugin::Array plugins;
+
+        auto reverbPlugin = EngineHelpers::createPlugin(edit, tracktion::engine::ReverbPlugin::xmlTypeName);
+        plugins.add (reverbPlugin);
+
+        auto delayPlugin = EngineHelpers::createPlugin(edit, AutoDelayPlugin::xmlTypeName);
+        plugins.add (delayPlugin);
+
+        auto flangerPlugin = EngineHelpers::createPlugin(edit, FlangerPlugin::xmlTypeName);
+        plugins.add (flangerPlugin);
+
+        auto phaserPlugin = EngineHelpers::createPlugin(edit, AutoPhaserPlugin::xmlTypeName);
+        plugins.add (phaserPlugin);
+
+        // Create the rack type with proper channel connections
+        if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins (plugins, *edit))
+        {
+            masterTrack->pluginList.insertPlugin (tracktion::engine::RackInstance::create (*rack), 0);
+        }
+    }
+}
+
 void LibraryComponent::addToLibrary (const juce::File& file)
 {
     if (!libraryProject)
@@ -331,6 +357,8 @@ void LibraryComponent::addToLibrary (const juce::File& file)
         DBG ("Error: Failed to create chop plugin");
         return;
     }
+
+    createPluginRack(edit);
 
     // Create two tracks and import the audio file to both
     bool clipsCreated = false;

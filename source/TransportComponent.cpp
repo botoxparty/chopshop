@@ -75,6 +75,31 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     
     addAndMakeVisible (*crossfaderAutomationLane);
 
+    // Create and add automation lane for reverb wet parameter
+    reverbWetAutomationLane = std::make_unique<AutomationLane> (edit);
+    
+    // Find the reverb wet parameter
+    tracktion::engine::AutomatableParameter* reverbWetParam = nullptr;
+    if (auto reverbPlugin = EngineHelpers::getPluginFromMasterTrack(edit, tracktion::engine::ReverbPlugin::xmlTypeName))
+    {
+        if (auto* plugin = reverbPlugin.get())
+        {
+            reverbWetParam = plugin->getAutomatableParameterByID("wet level");
+        }
+    }
+    
+    if (reverbWetParam == nullptr)
+    {
+        DBG("No reverb wet parameter found");
+    }
+    
+    if (reverbWetParam != nullptr)
+    {
+        reverbWetAutomationLane->setParameter(reverbWetParam);
+    }
+    
+    addAndMakeVisible (*reverbWetAutomationLane);
+
     // Create and add automation lane for tempo
     automationLane = std::make_unique<AutomationLane> (edit);
     addAndMakeVisible (*automationLane);
@@ -369,11 +394,13 @@ void TransportComponent::resized()
     // Reserve space for waveform display (50% of height)
     auto waveformBounds = bounds.removeFromTop(static_cast<int>(bounds.getHeight() * 0.5));
 
-    // Reserve space for automation lanes (30% of original height, split between the two lanes)
+    // Reserve space for automation lanes (30% of original height, split between the three lanes)
     auto automationBounds = bounds.removeFromTop(static_cast<int>(getHeight() * 0.3));
-    auto firstLaneBounds = automationBounds.removeFromTop(automationBounds.getHeight() / 2);
-    automationLane->setBounds(automationBounds);
+    auto firstLaneBounds = automationBounds.removeFromTop(automationBounds.getHeight() / 3);
+    auto secondLaneBounds = automationBounds.removeFromTop(automationBounds.getHeight() / 2);
     crossfaderAutomationLane->setBounds(firstLaneBounds);
+    reverbWetAutomationLane->setBounds(secondLaneBounds);
+    automationLane->setBounds(automationBounds);
 
     // Layout transport controls in remaining space
     auto controlsBounds = bounds.reduced(5);
@@ -518,6 +545,8 @@ void TransportComponent::updateThumbnail()
                         automationLane->setSourceLength(sourceLength);
                     if (crossfaderAutomationLane != nullptr)
                         crossfaderAutomationLane->setSourceLength(sourceLength);
+                    if (reverbWetAutomationLane != nullptr)
+                        reverbWetAutomationLane->setSourceLength(sourceLength);
                         
                     repaint();
                     break;
@@ -605,6 +634,8 @@ void TransportComponent::setZoomLevel (double newLevel)
         automationLane->setZoomLevel(zoomLevel);
     if (crossfaderAutomationLane != nullptr)
         crossfaderAutomationLane->setZoomLevel(zoomLevel);
+    if (reverbWetAutomationLane != nullptr)
+        reverbWetAutomationLane->setZoomLevel(zoomLevel);
         
     repaint();
 }
@@ -620,6 +651,8 @@ void TransportComponent::setScrollPosition (double newPosition)
         automationLane->setScrollPosition(scrollPosition);
     if (crossfaderAutomationLane != nullptr)
         crossfaderAutomationLane->setScrollPosition(scrollPosition);
+    if (reverbWetAutomationLane != nullptr)
+        reverbWetAutomationLane->setScrollPosition(scrollPosition);
         
     repaint();
 }

@@ -271,9 +271,6 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     transportComponent = std::make_unique<TransportComponent>(*edit);
     addAndMakeVisible(*transportComponent);
 
-    // Create plugin rack after all effects are initialized
-    createPluginRack();
-
     // Reset component states
     if (screwComponent)
     {
@@ -507,31 +504,6 @@ void MainComponent::setupVinylBrakeComponent()
     };
 
     addAndMakeVisible (*vinylBrakeComponent);
-}
-
-void MainComponent::createPluginRack()
-{
-    if (auto masterTrack = edit->getMasterTrack())
-    {
-        tracktion::engine::Plugin::Array plugins;
-
-        if (reverbComponent)
-            plugins.add (reverbComponent->getPlugin());
-        if (delayComponent)
-            plugins.add (delayComponent->getPlugin());
-        if (flangerComponent)
-            plugins.add (flangerComponent->getPlugin());
-        if (phaserComponent)
-            plugins.add (phaserComponent->getPlugin());
-        // if (scratchComponent)
-        // plugins.add (scratchComponent->getPlugin());
-
-        // Create the rack type with proper channel connections
-        if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins (plugins, *edit))
-        {
-            masterTrack->pluginList.insertPlugin (tracktion::engine::RackInstance::create (*rack), 0);
-        }
-    }
 }
 
 void MainComponent::setupOscilloscopeComponent()

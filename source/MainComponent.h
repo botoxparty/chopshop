@@ -181,8 +181,6 @@ private:
     void setupScrewComponent();
     void setupScratchComponent();
 
-    void createPluginRack();
-
     void releaseResources();
 
     std::unique_ptr<juce::ApplicationCommandManager> commandManager;

@@ -257,6 +257,12 @@ namespace EngineHelpers
 
         return {};
     }
+
+    inline te::Plugin::Ptr createPlugin(te::Edit& edit, const juce::String& xmlType)
+    {
+        auto plugin = edit.getPluginCache().createNewPlugin(xmlType, {});
+        return plugin;
+    }
 }
 
 //==============================================================================
