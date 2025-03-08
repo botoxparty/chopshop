@@ -10,12 +10,11 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     // Add and make visible all buttons
     addAndMakeVisible (playButton);
     addAndMakeVisible (stopButton);
-    addAndMakeVisible (loopButton);
     addAndMakeVisible (timeDisplay);
     addAndMakeVisible (zoomInButton);
     addAndMakeVisible (zoomOutButton);
-    addAndMakeVisible (automationReadButton);
     addAndMakeVisible (automationWriteButton);
+    addAndMakeVisible (automationReadButton);
     addAndMakeVisible (gridSizeComboBox);
 
     // Set up play and stop button shapes
@@ -192,9 +191,23 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
     automationReadButton.setClickingTogglesState(true);
     automationWriteButton.setClickingTogglesState(true);
     
-    // Set up colors for automation buttons
-    automationReadButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::green.darker());
-    automationWriteButton.setColour(juce::TextButton::buttonOnColourId, juce::Colours::red.darker());
+    // Set up automation read button with sine wave shape
+    automationReadButton.setShape(getAutomationPath(), false, true, false);
+    automationReadButton.setColours(
+        juce::Colours::white.withAlpha(0.7f),     // normal
+        juce::Colours::green.darker(),            // over
+        juce::Colours::green                      // down
+    );
+    automationReadButton.setOutline(juce::Colours::white, 1.0f);
+    
+    // Setup automation write button with record circle
+    automationWriteButton.setShape(getRecordPath(), false, true, false);
+    automationWriteButton.setColours(
+        juce::Colours::red.withAlpha(0.7f),  // normal
+        juce::Colours::red,                   // over
+        juce::Colours::red.brighter(0.2f)     // down
+    );
+    automationWriteButton.setOutline(juce::Colours::transparentWhite, 0.0f);
     
     automationReadButton.setToggleState(edit.getAutomationRecordManager().isReadingAutomation(), juce::dontSendNotification);
     automationWriteButton.setToggleState(edit.getAutomationRecordManager().isWritingAutomation(), juce::dontSendNotification);
@@ -471,14 +484,13 @@ void TransportComponent::resized()
     
     // Calculate remaining width for buttons
     const int remainingWidth = controlBarBounds.getWidth() - timeDisplayWidth - gridControlWidth;
-    const int buttonWidth = (remainingWidth - (controlSpacing * 7)) / 8; // 8 controls, 7 spaces
+    const int buttonWidth = (remainingWidth - (controlSpacing * 6)) / 7; // 8 controls, 7 spaces
     
     // Add buttons to flex layout with spacing
     buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), playButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
     buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), stopButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), loopButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), automationReadButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
     buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), automationWriteButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), automationReadButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
     buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), zoomInButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
     buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), zoomOutButton));
     
@@ -734,8 +746,45 @@ void TransportComponent::automationModeChanged()
     automationReadButton.setToggleState(isReading, juce::dontSendNotification);
     automationWriteButton.setToggleState(isWriting, juce::dontSendNotification);
     
-    automationReadButton.setColour(juce::TextButton::textColourOnId, isReading ? juce::Colours::white : juce::Colours::grey);
-    automationWriteButton.setColour(juce::TextButton::textColourOnId, isWriting ? juce::Colours::white : juce::Colours::grey);
+    // Update read button colors based on state
+    if (isReading)
+    {
+        automationReadButton.setColours(
+            juce::Colours::green,                    // normal
+            juce::Colours::green.brighter(0.2f),     // over
+            juce::Colours::green.brighter(0.4f)      // down
+        );
+        automationReadButton.setOutline(juce::Colours::green.withAlpha(0.3f), 2.0f);
+    }
+    else
+    {
+        automationReadButton.setColours(
+            juce::Colours::white.withAlpha(0.7f),     // normal
+            juce::Colours::green.darker(),            // over
+            juce::Colours::green                      // down
+        );
+        automationReadButton.setOutline(juce::Colours::white, 1.0f);
+    }
+    
+    // Update write button glow effect
+    if (isWriting)
+    {
+        automationWriteButton.setColours(
+            juce::Colours::red,                    // normal
+            juce::Colours::red.brighter(0.2f),     // over
+            juce::Colours::red.brighter(0.4f)      // down
+        );
+        automationWriteButton.setOutline(juce::Colours::red.withAlpha(0.3f), 2.0f);
+    }
+    else
+    {
+        automationWriteButton.setColours(
+            juce::Colours::red.withAlpha(0.7f),    // normal
+            juce::Colours::red,                    // over
+            juce::Colours::red.brighter(0.2f)      // down
+        );
+        automationWriteButton.setOutline(juce::Colours::transparentWhite, 0.0f);
+    }
 }
 
 void TransportComponent::deleteSelectedChopRegion()

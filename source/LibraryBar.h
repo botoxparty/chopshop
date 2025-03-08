@@ -1,7 +1,7 @@
 #pragma once
 
 #include <juce_gui_basics/juce_gui_basics.h>
-
+#include "CustomLookAndFeel.h"
 class LibraryBar : public juce::Component
 {
 public:
@@ -10,8 +10,13 @@ public:
         showLibraryButton.setButtonText("Show Library");
         addAndMakeVisible(showLibraryButton);
         
-        currentTrackLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+        // Style the track label to look like a screen display
+        currentTrackLabel.setColour(juce::Label::textColourId, juce::Colours::lime);
+        currentTrackLabel.setColour(juce::Label::backgroundColourId, juce::Colours::darkgrey.darker(0.8f));
         currentTrackLabel.setJustificationType(juce::Justification::centredLeft);
+        currentTrackLabel.setFont(CustomLookAndFeel::getMonospaceFont());
+        currentTrackLabel.setText("No Track Loaded", juce::dontSendNotification);
+        currentTrackLabel.setBorderSize(juce::BorderSize<int>(2));
         addAndMakeVisible(currentTrackLabel);
     }
 
@@ -38,6 +43,15 @@ public:
     void paint(juce::Graphics& g) override
     {
         g.fillAll(juce::Colours::black);
+        
+        // Draw a subtle border around the track label to enhance the screen effect
+        auto labelBounds = currentTrackLabel.getBounds().expanded(2);
+        g.setColour(juce::Colours::grey.darker(0.5f));
+        g.drawRect(labelBounds, 2);
+        
+        // Add a subtle inner shadow effect
+        g.setColour(juce::Colours::black.withAlpha(0.3f));
+        g.drawRect(labelBounds.reduced(2), 1);
     }
 
     void setCurrentTrackName(const juce::String& name)

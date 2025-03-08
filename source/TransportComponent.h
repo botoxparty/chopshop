@@ -44,8 +44,8 @@ private:
     juce::ShapeButton playButton{"Play", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
     juce::ShapeButton stopButton{"Stop", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
     juce::TextButton loopButton{"Loop"};
-    juce::TextButton automationReadButton{"Auto Read"};
-    juce::TextButton automationWriteButton{"Auto Write"};
+    juce::ShapeButton automationReadButton{"Auto Read", juce::Colours::white, juce::Colours::green.darker(), juce::Colours::green};
+    juce::ShapeButton automationWriteButton{"Auto Write", juce::Colours::white, juce::Colours::red, juce::Colours::red};
     
     // Zoom controls
     juce::TextButton zoomInButton{"+"};
@@ -109,6 +109,28 @@ private:
     {
         juce::Path path;
         path.addRectangle(0.0f, 0.0f, 1.0f, 1.0f);
+        return path;
+    }
+
+    static juce::Path getRecordPath()
+    {
+        juce::Path recordPath;
+        recordPath.addEllipse(0.0f, 0.0f, 100.0f, 100.0f);
+        return recordPath;
+    }
+
+    static juce::Path getAutomationPath()
+    {
+        juce::Path path;
+        path.startNewSubPath(0.0f, 50.0f);
+        
+        // Create a smooth sine wave
+        for (float x = 0; x <= 100.0f; x += 1.0f)
+        {
+            float y = 50.0f + 30.0f * std::sin(x * 0.12f);
+            path.lineTo(x, y);
+        }
+        
         return path;
     }
     
