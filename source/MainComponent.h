@@ -21,7 +21,8 @@ namespace ProjectInfo
 #include "ReverbComponent.h"
 #include "GamepadManager.h"
 #include "FlangerComponent.h"
-#include "LibraryComponent.h"
+#include "LibraryWindow.h"
+#include "LibraryBar.h"
 #include "VinylBrakeComponent.h"
 #include "DelayComponent.h"
 #include "OscilloscopePlugin.h"
@@ -160,7 +161,8 @@ private:
 
     std::unique_ptr<ReverbComponent> reverbComponent;
     std::unique_ptr<FlangerComponent> flangerComponent;
-    std::unique_ptr<LibraryComponent> libraryComponent;
+    std::unique_ptr<LibraryWindow> libraryWindow;
+    std::unique_ptr<LibraryBar> libraryBar;
     std::unique_ptr<VinylBrakeComponent> vinylBrakeComponent;
     std::unique_ptr<DelayComponent> delayComponent;
     std::unique_ptr<ChopComponent> chopComponent;
