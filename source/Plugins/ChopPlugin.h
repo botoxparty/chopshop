@@ -37,6 +37,10 @@ public:
     {
         DBG("ChopPlugin constructor start");
         auto um = getUndoManager();
+        if(remapOnTempoChange == false)
+        {
+            DBG("Remapping on tempo change on Plugin is disabled.");
+        }
 
         try {
             crossfaderParam = addParam("crossfader", TRANS("Crossfader"), { 0.0f, 1.0f },
@@ -50,6 +54,12 @@ public:
 
             crossfaderValue.referTo(state, ChopPluginIDs::IDs::crossfader, um, 0.0f);
             crossfaderParam->attachToCurrentValue(crossfaderValue);
+
+            // Enable remapping on tempo change
+            if(crossfaderParam->automatableEditElement.remapOnTempoChange == false)
+            {
+                DBG("Remapping on tempo change on Parameter is disabled.");
+            }
 
             // Add value listener to crossfader parameter
             crossfaderParam->addListener(this);

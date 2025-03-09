@@ -254,15 +254,19 @@ void LibraryComponent::createPluginRack(std::unique_ptr<tracktion::engine::Edit>
         tracktion::engine::Plugin::Array plugins;
 
         auto reverbPlugin = EngineHelpers::createPlugin(*edit, tracktion::engine::ReverbPlugin::xmlTypeName);
+        reverbPlugin->remapOnTempoChange.setValue(true, nullptr);
         plugins.add (reverbPlugin);
 
         auto delayPlugin = EngineHelpers::createPlugin(*edit, AutoDelayPlugin::xmlTypeName);
+        delayPlugin->remapOnTempoChange.setValue(true, nullptr);
         plugins.add (delayPlugin);
 
         auto flangerPlugin = EngineHelpers::createPlugin(*edit, FlangerPlugin::xmlTypeName);
+        flangerPlugin->remapOnTempoChange.setValue(true, nullptr);
         plugins.add (flangerPlugin);
 
         auto phaserPlugin = EngineHelpers::createPlugin(*edit, AutoPhaserPlugin::xmlTypeName);
+        phaserPlugin->remapOnTempoChange.setValue(true, nullptr);
         plugins.add (phaserPlugin);
 
         // Create the rack type with proper channel connections
@@ -343,9 +347,10 @@ void LibraryComponent::addToLibrary (const juce::File& file)
     // Should use PluginCache::createNewPlugin to create the ones you add here
 
     auto chopPlugin = edit->getPluginCache().createNewPlugin(ChopPlugin::xmlTypeName, juce::PluginDescription());
-
     if (chopPlugin != nullptr)
     {
+        chopPlugin->remapOnTempoChange.setValue(true, nullptr);
+        
         auto crossfaderParameter = chopPlugin->getAutomatableParameterByID("crossfader");
         if (crossfaderParameter != nullptr)
         {
@@ -367,16 +372,6 @@ void LibraryComponent::addToLibrary (const juce::File& file)
         if (auto track = EngineHelpers::getAudioTrack (*edit, trackIndex))
         {
             DBG ("Setup track " + juce::String (trackIndex + 1));
-
-            // Add volume and pan plugin
-            auto volumeAndPan = track->pluginList.insertPlugin(te::VolumeAndPanPlugin::create(), 0);
-            if (volumeAndPan == nullptr)
-            {
-                DBG("Failed to create VolumeAndPanPlugin for track " + juce::String(trackIndex + 1));
-                continue;
-            }
-            DBG("Successfully created VolumeAndPanPlugin for track " + juce::String(trackIndex + 1));
-
             // Get the audio file length
             te::AudioFile audioFile (engine, file);
             if (!audioFile.isValid())
