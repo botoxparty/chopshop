@@ -250,6 +250,7 @@ void TransportComponent::paint (juce::Graphics& g)
     if (currentClip != nullptr)
     {
         auto sourceLength = currentClip->getPosition().getLength().inSeconds();
+        auto originalLength = currentClip->getSourceLength().inSeconds();
         
         auto timeRange = tracktion::TimeRange (
             tracktion::TimePosition::fromSeconds (sourceLength * scrollPosition),
@@ -301,7 +302,8 @@ void TransportComponent::paint (juce::Graphics& g)
                         auto segmentEndTime = segmentTime + timePerSegment;
                         
                         // Get crossfader value at this time
-                        auto crossfaderValue = crossfaderParam->getCurve().getValueAt(tracktion::TimePosition::fromSeconds(segmentTime));
+                        auto tempoRatio = originalLength / sourceLength;
+                        auto crossfaderValue = crossfaderParam->getCurve().getValueAt(tracktion::TimePosition::fromSeconds(segmentTime * tempoRatio));
                         
                         // Create segment bounds
                         auto segmentBounds = drawBounds.withWidth(1).withX(drawBounds.getX() + i);

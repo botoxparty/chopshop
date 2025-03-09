@@ -209,11 +209,16 @@ void AutomationLane::updatePoints()
     if (parameter != nullptr)
     {
         auto& curve = parameter->getCurve();
+        auto& tempoSequence = edit.tempoSequence;
+        
         // Get all automation points from the curve
         for (int i = 0; i < curve.getNumPoints(); ++i)
         {
             auto point = curve.getPoint(i);
-            automationPoints.emplace_back(point.time.inSeconds(), point.value);
+            // Store the time in seconds but convert through beats for proper tempo handling
+            auto beatPos = tempoSequence.toBeats(point.time);
+            auto timeInSeconds = tempoSequence.toTime(beatPos).inSeconds();
+            automationPoints.emplace_back(timeInSeconds, point.value);
         }
     }
     
@@ -286,12 +291,19 @@ juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) 
 {
     auto bounds = getLocalBounds().toFloat();
     
-    // Calculate visible time range
-    auto visibleTimeStart = getSourceLength() * scrollPosition;
-    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
+    // Convert time to beats using edit's tempo sequence
+    auto& tempoSequence = edit.tempoSequence;
+    auto beatPosition = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(timeInSeconds));
     
-    // Normalize time to width using the visible time range
-    float normalizedTime = (timeInSeconds - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
+    // Calculate visible beat range
+    auto visibleTimeStart = getSourceLength() * scrollPosition;
+    auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
+    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
+    auto visibleTimeEndBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeEnd));
+    
+    // Normalize beat position to width using the visible beat range
+    float normalizedTime = (beatPosition.inBeats() - visibleTimeStartBeats.inBeats()) / 
+                          (visibleTimeEndBeats.inBeats() - visibleTimeStartBeats.inBeats());
     float x = bounds.getX() + (normalizedTime * bounds.getWidth());
     
     // Normalize value to height
@@ -309,14 +321,21 @@ juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) 
 std::pair<double, double> AutomationLane::XYToTime(float x, float y) const
 {
     auto bounds = getLocalBounds().toFloat();
+    auto& tempoSequence = edit.tempoSequence;
     
-    // Calculate visible time range
+    // Calculate visible beat range
     auto visibleTimeStart = getSourceLength() * scrollPosition;
+    auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
     auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
+    auto visibleTimeEndBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeEnd));
     
-    // Convert x to time using the visible time range
+    // Convert x to beats using the visible beat range
     double normalizedX = (x - bounds.getX()) / bounds.getWidth();
-    double timeInSeconds = visibleTimeStart + (normalizedX * (visibleTimeEnd - visibleTimeStart));
+    double beatPosition = visibleTimeStartBeats.inBeats() + 
+                         (normalizedX * (visibleTimeEndBeats.inBeats() - visibleTimeStartBeats.inBeats()));
+    
+    // Convert beats back to seconds
+    double timeInSeconds = tempoSequence.toTime(tracktion::BeatPosition::fromBeats(beatPosition)).inSeconds();
     
     // Convert y to parameter value
     float normalizedValue = 1.0f - ((y - bounds.getY()) / bounds.getHeight());

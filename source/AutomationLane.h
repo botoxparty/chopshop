@@ -43,9 +43,10 @@ public:
     void parameterChangeGestureEnd(tracktion::engine::AutomatableParameter&) override;
 
 private:
-    tracktion::engine::Edit& edit;
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AutomationLane)
 
 protected:
+    tracktion::engine::Edit& edit;
     tracktion::engine::AutomatableParameter* parameter;
     tracktion::engine::WaveAudioClip* currentClip = nullptr;
     std::vector<std::pair<double, double>> automationPoints; // <time, value> pairs
@@ -67,6 +68,4 @@ protected:
     // Debounce timer to prevent rapid updates
     juce::int64 lastUpdateTime = 0;
     static constexpr juce::int64 minimumUpdateInterval = 50; // milliseconds
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AutomationLane)
 }; 
