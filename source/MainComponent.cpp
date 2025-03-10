@@ -97,20 +97,13 @@ void MainComponent::paint (juce::Graphics& g)
 void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
-    bounds.reduce (10, 10); // Add some padding
+    bounds.reduce(10, 10); // Add some padding
 
-    // Row 1: Transport control
-    if (transportComponent != nullptr)
-    {
-        auto transportHeight = bounds.getHeight() / 2; // 1/2 of total height
-        transportComponent->setBounds (bounds.removeFromTop (transportHeight));
-    }
-
-    // Row 2: Library bar and settings button
+    // Always position the library bar at the top
     if (libraryBar != nullptr)
     {
         auto libraryHeight = 40;
-        auto libraryBounds = bounds.removeFromTop (libraryHeight);
+        auto libraryBounds = bounds.removeFromTop(libraryHeight);
 
         // Position settings button and controller mapping button on the right
         if (audioSettingsButton != nullptr && controllerMappingComponent != nullptr)
@@ -119,16 +112,29 @@ void MainComponent::resized()
             auto buttonSpacing = 5;
 
             // Position controller mapping button first (rightmost)
-            auto controllerBounds = libraryBounds.removeFromRight (buttonSize + buttonSpacing).withSizeKeepingCentre (buttonSize, buttonSize);
-            controllerMappingComponent->setBounds (controllerBounds);
+            auto controllerBounds = libraryBounds.removeFromRight(buttonSize + buttonSpacing).withSizeKeepingCentre(buttonSize, buttonSize);
+            controllerMappingComponent->setBounds(controllerBounds);
 
             // Then position settings button to its left
-            auto settingsBounds = libraryBounds.removeFromRight (buttonSize + buttonSpacing).withSizeKeepingCentre (buttonSize, buttonSize);
-            audioSettingsButton->setBounds (settingsBounds);
+            auto settingsBounds = libraryBounds.removeFromRight(buttonSize + buttonSpacing).withSizeKeepingCentre(buttonSize, buttonSize);
+            audioSettingsButton->setBounds(settingsBounds);
         }
 
         // Position library bar in remaining space
-        libraryBar->setBounds (libraryBounds);
+        libraryBar->setBounds(libraryBounds);
+    }
+
+    // Position library component or main content in the remaining space
+    if (libraryComponent && libraryComponent->isVisible()) {
+        libraryComponent->setBounds(bounds);
+        return;
+    }
+
+    // Row 1: Transport control
+    if (transportComponent != nullptr)
+    {
+        auto transportHeight = bounds.getHeight() / 2; // 1/2 of total height
+        transportComponent->setBounds(bounds.removeFromTop(transportHeight));
     }
 
     // Main layout using FlexBox
@@ -142,9 +148,9 @@ void MainComponent::resized()
     topRow.flexDirection = juce::FlexBox::Direction::row;
     topRow.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
     if (chopComponent)
-        topRow.items.add (juce::FlexItem (*chopComponent).withFlex (1.0f).withMargin (5));
+        topRow.items.add(juce::FlexItem(*chopComponent).withFlex(1.0f).withMargin(5));
     if (screwComponent)
-        topRow.items.add (juce::FlexItem (*screwComponent).withFlex (1.0f).withMargin (5));
+        topRow.items.add(juce::FlexItem(*screwComponent).withFlex(1.0f).withMargin(5));
 
     // Row 2: Effects Box with three columns
     juce::FlexBox effectsBox;
@@ -155,37 +161,37 @@ void MainComponent::resized()
     juce::FlexBox effectsColumn1;
     effectsColumn1.flexDirection = juce::FlexBox::Direction::column;
     if (scratchComponent)
-        effectsColumn1.items.add (juce::FlexItem (*scratchComponent).withFlex (1.0f).withMargin (5));
+        effectsColumn1.items.add(juce::FlexItem(*scratchComponent).withFlex(1.0f).withMargin(5));
     if (vinylBrakeComponent)
-        effectsColumn1.items.add (juce::FlexItem (*vinylBrakeComponent).withFlex (1.0f).withMargin (5));
+        effectsColumn1.items.add(juce::FlexItem(*vinylBrakeComponent).withFlex(1.0f).withMargin(5));
 
     // Column 2: Reverb and Delay
     juce::FlexBox effectsColumn2;
     effectsColumn2.flexDirection = juce::FlexBox::Direction::column;
     if (reverbComponent)
-        effectsColumn2.items.add (juce::FlexItem (*reverbComponent).withFlex (1.0f).withMargin (5));
+        effectsColumn2.items.add(juce::FlexItem(*reverbComponent).withFlex(1.0f).withMargin(5));
     if (delayComponent)
-        effectsColumn2.items.add (juce::FlexItem (*delayComponent).withFlex (1.0f).withMargin (5));
+        effectsColumn2.items.add(juce::FlexItem(*delayComponent).withFlex(1.0f).withMargin(5));
 
     // Column 3: Flanger and Phaser
     juce::FlexBox effectsColumn3;
     effectsColumn3.flexDirection = juce::FlexBox::Direction::column;
     if (flangerComponent)
-        effectsColumn3.items.add (juce::FlexItem (*flangerComponent).withFlex (1.0f).withMargin (5));
+        effectsColumn3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMargin(5));
     if (phaserComponent)
-        effectsColumn3.items.add (juce::FlexItem (*phaserComponent).withFlex (1.0f).withMargin (5));
+        effectsColumn3.items.add(juce::FlexItem(*phaserComponent).withFlex(1.0f).withMargin(5));
 
     // Add columns to effects box
-    effectsBox.items.add (juce::FlexItem (effectsColumn1).withFlex (1.0f));
-    effectsBox.items.add (juce::FlexItem (effectsColumn2).withFlex (1.0f));
-    effectsBox.items.add (juce::FlexItem (effectsColumn3).withFlex (1.0f));
+    effectsBox.items.add(juce::FlexItem(effectsColumn1).withFlex(1.0f));
+    effectsBox.items.add(juce::FlexItem(effectsColumn2).withFlex(1.0f));
+    effectsBox.items.add(juce::FlexItem(effectsColumn3).withFlex(1.0f));
 
     // Add rows to main box
-    mainBox.items.add (juce::FlexItem (topRow).withFlex (0.3f));
-    mainBox.items.add (juce::FlexItem (effectsBox).withFlex (0.7f));
+    mainBox.items.add(juce::FlexItem(topRow).withFlex(0.3f));
+    mainBox.items.add(juce::FlexItem(effectsBox).withFlex(0.7f));
 
     // Perform the layout
-    mainBox.performLayout (bounds);
+    mainBox.performLayout(bounds);
 }
 
 void MainComponent::play()
@@ -251,30 +257,32 @@ void MainComponent::setupChopComponent()
 
 void MainComponent::setupLibraryComponent()
 {
-    // Create the library window
-    libraryWindow = std::make_unique<LibraryWindow> (engine);
+    // Create the library component directly
+    libraryComponent = std::make_unique<LibraryComponent>(engine);
+    addAndMakeVisible(*libraryComponent);
 
     // Create the library bar
     libraryBar = std::make_unique<LibraryBar>();
-    addAndMakeVisible (libraryBar.get());
+    addAndMakeVisible(libraryBar.get());
 
-    // Set up the show library button callback
+    // Set up the show library button callback to toggle visibility
     libraryBar->getShowLibraryButton().onClick = [this]() {
-        if (libraryWindow)
-        {
-            libraryWindow->setVisible (true);
-            libraryWindow->toFront (true);
-            libraryWindow->grabKeyboardFocus();
+        if (libraryComponent && libraryBar) {
+            bool showLibrary = !libraryComponent->isVisible();
+            libraryComponent->setVisible(showLibrary);
+            resized();
         }
     };
 
     // Update to use Edit selection instead of File selection
-    libraryWindow->getLibraryComponent()->onEditSelected = [this] (std::unique_ptr<tracktion::engine::Edit> newEdit) {
-        handleEditSelection (std::move (newEdit));
+    libraryComponent->onEditSelected = [this](std::unique_ptr<tracktion::engine::Edit> newEdit) {
+        handleEditSelection(std::move(newEdit));
     };
 
-    // Show library window by default since no edit is loaded
-    // Use a timer to ensure window is shown after component is fully initialized
+    // Show library by default
+    if (libraryComponent) {
+        libraryComponent->setVisible(true);
+    }
 }
 
 void MainComponent::handleEditSelection (std::unique_ptr<tracktion::engine::Edit> newEdit)
@@ -307,7 +315,7 @@ void MainComponent::handleEditSelection (std::unique_ptr<tracktion::engine::Edit
     libraryBar->setCurrentTrackName (edit->getName());
 
     // Hide library window since we now have an edit loaded
-    libraryWindow->setVisible (false);
+    libraryComponent->setVisible (false);
 
     // Get the stored BPM from the Edit
     float bpm = edit->state.getProperty ("bpm", 120.0f);
@@ -673,7 +681,7 @@ void MainComponent::releaseResources()
     oscilloscopeComponent = nullptr;
     controllerMappingComponent = nullptr;
     libraryBar = nullptr;
-    libraryWindow = nullptr;
+    libraryComponent = nullptr;
 
     phaserComponent = nullptr;
     delayComponent = nullptr;

@@ -172,7 +172,7 @@ private:
 
     std::unique_ptr<ReverbComponent> reverbComponent;
     std::unique_ptr<FlangerComponent> flangerComponent;
-    std::unique_ptr<LibraryWindow> libraryWindow;
+    std::unique_ptr<LibraryComponent> libraryComponent;
     std::unique_ptr<LibraryBar> libraryBar;
     std::unique_ptr<VinylBrakeComponent> vinylBrakeComponent;
     std::unique_ptr<DelayComponent> delayComponent;
