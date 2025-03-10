@@ -14,6 +14,7 @@
 #include "Plugins/FlangerPlugin.h"
 #include "CrossfaderAutomationLane.h"
 #include "PluginAutomationComponent.h"
+#include "TransportBar.h"
 
 class TransportComponent : public juce::Component,
                          public juce::Timer,
@@ -32,13 +33,10 @@ public:
     void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
     
     void updateThumbnail();
-    void automationModeChanged() override;
 
     void deleteSelectedChopRegion();
 
-    void updateTimeDisplay();
     void updatePlayheadPosition();
-    void updateTransportState();
     void setZoomLevel(double newLevel);
     void setScrollPosition(double newPosition);
     double getMaxScrollPosition() const;
@@ -47,23 +45,8 @@ private:
     tracktion::engine::Edit& edit;
     tracktion::engine::TransportControl& transport;
     
-    // Transport controls
-    juce::ShapeButton playButton{"Play", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
-    juce::ShapeButton stopButton{"Stop", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
-    juce::TextButton loopButton{"Loop"};
-    juce::ShapeButton automationReadButton{"Auto Read", juce::Colours::white, juce::Colours::green.darker(), juce::Colours::green};
-    juce::ShapeButton automationWriteButton{"Auto Write", juce::Colours::white, juce::Colours::red, juce::Colours::red};
-    
-    // Zoom controls
-    juce::TextButton zoomInButton{"+"};
-    juce::TextButton zoomOutButton{"-"};
-    
-    // Grid controls
-    juce::ComboBox gridSizeComboBox;
-    
-    // Timeline and position display
-    juce::Label timeDisplay;
-    std::unique_ptr<juce::DrawableRectangle> playhead;
+    // Transport bar
+    TransportBar transportBar;
     
     // Waveform thumbnail
     tracktion::engine::SmartThumbnail thumbnail;
@@ -89,50 +72,8 @@ private:
     // Current clip reference
     tracktion::engine::WaveAudioClip* currentClip = nullptr;
     
-    // Icon path functions
-    static juce::Path getPlayPath()
-    {
-        juce::Path path;
-        path.addTriangle(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.5f);
-        return path;
-    }
+    // Playhead
+    std::unique_ptr<juce::DrawableRectangle> playhead;
 
-    static juce::Path getPausePath()
-    {
-        juce::Path path;
-        path.addRectangle(0.0f, 0.0f, 0.3f, 1.0f);
-        path.addRectangle(0.7f, 0.0f, 0.3f, 1.0f);
-        return path;
-    }
-
-    static juce::Path getStopPath()
-    {
-        juce::Path path;
-        path.addRectangle(0.0f, 0.0f, 1.0f, 1.0f);
-        return path;
-    }
-
-    static juce::Path getRecordPath()
-    {
-        juce::Path recordPath;
-        recordPath.addEllipse(0.0f, 0.0f, 100.0f, 100.0f);
-        return recordPath;
-    }
-
-    static juce::Path getAutomationPath()
-    {
-        juce::Path path;
-        path.startNewSubPath(0.0f, 50.0f);
-        
-        // Create a smooth sine wave
-        for (float x = 0; x <= 100.0f; x += 1.0f)
-        {
-            float y = 50.0f + 30.0f * std::sin(x * 0.12f);
-            path.lineTo(x, y);
-        }
-        
-        return path;
-    }
-    
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TransportComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TransportComponent)
 }; 

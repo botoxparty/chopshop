@@ -1,59 +1,32 @@
 #include "TransportComponent.h"
 
-TransportComponent::TransportComponent (tracktion::engine::Edit& e)
-    : edit (e),
-      transport (e.getTransport()),
-      thumbnail (e.engine, tracktion::AudioFile (e.engine), *this, &e),
+TransportComponent::TransportComponent(tracktion::engine::Edit& e)
+    : edit(e),
+      transport(e.getTransport()),
+      transportBar(e),
+      thumbnail(e.engine, tracktion::AudioFile(e.engine), *this, &e),
       zoomLevel(1.0),
       scrollPosition(0.0)
 {
-    // Add and make visible all buttons
-    addAndMakeVisible (playButton);
-    addAndMakeVisible (stopButton);
-    addAndMakeVisible (timeDisplay);
-    addAndMakeVisible (zoomInButton);
-    addAndMakeVisible (zoomOutButton);
-    addAndMakeVisible (automationWriteButton);
-    addAndMakeVisible (automationReadButton);
-    addAndMakeVisible (gridSizeComboBox);
+    // Add transport bar
+    addAndMakeVisible(transportBar);
 
-    // Listen to transport changes
-    edit.getTransport().addChangeListener(this);
-    
-    // Set up play and stop button shapes
-    playButton.setShape(getPlayPath(), false, true, false);
-    playButton.setOutline(juce::Colours::white, 1.0f);
-    playButton.setColours(juce::Colours::white, juce::Colours::lightgrey.darker(0.2f), juce::Colours::white.darker(0.2f));
-    playButton.setClickingTogglesState(true);
+    // Add and make visible other components
+    addAndMakeVisible(pluginAutomationViewport);
+    pluginAutomationViewport.setViewedComponent(&pluginAutomationContainer, false);
+    pluginAutomationViewport.setScrollBarsShown(true, false);
 
-    stopButton.setShape(getStopPath(), false, true, false);
-    stopButton.setOutline(juce::Colours::white, 1.0f);
-    stopButton.setColours(juce::Colours::white, juce::Colours::lightgrey.darker(0.2f), juce::Colours::white.darker(0.2f));
+    // Initialize thumbnail
+    thumbnail.audioFileChanged();
+    startTimerHz(30);
 
-    // Setup grid size combo box
-    gridSizeComboBox.addItem("1/16", 1);  // 0.0625
-    gridSizeComboBox.addItem("1/8", 2);   // 0.125
-    gridSizeComboBox.addItem("1/4", 3);   // 0.25
-    gridSizeComboBox.addItem("1/2", 4);   // 0.5
-    gridSizeComboBox.addItem("1", 5);     // 1.0
-    gridSizeComboBox.setSelectedId(3);    // Default to 1/4
-    
-    gridSizeComboBox.onChange = [this] {
-        if (crossfaderAutomationLane != nullptr) {
-            float division = 0.25f; // Default
-            switch (gridSizeComboBox.getSelectedId()) {
-                case 1: division = 0.0625f; break; // 1/16
-                case 2: division = 0.125f; break;  // 1/8
-                case 3: division = 0.25f; break;   // 1/4
-                case 4: division = 0.5f; break;    // 1/2
-                case 5: division = 1.0f; break;    // 1
-            }
-            crossfaderAutomationLane->setGridDivision(division);
-        }
-    };
+    // Setup playhead
+    playhead = std::make_unique<juce::DrawableRectangle>();
+    playhead->setFill(juce::FillType(juce::Colours::red));
+    addAndMakeVisible(*playhead);
 
     // Create and add crossfader automation lane
-    crossfaderAutomationLane = std::make_unique<CrossfaderAutomationLane> (edit);
+    crossfaderAutomationLane = std::make_unique<CrossfaderAutomationLane>(edit);
     
     // Find the crossfader parameter
     tracktion::engine::AutomatableParameter* crossfaderParam = nullptr;
@@ -65,20 +38,15 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
         }
     }
     
-    if (crossfaderParam == nullptr)
-    {
-        // ... existing code ...
-    }
-    
     if (crossfaderParam != nullptr)
     {
         crossfaderAutomationLane->setParameter(crossfaderParam);
     }
     
-    addAndMakeVisible (*crossfaderAutomationLane);
+    addAndMakeVisible(*crossfaderAutomationLane);
 
     // Create and add automation lane for reverb wet parameter
-    reverbWetAutomationLane = std::make_unique<AutomationLane> (edit);
+    reverbWetAutomationLane = std::make_unique<AutomationLane>(edit);
     
     // Find the reverb plugin and create automation component
     if (auto reverbPlugin = EngineHelpers::getPluginFromRack(edit, tracktion::engine::ReverbPlugin::xmlTypeName))
@@ -108,100 +76,6 @@ TransportComponent::TransportComponent (tracktion::engine::Edit& e)
         pluginAutomationContainer.addAndMakeVisible(*flangerAutomationComponent);
     }
 
-    // Setup plugin automation viewport
-    addAndMakeVisible(pluginAutomationViewport);
-    pluginAutomationViewport.setViewedComponent(&pluginAutomationContainer, false);
-    pluginAutomationViewport.setScrollBarsShown(true, false);
-
-    // Initialize thumbnail
-    thumbnail.audioFileChanged();
-    startTimerHz(30);
-
-    // Setup button callbacks
-    playButton.onClick = [this] {
-        auto& tempoSequence = edit.tempoSequence;
-
-        if (transport.isPlaying())
-            transport.stop (false, false);
-        else
-        {
-            // Ensure we're synced to tempo before playing
-            auto position = createPosition (tempoSequence);
-            position.set (transport.getPosition());
-
-            // Update transport to sync with tempo
-            transport.setPosition (position.getTime());
-            transport.play (false);
-        }
-        updateTransportState();
-    };
-
-    stopButton.onClick = [this] {
-        transport.stop (false, false);
-        transport.setPosition (tracktion::TimePosition::fromSeconds (0.0));
-        updateTransportState();
-    };
-
-    loopButton.setClickingTogglesState (true);
-    loopButton.onClick = [this] {
-        transport.looping = loopButton.getToggleState();
-        updateTransportState();
-    };
-
-    // Add zoom button callbacks
-    zoomInButton.onClick = [this] {
-        setZoomLevel (zoomLevel * 1.5);
-    };
-
-    zoomOutButton.onClick = [this] {
-        setZoomLevel (zoomLevel / 1.5);
-    };
-
-    // Initialize time display
-    timeDisplay.setJustificationType (juce::Justification::centred);
-    timeDisplay.setFont(CustomLookAndFeel::getMonospaceFont().withHeight(18.0f));
-    timeDisplay.setColour(juce::Label::textColourId, juce::Colours::white);
-    timeDisplay.setColour(juce::Label::backgroundColourId, juce::Colours::darkgrey.darker(0.7f));
-    updateTimeDisplay();
-
-    // Setup playhead
-    playhead = std::make_unique<juce::DrawableRectangle>();
-    playhead->setFill (juce::FillType (juce::Colours::red));
-    addAndMakeVisible (*playhead);
-
-    // Set up automation buttons
-    automationReadButton.setClickingTogglesState(true);
-    automationWriteButton.setClickingTogglesState(true);
-    
-    // Set up automation read button with sine wave shape
-    automationReadButton.setShape(getAutomationPath(), false, true, false);
-    automationReadButton.setColours(
-        juce::Colours::white.withAlpha(0.7f),     // normal
-        juce::Colours::green.darker(),            // over
-        juce::Colours::green                      // down
-    );
-    automationReadButton.setOutline(juce::Colours::white, 1.0f);
-    
-    // Setup automation write button with record circle
-    automationWriteButton.setShape(getRecordPath(), false, true, false);
-    automationWriteButton.setColours(
-        juce::Colours::red.withAlpha(0.7f),  // normal
-        juce::Colours::red,                   // over
-        juce::Colours::red.brighter(0.2f)     // down
-    );
-    automationWriteButton.setOutline(juce::Colours::transparentWhite, 0.0f);
-    
-    automationReadButton.setToggleState(edit.getAutomationRecordManager().isReadingAutomation(), juce::dontSendNotification);
-    automationWriteButton.setToggleState(edit.getAutomationRecordManager().isWritingAutomation(), juce::dontSendNotification);
-    
-    automationReadButton.onClick = [this] {
-        edit.getAutomationRecordManager().setReadingAutomation(automationReadButton.getToggleState());
-    };
-    
-    automationWriteButton.onClick = [this] {
-        edit.getAutomationRecordManager().setWritingAutomation(automationWriteButton.getToggleState());
-    };
-    
     // Register as automation listener
     edit.getAutomationRecordManager().addListener(this);
 }
@@ -211,19 +85,12 @@ TransportComponent::~TransportComponent()
     // First stop the timer to prevent any callbacks
     stopTimer();
     
-    // Remove ourselves as a change listener if transport is still valid
-    if (&edit != nullptr && &(edit.getTransport()) != nullptr)
-    {
-        edit.getTransport().removeChangeListener(this);
-    }
-
     // Remove automation listener
     edit.getAutomationRecordManager().removeListener(this);
 }
 
 void TransportComponent::timerCallback()
 {
-    updateTimeDisplay();
     updatePlayheadPosition();
 
     // Force thumbnail redraw during playback
@@ -413,126 +280,71 @@ void TransportComponent::resized()
     const int crossfaderHeight = 25;  // Fixed crossfader height
     const int thumbnailHeight = 60;   // Fixed thumbnail height
     
-    // Remove the control bar from bottom first
-    auto controlBarBounds = bounds.removeFromBottom(controlBarHeight).reduced(5, 0);
+    // Create main FlexBox for vertical layout of all components
+    juce::FlexBox mainFlex;
+    mainFlex.flexDirection = juce::FlexBox::Direction::column;
+    mainFlex.flexWrap = juce::FlexBox::Wrap::noWrap;
+    mainFlex.justifyContent = juce::FlexBox::JustifyContent::flexStart;
+    mainFlex.alignItems = juce::FlexBox::AlignItems::stretch;
     
-    // 1. Thumbnail section (fixed height)
-    auto thumbnailBounds = bounds.removeFromTop(thumbnailHeight);
+    // 1. Add transport bar
+    mainFlex.items.add(juce::FlexItem(transportBar).withHeight(controlBarHeight).withMargin(juce::FlexItem::Margin(0, 5, 0, 5)));
     
-    // 2. Crossfader Automation Lane (fixed height)
-    auto crossfaderBounds = bounds.removeFromTop(crossfaderHeight);
+    // 2. Add thumbnail section
+    mainFlex.items.add(juce::FlexItem(bounds.getWidth(), thumbnailHeight).withMargin(juce::FlexItem::Margin(0, 0, 0, 0)));
+    
+    // 3. Add crossfader automation lane
     if (crossfaderAutomationLane != nullptr)
     {
-        crossfaderAutomationLane->setBounds(crossfaderBounds);
+        mainFlex.items.add(juce::FlexItem(*crossfaderAutomationLane).withHeight(crossfaderHeight).withMargin(juce::FlexItem::Margin(1, 0, 1, 0)));
     }
     
-    // 3. Plugin Automation Components (remaining height for plugins)
-    auto pluginAutomationBounds = bounds;
+    // 4. Add plugin automation viewport
+    mainFlex.items.add(juce::FlexItem(pluginAutomationViewport).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 0, 0)));
     
-    // Set viewport bounds
-    pluginAutomationViewport.setBounds(pluginAutomationBounds);
+    // Perform the main layout
+    mainFlex.performLayout(bounds);
     
-    // Create a FlexBox for vertical layout
-    juce::FlexBox flex;
-    flex.flexDirection = juce::FlexBox::Direction::column;
-    flex.flexWrap = juce::FlexBox::Wrap::noWrap;
+    // Setup plugin automation container layout
+    juce::FlexBox pluginFlex;
+    pluginFlex.flexDirection = juce::FlexBox::Direction::column;
+    pluginFlex.flexWrap = juce::FlexBox::Wrap::noWrap;
     
-    // Add automation components to flex layout
+    // Add automation components to plugin flex layout
     if (reverbAutomationComponent != nullptr)
-        flex.items.add(juce::FlexItem(*reverbAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+        pluginFlex.items.add(juce::FlexItem(*reverbAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
     
     if (delayAutomationComponent != nullptr)
-        flex.items.add(juce::FlexItem(*delayAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+        pluginFlex.items.add(juce::FlexItem(*delayAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
     
     if (phaserAutomationComponent != nullptr)
-        flex.items.add(juce::FlexItem(*phaserAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+        pluginFlex.items.add(juce::FlexItem(*phaserAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
     
     if (flangerAutomationComponent != nullptr)
-        flex.items.add(juce::FlexItem(*flangerAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+        pluginFlex.items.add(juce::FlexItem(*flangerAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
     
-    auto totalHeight = flangerAutomationComponent->getHeight() + phaserAutomationComponent->getHeight() + delayAutomationComponent->getHeight() + reverbAutomationComponent->getHeight();
-
-    // Set container bounds and perform flex layout
-    pluginAutomationContainer.setBounds(0, 0, pluginAutomationBounds.getWidth(), pluginAutomationBounds.getHeight() * 4);
-    flex.performLayout(pluginAutomationContainer.getBounds().withHeight(pluginAutomationBounds.getHeight() * 4));
+    // Calculate total height for plugin container
+    auto totalHeight = pluginAutomationViewport.getHeight() * 4;
     
-    // 4. Control Bar Layout
-    const int controlSpacing = 4;  // Spacing between controls
-    const int verticalPadding = 2; // Vertical padding for control bar
-    
-    // Adjust control bar bounds for vertical padding
-    controlBarBounds = controlBarBounds.reduced(0, verticalPadding);
-    
-    // Calculate widths for time display and grid control
-    const int timeDisplayWidth = controlBarBounds.getWidth() * 0.3;  // 30% for time display
-    const int gridControlWidth = controlBarBounds.getWidth() * 0.1;  // 10% for grid control
-    
-    // Create FlexBox for button layout
-    juce::FlexBox buttonFlex;
-    buttonFlex.flexDirection = juce::FlexBox::Direction::row;
-    buttonFlex.justifyContent = juce::FlexBox::JustifyContent::flexStart;
-    buttonFlex.alignItems = juce::FlexBox::AlignItems::center;
-    
-    // Calculate remaining width for buttons
-    const int remainingWidth = controlBarBounds.getWidth() - timeDisplayWidth - gridControlWidth;
-    const int buttonWidth = (remainingWidth - (controlSpacing * 6)) / 7; // 8 controls, 7 spaces
-    
-    // Add buttons to flex layout with spacing
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), playButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), stopButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), automationWriteButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), automationReadButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), zoomInButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, controlBarBounds.getHeight(), zoomOutButton));
-    
-    // Create area for buttons
-    auto buttonArea = controlBarBounds.removeFromLeft(remainingWidth);
-    buttonFlex.performLayout(buttonArea);
-    
-    // Layout grid control and time display
-    gridSizeComboBox.setBounds(controlBarBounds.removeFromLeft(gridControlWidth));
-    timeDisplay.setBounds(controlBarBounds);
+    // Set container bounds and perform plugin layout
+    pluginAutomationContainer.setBounds(0, 0, pluginAutomationViewport.getWidth(), totalHeight);
+    pluginFlex.performLayout(pluginAutomationContainer.getBounds());
     
     // Update playhead if it exists
     if (playhead != nullptr)
     {
-        playhead->setRectangle(juce::Rectangle<float>(2.0f, (float)thumbnailBounds.getY(), 2.0f, (float)thumbnailBounds.getHeight()));
+        playhead->setRectangle(juce::Rectangle<float>(2.0f, (float)bounds.getY(), 2.0f, (float)thumbnailHeight));
         updatePlayheadPosition();
     }
 }
 
 void TransportComponent::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
-    if (source == &(edit.getTransport()))
-    {
-        updateTransportState();
-        repaint();
-    }
-}
-
-void TransportComponent::updateTimeDisplay()
-{
-    auto& tempoSequence = edit.tempoSequence;
-    auto position = createPosition (tempoSequence);
-    position.set (transport.getPosition());
-
-    auto barsBeats = position.getBarsBeats();
-    auto tempo = position.getTempo();
-    auto timeSignature = position.getTimeSignature();
-
-    auto seconds = transport.getPosition().inSeconds();
-    auto minutes = (int) (seconds / 60.0);
-    auto millis = (int) (seconds * 1000) % 1000;
-
-    timeDisplay.setText (juce::String::formatted ("%02d:%02d:%03d | %d/%d | Bar %d | %.1f BPM",
-                             minutes,
-                             (int) seconds % 60,
-                             millis,
-                             timeSignature.numerator,
-                             timeSignature.denominator,
-                             barsBeats.bars + 1,
-                             tempo),
-        juce::dontSendNotification);
+    // if (source == &(edit.getTransport()))
+    // {
+    //     updateTransportState();
+    //     repaint();
+    // }
 }
 
 void TransportComponent::updatePlayheadPosition()
@@ -579,14 +391,6 @@ void TransportComponent::updatePlayheadPosition()
             playhead->setVisible(false);
         }
     }
-}
-
-void TransportComponent::updateTransportState()
-{
-    bool isPlaying = transport.isPlaying();
-    playButton.setToggleState(isPlaying, juce::dontSendNotification);
-    playButton.setShape(isPlaying ? getPausePath() : getPlayPath(), false, true, false);
-    loopButton.setToggleState(transport.looping, juce::dontSendNotification);
 }
 
 void TransportComponent::updateThumbnail()
@@ -647,7 +451,7 @@ void TransportComponent::mouseDown (juce::MouseEvent const& event)
             auto newPosition = (normalizedPosition * sourceLength);
 
             transport.setPosition(tracktion::TimePosition::fromSeconds(newPosition));
-            updateTransportState();
+            // updateTransportState();
         }
     }
 }
@@ -734,55 +538,6 @@ void TransportComponent::setScrollPosition(double newPosition)
 double TransportComponent::getMaxScrollPosition() const
 {
     return zoomLevel > 1.0 ? 1.0 - (1.0 / zoomLevel) : 0.0;
-}
-
-void TransportComponent::automationModeChanged()
-{
-    bool isReading = edit.getAutomationRecordManager().isReadingAutomation();
-    bool isWriting = edit.getAutomationRecordManager().isWritingAutomation();
-    
-    automationReadButton.setToggleState(isReading, juce::dontSendNotification);
-    automationWriteButton.setToggleState(isWriting, juce::dontSendNotification);
-    
-    // Update read button colors based on state
-    if (isReading)
-    {
-        automationReadButton.setColours(
-            juce::Colours::green,                    // normal
-            juce::Colours::green.brighter(0.2f),     // over
-            juce::Colours::green.brighter(0.4f)      // down
-        );
-        automationReadButton.setOutline(juce::Colours::green.withAlpha(0.3f), 2.0f);
-    }
-    else
-    {
-        automationReadButton.setColours(
-            juce::Colours::white.withAlpha(0.7f),     // normal
-            juce::Colours::green.darker(),            // over
-            juce::Colours::green                      // down
-        );
-        automationReadButton.setOutline(juce::Colours::white, 1.0f);
-    }
-    
-    // Update write button glow effect
-    if (isWriting)
-    {
-        automationWriteButton.setColours(
-            juce::Colours::red,                    // normal
-            juce::Colours::red.brighter(0.2f),     // over
-            juce::Colours::red.brighter(0.4f)      // down
-        );
-        automationWriteButton.setOutline(juce::Colours::red.withAlpha(0.3f), 2.0f);
-    }
-    else
-    {
-        automationWriteButton.setColours(
-            juce::Colours::red.withAlpha(0.7f),    // normal
-            juce::Colours::red,                    // over
-            juce::Colours::red.brighter(0.2f)      // down
-        );
-        automationWriteButton.setOutline(juce::Colours::transparentWhite, 0.0f);
-    }
 }
 
 void TransportComponent::deleteSelectedChopRegion()
