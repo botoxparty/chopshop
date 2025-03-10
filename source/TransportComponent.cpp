@@ -669,19 +669,23 @@ void TransportComponent::mouseWheelMove(const juce::MouseEvent& event, const juc
         // Handle zooming
         else if (wheel.deltaY != 0.0f)
         {
-            auto zoomFactor = wheel.deltaY > 0 ? 1.1 : 0.9;
-
-            // Calculate the position under the mouse as a fraction of the visible width
+            // Calculate zoom factor based on wheel direction
+            auto zoomFactor = wheel.deltaY > 0 ? 0.9 : 1.1; // Inverted for more natural feel
+            
+            // Calculate the mouse position as a proportion of the visible width
             auto mouseXProportion = (event.position.x - waveformBounds.getX()) / (float)waveformBounds.getWidth();
-
-            // Get the time position under the mouse
-            auto oldTimePosition = (mouseXProportion + scrollPosition) / zoomLevel;
-
-            // Apply the new zoom level
-            setZoomLevel(zoomLevel * zoomFactor);
-
-            // Calculate and set the new scroll position to keep the mouse point steady
-            auto newScrollPos = oldTimePosition * zoomLevel - mouseXProportion;
+            
+            // Calculate the absolute time position under the mouse
+            auto timeUnderMouse = (scrollPosition + (mouseXProportion / zoomLevel));
+            
+            // Calculate new zoom level
+            auto newZoomLevel = juce::jlimit(minZoom, maxZoom, zoomLevel * zoomFactor);
+            
+            // Calculate new scroll position that keeps the time under mouse at the same screen position
+            auto newScrollPos = timeUnderMouse - (mouseXProportion / newZoomLevel);
+            
+            // Apply the changes
+            setZoomLevel(newZoomLevel);
             setScrollPosition(newScrollPos);
         }
     }
