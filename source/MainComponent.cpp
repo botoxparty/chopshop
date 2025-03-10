@@ -14,10 +14,19 @@ MainComponent::MainComponent()
     // Create a global command manager
     commandManager = std::make_unique<juce::ApplicationCommandManager>();
 
+    // Register all commands with the command manager
+    commandManager->registerAllCommandsForTarget(this);
+
+    // Add key mappings to the top level component
+    addKeyListener(commandManager->getKeyMappings());
+
+    // Set this as the first command target
+    commandManager->setFirstCommandTarget(this);
+
     // Set up menu bar  
     if (__APPLE__)
     {
-        juce::MenuBarModel::setMacMainMenu (this);
+        juce::MenuBarModel::setMacMainMenu(this);
     }
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
@@ -772,13 +781,18 @@ juce::StringArray MainComponent::getMenuBarNames()
     return { "File" };
 }
 
-juce::PopupMenu MainComponent::getMenuForIndex (int topLevelMenuIndex, const juce::String& menuName)
+juce::PopupMenu MainComponent::getMenuForIndex (int topLevelMenuIndex, const juce::String& /*menuName*/)
 {
     juce::PopupMenu menu;
 
     if (topLevelMenuIndex == 0) // File menu
     {
-        menu.addCommandItem (commandManager.get(), CommandIDs::SaveProject, "Save");
+        menu.addCommandItem(commandManager.get(), CommandIDs::SaveProject);
+        menu.addSeparator();
+        menu.addItem(1, "Audio Settings", true, false);
+        menu.addItem(3, "Game Controller Settings", true, false);
+        menu.addSeparator();
+        menu.addItem(2, "Quit", true, false);
     }
 
     return menu;
@@ -786,5 +800,25 @@ juce::PopupMenu MainComponent::getMenuForIndex (int topLevelMenuIndex, const juc
 
 void MainComponent::menuItemSelected (int menuItemID, int topLevelMenuIndex)
 {
-    // Handle menu item selection if needed
+    if (topLevelMenuIndex == 0) // File menu
+    {
+        switch (menuItemID)
+        {
+            case 1: // Audio Settings
+                EngineHelpers::showAudioDeviceSettings(engine);
+                break;
+            case 2: // Quit
+                juce::JUCEApplication::getInstance()->systemRequestedQuit();
+                break;
+            case 3: // Game Controller Settings
+                if (controllerMappingComponent)
+                {
+                    controllerMappingComponent->toFront(true);
+                    controllerMappingComponent->setVisible(true);
+                }
+                break;
+            default:
+                break;
+        }
+    }
 }
