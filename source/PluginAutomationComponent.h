@@ -22,19 +22,43 @@ public:
 private:
     void updateAutomationLanes();
     void createAutomationLaneForParameter(tracktion::engine::AutomatableParameter* param);
+    void toggleLaneCollapsed(size_t laneIndex);
+    void toggleGroupCollapsed();
 
     tracktion::engine::Edit& edit;
     tracktion::engine::Plugin* plugin = nullptr;
     tracktion::engine::WaveAudioClip* currentClip = nullptr;
+    bool isGroupCollapsed = false;
+    std::unique_ptr<juce::DrawableButton> groupCollapseButton;
     
     struct AutomationLaneInfo {
         std::unique_ptr<AutomationLane> lane;
         std::unique_ptr<juce::Label> nameLabel;
+        std::unique_ptr<juce::DrawableButton> collapseButton;
+        bool isCollapsed = false;
         
         AutomationLaneInfo() {
             nameLabel = std::make_unique<juce::Label>("", "");
             nameLabel->setJustificationType(juce::Justification::centredLeft);
             nameLabel->setFont(juce::Font(14.0f));
+            
+            // Create collapse button with custom path
+            auto* collapseIcon = new juce::DrawablePath();
+            juce::Path path;
+            // Point down for open state
+            path.addTriangle(0.0f, 0.0f, 10.0f, 0.0f, 5.0f, 10.0f);
+            collapseIcon->setPath(path);
+            collapseIcon->setFill(juce::Colours::white);
+            
+            auto* collapseIconClosed = new juce::DrawablePath();
+            juce::Path closedPath;
+            // Point right for closed state
+            closedPath.addTriangle(0.0f, 0.0f, 10.0f, 5.0f, 0.0f, 10.0f);
+            collapseIconClosed->setPath(closedPath);
+            collapseIconClosed->setFill(juce::Colours::white);
+            
+            collapseButton = std::make_unique<juce::DrawableButton>("collapse", juce::DrawableButton::ImageFitted);
+            collapseButton->setImages(collapseIcon, nullptr, nullptr, nullptr, collapseIconClosed);
         }
         
         // Delete copy constructor and assignment
@@ -52,7 +76,9 @@ private:
     double scrollPosition = 0.0;
     
     const float laneHeight = 60.0f;
+    const float collapsedLaneHeight = 25.0f;
     const float labelWidth = 150.0f;
+    const float headerHeight = 30.0f;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginAutomationComponent)
 }; 
