@@ -1,7 +1,7 @@
 #include "CrossfaderAutomationLane.h"
 
-CrossfaderAutomationLane::CrossfaderAutomationLane(tracktion::engine::Edit& e, tracktion::engine::AutomatableParameter* param)
-    : AutomationLane(e, param)
+CrossfaderAutomationLane::CrossfaderAutomationLane(tracktion::engine::Edit& e, ZoomState& zs)
+    : AutomationLane(e, zs)
 {
 }
 
@@ -23,9 +23,9 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
     g.setColour(juce::Colours::grey.withAlpha(0.5f));
     
     // Calculate visible beat range
-    auto visibleTimeStart = getSourceLength() * scrollPosition;
+    auto visibleTimeStart = getSourceLength() * zoomState.getScrollPosition();
     auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
-    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
+    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomState.getZoomLevel());
     auto visibleTimeEndBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeEnd));
     
     // Draw vertical grid lines based on gridDivision

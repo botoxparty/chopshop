@@ -4,19 +4,18 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <tracktion_engine/tracktion_engine.h>
 #include "AutomationLane.h"
+#include "ZoomState.h"
 
 class PluginAutomationComponent : public juce::Component
 {
 public:
-    PluginAutomationComponent(tracktion::engine::Edit& e, tracktion::engine::Plugin* p = nullptr);
+    PluginAutomationComponent(tracktion::engine::Edit& e, tracktion::engine::Plugin* p = nullptr, ZoomState& zs = ZoomState::instance());
     ~PluginAutomationComponent() override;
 
     void paint(juce::Graphics& g) override;
     void resized() override;
 
     void setPlugin(tracktion::engine::Plugin* plugin);
-    void setZoomLevel(double newZoomLevel);
-    void setScrollPosition(double newScrollPosition);
     void setClip(tracktion::engine::WaveAudioClip* clip);
 
 private:
@@ -30,6 +29,7 @@ private:
     tracktion::engine::WaveAudioClip* currentClip = nullptr;
     bool isGroupCollapsed = false;
     std::unique_ptr<juce::DrawableButton> groupCollapseButton;
+    ZoomState& zoomState;
     
     struct AutomationLaneInfo {
         std::unique_ptr<AutomationLane> lane;
@@ -45,14 +45,12 @@ private:
             // Create collapse button with custom path
             auto* collapseIcon = new juce::DrawablePath();
             juce::Path path;
-            // Point down for open state
             path.addTriangle(0.0f, 0.0f, 10.0f, 0.0f, 5.0f, 10.0f);
             collapseIcon->setPath(path);
             collapseIcon->setFill(juce::Colours::white);
             
             auto* collapseIconClosed = new juce::DrawablePath();
             juce::Path closedPath;
-            // Point right for closed state
             closedPath.addTriangle(0.0f, 0.0f, 10.0f, 5.0f, 0.0f, 10.0f);
             collapseIconClosed->setPath(closedPath);
             collapseIconClosed->setFill(juce::Colours::white);
@@ -61,19 +59,13 @@ private:
             collapseButton->setImages(collapseIcon, nullptr, nullptr, nullptr, collapseIconClosed);
         }
         
-        // Delete copy constructor and assignment
         AutomationLaneInfo(const AutomationLaneInfo&) = delete;
         AutomationLaneInfo& operator=(const AutomationLaneInfo&) = delete;
-        
-        // Add move constructor and assignment
         AutomationLaneInfo(AutomationLaneInfo&& other) noexcept = default;
         AutomationLaneInfo& operator=(AutomationLaneInfo&& other) noexcept = default;
     };
     
     std::vector<AutomationLaneInfo> automationLanes;
-    
-    double zoomLevel = 1.0;
-    double scrollPosition = 0.0;
     
     const float laneHeight = 60.0f;
     const float collapsedLaneHeight = 25.0f;

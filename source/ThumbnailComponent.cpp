@@ -1,13 +1,12 @@
 #include "ThumbnailComponent.h"
 #include "Utilities.h"
 
-ThumbnailComponent::ThumbnailComponent(tracktion::engine::Edit& e)
+ThumbnailComponent::ThumbnailComponent(tracktion::engine::Edit& e, ZoomState& zs)
     : edit(e),
       transport(e.getTransport()),
       thumbnail(e.engine, tracktion::AudioFile(e.engine), *this, &e),
       currentClip(nullptr),
-      zoomLevel(1.0),
-      scrollPosition(0.0)
+      zoomState(zs)
 {
     // Initialize thumbnail
     thumbnail.audioFileChanged();
@@ -17,12 +16,16 @@ ThumbnailComponent::ThumbnailComponent(tracktion::engine::Edit& e)
     playhead->setFill(juce::FillType(juce::Colours::red));
     addAndMakeVisible(*playhead);
 
+    // Register as listener for zoom state changes
+    zoomState.addListener(this);
+
     startTimerHz(30);
 }
 
 ThumbnailComponent::~ThumbnailComponent()
 {
     stopTimer();
+    zoomState.removeListener(this);
 }
 
 void ThumbnailComponent::timerCallback()
@@ -56,8 +59,8 @@ void ThumbnailComponent::paint(juce::Graphics& g)
         auto timeStretchRatio = clipLength / sourceLength;
 
         // Calculate visible time range in source time domain
-        auto visibleTimeStart = (sourceLength * scrollPosition) * timeStretchRatio;
-        auto visibleTimeEnd = visibleTimeStart + ((sourceLength / zoomLevel) * timeStretchRatio);
+        auto visibleTimeStart = (sourceLength * zoomState.getScrollPosition()) * timeStretchRatio;
+        auto visibleTimeEnd = visibleTimeStart + ((sourceLength / zoomState.getZoomLevel()) * timeStretchRatio);
 
         auto timeRange = tracktion::TimeRange(
             tracktion::TimePosition::fromSeconds(visibleTimeStart),
@@ -211,20 +214,6 @@ void ThumbnailComponent::changeListenerCallback(juce::ChangeBroadcaster*)
     repaint();
 }
 
-void ThumbnailComponent::setZoomLevel(double newLevel)
-{
-    zoomLevel = juce::jlimit(minZoom, maxZoom, newLevel);
-    repaint();
-}
-
-void ThumbnailComponent::setScrollPosition(double newPosition)
-{
-    // Limit scrolling based on zoom level
-    auto maxScroll = getMaxScrollPosition();
-    scrollPosition = juce::jlimit(0.0, maxScroll, newPosition);
-    repaint();
-}
-
 void ThumbnailComponent::updateThumbnail()
 {
     auto audioTracks = te::getAudioTracks(edit);
@@ -262,7 +251,7 @@ void ThumbnailComponent::mouseDown(const juce::MouseEvent& event)
         {
             // Calculate normalized position from click
             auto clickX = event.position.x - bounds.getX();
-            auto normalizedPosition = (clickX / bounds.getWidth()) / zoomLevel + scrollPosition;
+            auto normalizedPosition = (clickX / bounds.getWidth()) / zoomState.getZoomLevel() + zoomState.getScrollPosition();
             normalizedPosition = juce::jlimit(0.0, 1.0, normalizedPosition);
 
             auto sourceLength = currentClip->getPosition().getLength().inSeconds();
@@ -283,8 +272,8 @@ void ThumbnailComponent::mouseWheelMove(const juce::MouseEvent& event, const juc
         if (event.mods.isShiftDown() || wheel.deltaX != 0.0f)
         {
             auto delta = wheel.deltaX != 0.0f ? wheel.deltaX : wheel.deltaY;
-            auto newScrollPos = scrollPosition - (delta * 0.1);
-            setScrollPosition(newScrollPos);
+            auto newScrollPos = zoomState.getScrollPosition() - (delta * 0.1);
+            zoomState.setScrollPosition(newScrollPos);
         }
         // Handle zooming
         else if (wheel.deltaY != 0.0f)
@@ -296,24 +285,19 @@ void ThumbnailComponent::mouseWheelMove(const juce::MouseEvent& event, const juc
             auto mouseXProportion = (event.position.x - bounds.getX()) / (float)bounds.getWidth();
 
             // Calculate the absolute time position under the mouse
-            auto timeUnderMouse = (scrollPosition + (mouseXProportion / zoomLevel));
+            auto timeUnderMouse = (zoomState.getScrollPosition() + (mouseXProportion / zoomState.getZoomLevel()));
 
             // Calculate new zoom level
-            auto newZoomLevel = juce::jlimit(minZoom, maxZoom, zoomLevel * zoomFactor);
+            auto newZoomLevel = zoomState.getZoomLevel() * zoomFactor;
 
             // Calculate new scroll position that keeps the time under mouse at the same screen position
             auto newScrollPos = timeUnderMouse - (mouseXProportion / newZoomLevel);
 
             // Apply the changes
-            setZoomLevel(newZoomLevel);
-            setScrollPosition(newScrollPos);
+            zoomState.setZoomLevel(newZoomLevel);
+            zoomState.setScrollPosition(newScrollPos);
         }
     }
-}
-
-double ThumbnailComponent::getMaxScrollPosition() const
-{
-    return zoomLevel > 1.0 ? 1.0 - (1.0 / zoomLevel) : 0.0;
 }
 
 void ThumbnailComponent::updatePlayheadPosition()
@@ -337,8 +321,8 @@ void ThumbnailComponent::updatePlayheadPosition()
             auto currentTempo = position.getTempo();
 
             // Calculate visible time range in source time domain first
-            auto visibleTimeStart = sourceLength * scrollPosition;
-            auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomLevel);
+            auto visibleTimeStart = sourceLength * zoomState.getScrollPosition();
+            auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomState.getZoomLevel());
 
             // Calculate normalized position directly in source time domain
             auto normalizedPosition = (currentPosition - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart);
@@ -360,4 +344,14 @@ void ThumbnailComponent::updatePlayheadPosition()
             playhead->setVisible(false);
         }
     }
+}
+
+void ThumbnailComponent::zoomLevelChanged(double newZoomLevel)
+{
+    repaint();
+}
+
+void ThumbnailComponent::scrollPositionChanged(double newScrollPosition)
+{
+    repaint();
 } 

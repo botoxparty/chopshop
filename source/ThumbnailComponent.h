@@ -8,40 +8,40 @@
 
 #include "Utilities.h"
 #include "Plugins/ChopPlugin.h"
+#include "ZoomState.h"
 
 class ThumbnailComponent : public juce::Component,
                           public juce::Timer,
-                          public juce::ChangeListener
+                          public juce::ChangeListener,
+                          public ZoomStateListener
 {
 public:
-    ThumbnailComponent(tracktion::engine::Edit& e);
+    ThumbnailComponent(tracktion::engine::Edit&, ZoomState&);
     ~ThumbnailComponent() override;
 
-    void paint(juce::Graphics& g) override;
+    void paint(juce::Graphics&) override;
     void resized() override;
-    void changeListenerCallback(juce::ChangeBroadcaster*) override;
     void timerCallback() override;
-
-    void setZoomLevel(double newLevel);
-    void setScrollPosition(double newPosition);
+    void changeListenerCallback(juce::ChangeBroadcaster*) override;
+    
+    // ZoomStateListener implementation
+    void zoomLevelChanged(double newZoomLevel) override;
+    void scrollPositionChanged(double newScrollPosition) override;
+    
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
+    
     void updateThumbnail();
-    void mouseDown(const juce::MouseEvent& event) override;
-    void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
-
-    double getMaxScrollPosition() const;
 
 private:
     tracktion::engine::Edit& edit;
     tracktion::engine::TransportControl& transport;
-    tracktion::SmartThumbnail thumbnail;
+    tracktion::engine::SmartThumbnail thumbnail;
     tracktion::engine::WaveAudioClip* currentClip;
+    
+    ZoomState& zoomState;
     std::unique_ptr<juce::DrawableRectangle> playhead;
     
-    double zoomLevel;
-    double scrollPosition;
-    static constexpr double minZoom = 1.0;
-    static constexpr double maxZoom = 100.0;
-
     void updatePlayheadPosition();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ThumbnailComponent)

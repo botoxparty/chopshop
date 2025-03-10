@@ -17,7 +17,7 @@ public:
             : startTime(start), endTime(end), isASide(a), mixAmount(mix) {}
     };
 
-    CrossfaderAutomationLane(tracktion::engine::Edit& e, tracktion::engine::AutomatableParameter* param = nullptr);
+    CrossfaderAutomationLane(tracktion::engine::Edit&, ZoomState&);
     ~CrossfaderAutomationLane() override;
 
     void paint(juce::Graphics& g) override;

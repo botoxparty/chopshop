@@ -16,6 +16,7 @@
 #include "PluginAutomationComponent.h"
 #include "TransportBar.h"
 #include "ThumbnailComponent.h"
+#include "ZoomState.h"
 
 class TransportComponent : public juce::Component,
                          public juce::Timer,
@@ -40,6 +41,9 @@ public:
     void setZoomLevel(double newLevel);
     void setScrollPosition(double newPosition);
     double getMaxScrollPosition() const;
+
+    // Expose zoom state for child components
+    ZoomState& getZoomState() { return zoomState; }
 
 private:
     tracktion::engine::Edit& edit;
@@ -74,6 +78,9 @@ private:
     
     // Playhead
     std::unique_ptr<juce::DrawableRectangle> playhead;
+
+    // Global zoom state
+    ZoomState zoomState;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TransportComponent)
 }; 

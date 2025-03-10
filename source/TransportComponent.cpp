@@ -8,8 +8,8 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     // Add transport bar
     addAndMakeVisible(transportBar);
 
-    // Create and add thumbnail component
-    thumbnailComponent = std::make_unique<ThumbnailComponent>(edit);
+    // Create and add thumbnail component with zoom state
+    thumbnailComponent = std::make_unique<ThumbnailComponent>(edit, zoomState);
     addAndMakeVisible(*thumbnailComponent);
 
     // Add and make visible other components
@@ -17,8 +17,8 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     pluginAutomationViewport.setViewedComponent(&pluginAutomationContainer, false);
     pluginAutomationViewport.setScrollBarsShown(true, false);
 
-    // Create and add crossfader automation lane
-    crossfaderAutomationLane = std::make_unique<CrossfaderAutomationLane>(edit);
+    // Create and add crossfader automation lane with zoom state
+    crossfaderAutomationLane = std::make_unique<CrossfaderAutomationLane>(edit, zoomState);
     
     // Find the crossfader parameter
     tracktion::engine::AutomatableParameter* crossfaderParam = nullptr;
@@ -37,34 +37,34 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     
     addAndMakeVisible(*crossfaderAutomationLane);
 
-    // Create and add automation lane for reverb wet parameter
-    reverbWetAutomationLane = std::make_unique<AutomationLane>(edit);
+    // Create and add automation lane for reverb wet parameter with zoom state
+    reverbWetAutomationLane = std::make_unique<AutomationLane>(edit, zoomState);
     
     // Find the reverb plugin and create automation component
     if (auto reverbPlugin = EngineHelpers::getPluginFromRack(edit, tracktion::engine::ReverbPlugin::xmlTypeName))
     {
-        reverbAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, reverbPlugin.get());
+        reverbAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, reverbPlugin.get(), zoomState);
         pluginAutomationContainer.addAndMakeVisible(*reverbAutomationComponent);
     }
 
     // Find the delay plugin and create automation component
     if (auto delayPlugin = EngineHelpers::getPluginFromRack(edit, AutoDelayPlugin::xmlTypeName))
     {
-        delayAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, delayPlugin.get());
+        delayAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, delayPlugin.get(), zoomState);
         pluginAutomationContainer.addAndMakeVisible(*delayAutomationComponent);
     }
 
     // Find the phaser plugin and create automation component
     if (auto phaserPlugin = EngineHelpers::getPluginFromRack(edit, AutoPhaserPlugin::xmlTypeName))
     {
-        phaserAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, phaserPlugin.get());
+        phaserAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, phaserPlugin.get(), zoomState);
         pluginAutomationContainer.addAndMakeVisible(*phaserAutomationComponent);
     }
 
     // Find the flanger plugin and create automation component
     if (auto flangerPlugin = EngineHelpers::getPluginFromRack(edit, FlangerPlugin::xmlTypeName))
     {
-        flangerAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, flangerPlugin.get());
+        flangerAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, flangerPlugin.get(), zoomState);
         pluginAutomationContainer.addAndMakeVisible(*flangerAutomationComponent);
     }
 

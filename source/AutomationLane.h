@@ -4,27 +4,30 @@
 #include <juce_graphics/juce_graphics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <tracktion_engine/tracktion_engine.h>
+#include "ZoomState.h"
 
 class AutomationLane : public juce::Component,
-                     public tracktion::engine::AutomatableParameter::Listener
+                     public tracktion::engine::AutomatableParameter::Listener,
+                     public ZoomStateListener
 {
 public:
-    AutomationLane(tracktion::engine::Edit& e, tracktion::engine::AutomatableParameter* param = nullptr);
+    AutomationLane(tracktion::engine::Edit&, ZoomState&);
     ~AutomationLane() override;
 
-    void paint(juce::Graphics& g) override;
+    void paint(juce::Graphics&) override;
     void resized() override;
-    void mouseDown(const juce::MouseEvent& event) override;
-    void mouseDrag(const juce::MouseEvent& event) override;
-    void mouseUp(const juce::MouseEvent& event) override;
-    void mouseDoubleClick(const juce::MouseEvent& event) override;
-
-    void setParameter(tracktion::engine::AutomatableParameter* param);
-    virtual void updatePoints();
     
-    // Add zoom and scroll control methods
-    void setZoomLevel(double newZoomLevel);
-    void setScrollPosition(double newScrollPosition);
+    // ZoomStateListener implementation
+    void zoomLevelChanged(double newZoomLevel) override;
+    void scrollPositionChanged(double newScrollPosition) override;
+
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
+    void mouseDoubleClick(const juce::MouseEvent&) override;
+
+    void setParameter(tracktion::engine::AutomatableParameter*);
+    virtual void updatePoints();
     
     // Clip handling
     void setClip(tracktion::engine::WaveAudioClip* clip) { currentClip = clip; }
@@ -35,7 +38,7 @@ public:
         return 60.0; // Default length if no clip
     }
 
-    // AutomatableParameter::Listener methods
+    // AutomatableParameter::Listener overrides
     void curveHasChanged(tracktion::engine::AutomatableParameter&) override;
     void currentValueChanged(tracktion::engine::AutomatableParameter&) override;
     void parameterChanged(tracktion::engine::AutomatableParameter&, float) override;
@@ -51,16 +54,8 @@ protected:
     tracktion::engine::WaveAudioClip* currentClip = nullptr;
     std::vector<std::pair<double, double>> automationPoints; // <time, value> pairs
     
-    // Add zoom and scroll state
-    double zoomLevel = 1.0;
-    double scrollPosition = 0.0;
+    ZoomState& zoomState;
     
-    juce::Point<float> timeToXY(double timeInSeconds, double value) const;
-    std::pair<double, double> XYToTime(float x, float y) const;
-    void addPoint(double timeInSeconds, double value);
-    void updateValueAtTime(double timeInSeconds, double value);
-
-    // New members for point dragging
     int draggedPointIndex = -1;
     static constexpr float pointHitRadius = 5.0f; // Radius in pixels for hit detection
     int findPointNear(float x, float y) const;
@@ -68,4 +63,9 @@ protected:
     // Debounce timer to prevent rapid updates
     juce::int64 lastUpdateTime = 0;
     static constexpr juce::int64 minimumUpdateInterval = 50; // milliseconds
+
+    juce::Point<float> timeToXY(double timeInSeconds, double value) const;
+    std::pair<double, double> XYToTime(float x, float y) const;
+    void addPoint(double timeInSeconds, double value);
+    void updateValueAtTime(double timeInSeconds, double value);
 }; 

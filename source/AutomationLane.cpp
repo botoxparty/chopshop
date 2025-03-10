@@ -1,35 +1,19 @@
 #include "AutomationLane.h"
 
-AutomationLane::AutomationLane(tracktion::engine::Edit& e, tracktion::engine::AutomatableParameter* param)
-    : edit(e), parameter(param)
+AutomationLane::AutomationLane(tracktion::engine::Edit& e, ZoomState& zs)
+    : edit(e)
+    , parameter(nullptr)
+    , zoomState(zs)
+    , draggedPointIndex(-1)
 {
-    if (parameter != nullptr)
-        parameter->addListener(this);
-    updatePoints();
+    zoomState.addListener(this);
 }
 
 AutomationLane::~AutomationLane()
 {
     if (parameter != nullptr)
         parameter->removeListener(this);
-}
-
-void AutomationLane::setZoomLevel(double newZoomLevel)
-{
-    if (std::abs(zoomLevel - newZoomLevel) > 0.0001)
-    {
-        zoomLevel = newZoomLevel;
-        repaint();
-    }
-}
-
-void AutomationLane::setScrollPosition(double newScrollPosition)
-{
-    if (std::abs(scrollPosition - newScrollPosition) > 0.0001)
-    {
-        scrollPosition = newScrollPosition;
-        repaint();
-    }
+    zoomState.removeListener(this);
 }
 
 void AutomationLane::paint(juce::Graphics& g)
@@ -290,15 +274,15 @@ void AutomationLane::parameterChangeGestureEnd(tracktion::engine::AutomatablePar
 juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) const
 {
     auto bounds = getLocalBounds().toFloat();
+    auto& tempoSequence = edit.tempoSequence;
     
     // Convert time to beats using edit's tempo sequence
-    auto& tempoSequence = edit.tempoSequence;
     auto beatPosition = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(timeInSeconds));
     
     // Calculate visible beat range
-    auto visibleTimeStart = getSourceLength() * scrollPosition;
+    auto visibleTimeStart = getSourceLength() * zoomState.getScrollPosition();
     auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
-    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
+    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomState.getZoomLevel());
     auto visibleTimeEndBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeEnd));
     
     // Normalize beat position to width using the visible beat range
@@ -324,9 +308,9 @@ std::pair<double, double> AutomationLane::XYToTime(float x, float y) const
     auto& tempoSequence = edit.tempoSequence;
     
     // Calculate visible beat range
-    auto visibleTimeStart = getSourceLength() * scrollPosition;
+    auto visibleTimeStart = getSourceLength() * zoomState.getScrollPosition();
     auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
-    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomLevel);
+    auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomState.getZoomLevel());
     auto visibleTimeEndBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeEnd));
     
     // Convert x to beats using the visible beat range
@@ -379,4 +363,14 @@ void AutomationLane::updateValueAtTime(double timeInSeconds, double value)
         }
     }
     updatePoints();
+}
+
+void AutomationLane::zoomLevelChanged(double newZoomLevel)
+{
+    repaint();
+}
+
+void AutomationLane::scrollPositionChanged(double newScrollPosition)
+{
+    repaint();
 }

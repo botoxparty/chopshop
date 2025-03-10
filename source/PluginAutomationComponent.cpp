@@ -1,7 +1,9 @@
 #include "PluginAutomationComponent.h"
 
-PluginAutomationComponent::PluginAutomationComponent(tracktion::engine::Edit& e, tracktion::engine::Plugin* p)
+PluginAutomationComponent::PluginAutomationComponent(tracktion::engine::Edit& e, tracktion::engine::Plugin* p, ZoomState& zs)
     : edit(e)
+    , plugin(nullptr)
+    , zoomState(zs)
 {
     // Create group collapse button with custom path
     auto* collapseIcon = new juce::DrawablePath();
@@ -197,24 +199,6 @@ void PluginAutomationComponent::setPlugin(tracktion::engine::Plugin* p)
     resized();
 }
 
-void PluginAutomationComponent::setZoomLevel(double newZoomLevel)
-{
-    zoomLevel = newZoomLevel;
-    
-    for (auto& laneInfo : automationLanes)
-        if (laneInfo.lane != nullptr)
-            laneInfo.lane->setZoomLevel(zoomLevel);
-}
-
-void PluginAutomationComponent::setScrollPosition(double newScrollPosition)
-{
-    scrollPosition = newScrollPosition;
-    
-    for (auto& laneInfo : automationLanes)
-        if (laneInfo.lane != nullptr)
-            laneInfo.lane->setScrollPosition(scrollPosition);
-}
-
 void PluginAutomationComponent::setClip(tracktion::engine::WaveAudioClip* clip)
 {
     currentClip = clip;
@@ -252,9 +236,8 @@ void PluginAutomationComponent::createAutomationLaneForParameter(tracktion::engi
     AutomationLaneInfo laneInfo;
     
     // Create and setup automation lane
-    laneInfo.lane = std::make_unique<AutomationLane>(edit, param);
-    laneInfo.lane->setZoomLevel(zoomLevel);
-    laneInfo.lane->setScrollPosition(scrollPosition);
+    laneInfo.lane = std::make_unique<AutomationLane>(edit, zoomState);
+    laneInfo.lane->setParameter(param);
     laneInfo.lane->setClip(currentClip);
     addAndMakeVisible(*laneInfo.lane);
     
