@@ -14,8 +14,11 @@ MainComponent::MainComponent()
     // Create a global command manager
     commandManager = std::make_unique<juce::ApplicationCommandManager>();
 
-    // Set up menu bar
-    juce::MenuBarModel::setMacMainMenu (this);
+    // Set up menu bar  
+    if (__APPLE__)
+    {
+        juce::MenuBarModel::setMacMainMenu (this);
+    }
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
     LookAndFeel::setDefaultLookAndFeel (customLookAndFeel.get());
