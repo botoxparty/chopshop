@@ -249,12 +249,17 @@ void TransportComponent::paint (juce::Graphics& g)
     // Draw waveform if we have a clip
     if (currentClip != nullptr)
     {
-        auto sourceLength = currentClip->getPosition().getLength().inSeconds();
-        auto originalLength = currentClip->getSourceLength().inSeconds();
+        auto clipLength = currentClip->getPosition().getLength().inSeconds();
+        auto sourceLength = currentClip->getSourceLength().inSeconds();
+        auto timeStretchRatio = clipLength / sourceLength;  // This gives us the time-stretch ratio
+        
+        // Calculate visible time range in source time domain
+        auto visibleTimeStart = (sourceLength * scrollPosition) * timeStretchRatio;
+        auto visibleTimeEnd = visibleTimeStart + ((sourceLength / zoomLevel) * timeStretchRatio);
         
         auto timeRange = tracktion::TimeRange (
-            tracktion::TimePosition::fromSeconds (sourceLength * scrollPosition),
-            tracktion::TimePosition::fromSeconds (sourceLength * (scrollPosition + 1.0 / zoomLevel)));
+            tracktion::TimePosition::fromSeconds (visibleTimeStart),
+            tracktion::TimePosition::fromSeconds (visibleTimeEnd));
         
         if (sourceLength > 0.0)
         {
@@ -289,21 +294,20 @@ void TransportComponent::paint (juce::Graphics& g)
                 if (crossfaderParam != nullptr)
                 {
                     // Calculate visible time range
-                    auto visibleTimeStart = timeRange.getStart().inSeconds();
-                    auto visibleTimeEnd = timeRange.getEnd().inSeconds();
+                    auto visibleTimeStartSource = visibleTimeStart / timeStretchRatio;  // Convert to source time domain
+                    auto visibleTimeEndSource = visibleTimeEnd / timeStretchRatio;      // Convert to source time domain
                     
                     // Draw in small segments to capture crossfader changes
                     const int numSegments = drawBounds.getWidth();
-                    const double timePerSegment = (visibleTimeEnd - visibleTimeStart) / numSegments;
+                    const double timePerSegment = (visibleTimeEndSource - visibleTimeStartSource) / numSegments;
                     
                     for (int i = 0; i < numSegments; i++)
                     {
-                        auto segmentTime = visibleTimeStart + (i * timePerSegment);
+                        auto segmentTime = visibleTimeStartSource + (i * timePerSegment);
                         auto segmentEndTime = segmentTime + timePerSegment;
                         
-                        // Get crossfader value at this time
-                        auto tempoRatio = originalLength / sourceLength;
-                        auto crossfaderValue = crossfaderParam->getCurve().getValueAt(tracktion::TimePosition::fromSeconds(segmentTime * tempoRatio));
+                        // Get crossfader value at this time (in source time domain)
+                        auto crossfaderValue = crossfaderParam->getCurve().getValueAt(tracktion::TimePosition::fromSeconds(segmentTime * timeStretchRatio));
                         
                         // Create segment bounds
                         auto segmentBounds = drawBounds.withWidth(1).withX(drawBounds.getX() + i);
@@ -319,7 +323,7 @@ void TransportComponent::paint (juce::Graphics& g)
                             segmentBounds.getBottomLeft().toFloat(),
                             false));
                         
-                        // Draw this segment
+                        // Draw this segment in source time domain
                         thumbnail.drawChannels(g, 
                                             segmentBounds,
                                             tracktion::TimeRange(tracktion::TimePosition::fromSeconds(segmentTime),
@@ -333,7 +337,7 @@ void TransportComponent::paint (juce::Graphics& g)
                 }
                 else
                 {
-                    // Fallback if no crossfader parameter
+                    // Fallback if no crossfader parameter - draw in source time domain
                     g.setGradientFill(juce::ColourGradient(
                         juce::Colours::lime.withAlpha(0.8f),
                         drawBounds.getTopLeft().toFloat(),
@@ -341,7 +345,11 @@ void TransportComponent::paint (juce::Graphics& g)
                         drawBounds.getBottomLeft().toFloat(),
                         false));
                         
-                    thumbnail.drawChannels(g, drawBounds, timeRange, maxGain);
+                    auto sourceTimeRange = tracktion::TimeRange(
+                        tracktion::TimePosition::fromSeconds(visibleTimeStart / timeStretchRatio),
+                        tracktion::TimePosition::fromSeconds(visibleTimeEnd / timeStretchRatio));
+                        
+                    thumbnail.drawChannels(g, drawBounds, sourceTimeRange, maxGain);
                 }
             }
             else

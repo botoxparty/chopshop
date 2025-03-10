@@ -6,13 +6,16 @@
 #define JUCE_USE_DIRECTWRITE 0 // Fix drawing of Monospace fonts in Code Editor!
 
 // Initialize settings icon path data
-const uint8 MainComponent::settingsIconPathData[486] = { 110,109,202,111,210,64,243,226,61,64,108,0,0,224,64,0,0,0,0,108,0,0,48,65,0,0,0,0,108,27,200,54,65,243,226,61,64,98,91,248,63,65,174,170,76,64,95,130,72,65,231,138,96,64,46,46,80,65,180,163,120,64,108,42,181,124,65,20,38,49,64,108,149,90,142,65,246,108,199,64,108,68,249,118,65,2,85,1,65,98,112,166,119,65,201,31,6,65,0,0,120,65,111,5,11,65,0,0,120,65,0,0,16,65,98,0,0,120,65,145,250,20,65,108,166,119,65,55,224,25,65,72,249,118,65,254,170,30,65,108,151,90,142,65,133,73,60,65,108,46,181,124,65,123,182,115,65,108,50,46,80,65,18,215,97,65,98,99,130,72,65,70,221,103,65,96,248,63,65,83,213,108,65,32,200,54,65,66,135,112,65,108,0,0,48,65,0,0,144,65,108,0,0,224,64,0,0,144,65,108,202,111,210,64,67,135,112,65,98,74,15,192,64,84,213,108,65,65,251,174,64,70,221,103,65,164,163,159,64,19,215,97,65,108,92,43,13,64,123,182,115,65,108,187,181,82,62,133,73,60,65,108,244,26,36,64,254,170,30,65,98,64,102,33,64,55,224,25,65,0,0,32,64,145,250,20,65,0,0,32,64,0,0,16,65,98,0,0,32,64,111,5,11,65,64,102,33,64,201,31,6,65,244,26,36,64,2,85,1,65,108,187,181,82,62,246,108,199,64,108,92,43,13,64,20,38,49,64,108,164,163,159,64,180,163,120,64,98,65,251,174,64,231,138,96,64,74,15,192,64,175,170,76,64,202,111,210,64,243,226,61,64,99,109,0,0,16,65,0,0,64,65,98,121,130,42,65,0,0,64,65,0,0,64,65,121,130,42,65,0,0,64,65,0,0,16,65,98,0,0,64,65,13,251,234,64,121,130,42,65,0,0,192,64,0,0,16,65,0,0,192,64,98,13,251,234,64,0,0,192,64,0,0,192,64,13,251,234,64,0,0,192,64,0,0,16,65,98,0,0,192,64,121,130,42,65,13,251,234,64,0,0,64,65,0,0,16,65,0,0,64,65,99,101,0,0 };
+const uint8 MainComponent::settingsIconPathData[486] = { 110, 109, 202, 111, 210, 64, 243, 226, 61, 64, 108, 0, 0, 224, 64, 0, 0, 0, 0, 108, 0, 0, 48, 65, 0, 0, 0, 0, 108, 27, 200, 54, 65, 243, 226, 61, 64, 98, 91, 248, 63, 65, 174, 170, 76, 64, 95, 130, 72, 65, 231, 138, 96, 64, 46, 46, 80, 65, 180, 163, 120, 64, 108, 42, 181, 124, 65, 20, 38, 49, 64, 108, 149, 90, 142, 65, 246, 108, 199, 64, 108, 68, 249, 118, 65, 2, 85, 1, 65, 98, 112, 166, 119, 65, 201, 31, 6, 65, 0, 0, 120, 65, 111, 5, 11, 65, 0, 0, 120, 65, 0, 0, 16, 65, 98, 0, 0, 120, 65, 145, 250, 20, 65, 108, 166, 119, 65, 55, 224, 25, 65, 72, 249, 118, 65, 254, 170, 30, 65, 108, 151, 90, 142, 65, 133, 73, 60, 65, 108, 46, 181, 124, 65, 123, 182, 115, 65, 108, 50, 46, 80, 65, 18, 215, 97, 65, 98, 99, 130, 72, 65, 70, 221, 103, 65, 96, 248, 63, 65, 83, 213, 108, 65, 32, 200, 54, 65, 66, 135, 112, 65, 108, 0, 0, 48, 65, 0, 0, 144, 65, 108, 0, 0, 224, 64, 0, 0, 144, 65, 108, 202, 111, 210, 64, 67, 135, 112, 65, 98, 74, 15, 192, 64, 84, 213, 108, 65, 65, 251, 174, 64, 70, 221, 103, 65, 164, 163, 159, 64, 19, 215, 97, 65, 108, 92, 43, 13, 64, 123, 182, 115, 65, 108, 187, 181, 82, 62, 133, 73, 60, 65, 108, 244, 26, 36, 64, 254, 170, 30, 65, 98, 64, 102, 33, 64, 55, 224, 25, 65, 0, 0, 32, 64, 145, 250, 20, 65, 0, 0, 32, 64, 0, 0, 16, 65, 98, 0, 0, 32, 64, 111, 5, 11, 65, 64, 102, 33, 64, 201, 31, 6, 65, 244, 26, 36, 64, 2, 85, 1, 65, 108, 187, 181, 82, 62, 246, 108, 199, 64, 108, 92, 43, 13, 64, 20, 38, 49, 64, 108, 164, 163, 159, 64, 180, 163, 120, 64, 98, 65, 251, 174, 64, 231, 138, 96, 64, 74, 15, 192, 64, 175, 170, 76, 64, 202, 111, 210, 64, 243, 226, 61, 64, 99, 109, 0, 0, 16, 65, 0, 0, 64, 65, 98, 121, 130, 42, 65, 0, 0, 64, 65, 0, 0, 64, 65, 121, 130, 42, 65, 0, 0, 64, 65, 0, 0, 16, 65, 98, 0, 0, 64, 65, 13, 251, 234, 64, 121, 130, 42, 65, 0, 0, 192, 64, 0, 0, 16, 65, 0, 0, 192, 64, 98, 13, 251, 234, 64, 0, 0, 192, 64, 0, 0, 192, 64, 13, 251, 234, 64, 0, 0, 192, 64, 0, 0, 16, 65, 98, 0, 0, 192, 64, 121, 130, 42, 65, 13, 251, 234, 64, 0, 0, 64, 65, 0, 0, 16, 65, 0, 0, 64, 65, 99, 101, 0, 0 };
 
 //==============================================================================
 MainComponent::MainComponent()
 {
     // Create a global command manager
     commandManager = std::make_unique<juce::ApplicationCommandManager>();
+
+    // Set up menu bar
+    juce::MenuBarModel::setMacMainMenu (this);
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
     LookAndFeel::setDefaultLookAndFeel (customLookAndFeel.get());
@@ -29,37 +32,40 @@ MainComponent::MainComponent()
     engine.getPluginManager().createBuiltInType<ChopPlugin>();
 
     // Initialize audio settings button with icon
-    audioSettingsButton = std::make_unique<juce::DrawableButton>("Audio Settings", juce::DrawableButton::ImageOnButtonBackground);
+    audioSettingsButton = std::make_unique<juce::DrawableButton> ("Audio Settings", juce::DrawableButton::ImageOnButtonBackground);
     juce::Path settingsIconPath;
-    settingsIconPath.loadPathFromData(settingsIconPathData, sizeof(settingsIconPathData));
-    
+    settingsIconPath.loadPathFromData (settingsIconPathData, sizeof (settingsIconPathData));
+
     auto drawable = std::make_unique<juce::DrawablePath>();
-    drawable->setPath(settingsIconPath);
-    drawable->setFill(getLookAndFeel().findColour(juce::DrawableButton::textColourId));
-    
-    audioSettingsButton->setImages(drawable.get());
-    addAndMakeVisible(*audioSettingsButton);
+    drawable->setPath (settingsIconPath);
+    drawable->setFill (getLookAndFeel().findColour (juce::DrawableButton::textColourId));
+
+    audioSettingsButton->setImages (drawable.get());
+    addAndMakeVisible (*audioSettingsButton);
 
     // Add the button callback
     audioSettingsButton->onClick = [this] {
-        EngineHelpers::showAudioDeviceSettings(engine);
+        EngineHelpers::showAudioDeviceSettings (engine);
     };
 
     gamepadManager = GamepadManager::getInstance();
-    gamepadManager->addListener(this);
+    gamepadManager->addListener (this);
 
     // Initialize library component first as it's not edit-dependent
     setupLibraryComponent();
 
     // Initialize controller mapping component (not edit-dependent)
     controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
-    addAndMakeVisible(*controllerMappingComponent);
+    addAndMakeVisible (*controllerMappingComponent);
 
     resized();
 }
 
 MainComponent::~MainComponent()
 {
+    // Remove the menu bar
+    juce::MenuBarModel::setMacMainMenu (nullptr);
+
     // Remove key listener before destroying command manager
     removeKeyListener (commandManager->getKeyMappings());
 
@@ -88,38 +94,38 @@ void MainComponent::paint (juce::Graphics& g)
 void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
-    bounds.reduce(10, 10); // Add some padding
+    bounds.reduce (10, 10); // Add some padding
 
     // Row 1: Transport control
     if (transportComponent != nullptr)
     {
-        auto transportHeight = bounds.getHeight() / 2;  // 1/2 of total height
-        transportComponent->setBounds(bounds.removeFromTop(transportHeight));
+        auto transportHeight = bounds.getHeight() / 2; // 1/2 of total height
+        transportComponent->setBounds (bounds.removeFromTop (transportHeight));
     }
 
     // Row 2: Library bar and settings button
     if (libraryBar != nullptr)
     {
         auto libraryHeight = 40;
-        auto libraryBounds = bounds.removeFromTop(libraryHeight);
-        
+        auto libraryBounds = bounds.removeFromTop (libraryHeight);
+
         // Position settings button and controller mapping button on the right
         if (audioSettingsButton != nullptr && controllerMappingComponent != nullptr)
         {
             auto buttonSize = 30;
             auto buttonSpacing = 5;
-            
+
             // Position controller mapping button first (rightmost)
-            auto controllerBounds = libraryBounds.removeFromRight(buttonSize + buttonSpacing).withSizeKeepingCentre(buttonSize, buttonSize);
-            controllerMappingComponent->setBounds(controllerBounds);
-            
+            auto controllerBounds = libraryBounds.removeFromRight (buttonSize + buttonSpacing).withSizeKeepingCentre (buttonSize, buttonSize);
+            controllerMappingComponent->setBounds (controllerBounds);
+
             // Then position settings button to its left
-            auto settingsBounds = libraryBounds.removeFromRight(buttonSize + buttonSpacing).withSizeKeepingCentre(buttonSize, buttonSize);
-            audioSettingsButton->setBounds(settingsBounds);
+            auto settingsBounds = libraryBounds.removeFromRight (buttonSize + buttonSpacing).withSizeKeepingCentre (buttonSize, buttonSize);
+            audioSettingsButton->setBounds (settingsBounds);
         }
-        
+
         // Position library bar in remaining space
-        libraryBar->setBounds(libraryBounds);
+        libraryBar->setBounds (libraryBounds);
     }
 
     // Main layout using FlexBox
@@ -132,8 +138,10 @@ void MainComponent::resized()
     juce::FlexBox topRow;
     topRow.flexDirection = juce::FlexBox::Direction::row;
     topRow.justifyContent = juce::FlexBox::JustifyContent::spaceBetween;
-    if (chopComponent) topRow.items.add(juce::FlexItem(*chopComponent).withFlex(1.0f).withMargin(5));
-    if (screwComponent) topRow.items.add(juce::FlexItem(*screwComponent).withFlex(1.0f).withMargin(5));
+    if (chopComponent)
+        topRow.items.add (juce::FlexItem (*chopComponent).withFlex (1.0f).withMargin (5));
+    if (screwComponent)
+        topRow.items.add (juce::FlexItem (*screwComponent).withFlex (1.0f).withMargin (5));
 
     // Row 2: Effects Box with three columns
     juce::FlexBox effectsBox;
@@ -143,32 +151,38 @@ void MainComponent::resized()
     // Column 1: Scratch and Vinyl Brake
     juce::FlexBox effectsColumn1;
     effectsColumn1.flexDirection = juce::FlexBox::Direction::column;
-    if (scratchComponent) effectsColumn1.items.add(juce::FlexItem(*scratchComponent).withFlex(1.0f).withMargin(5));
-    if (vinylBrakeComponent) effectsColumn1.items.add(juce::FlexItem(*vinylBrakeComponent).withFlex(1.0f).withMargin(5));
+    if (scratchComponent)
+        effectsColumn1.items.add (juce::FlexItem (*scratchComponent).withFlex (1.0f).withMargin (5));
+    if (vinylBrakeComponent)
+        effectsColumn1.items.add (juce::FlexItem (*vinylBrakeComponent).withFlex (1.0f).withMargin (5));
 
     // Column 2: Reverb and Delay
     juce::FlexBox effectsColumn2;
     effectsColumn2.flexDirection = juce::FlexBox::Direction::column;
-    if (reverbComponent) effectsColumn2.items.add(juce::FlexItem(*reverbComponent).withFlex(1.0f).withMargin(5));
-    if (delayComponent) effectsColumn2.items.add(juce::FlexItem(*delayComponent).withFlex(1.0f).withMargin(5));
+    if (reverbComponent)
+        effectsColumn2.items.add (juce::FlexItem (*reverbComponent).withFlex (1.0f).withMargin (5));
+    if (delayComponent)
+        effectsColumn2.items.add (juce::FlexItem (*delayComponent).withFlex (1.0f).withMargin (5));
 
     // Column 3: Flanger and Phaser
     juce::FlexBox effectsColumn3;
     effectsColumn3.flexDirection = juce::FlexBox::Direction::column;
-    if (flangerComponent) effectsColumn3.items.add(juce::FlexItem(*flangerComponent).withFlex(1.0f).withMargin(5));
-    if (phaserComponent) effectsColumn3.items.add(juce::FlexItem(*phaserComponent).withFlex(1.0f).withMargin(5));
+    if (flangerComponent)
+        effectsColumn3.items.add (juce::FlexItem (*flangerComponent).withFlex (1.0f).withMargin (5));
+    if (phaserComponent)
+        effectsColumn3.items.add (juce::FlexItem (*phaserComponent).withFlex (1.0f).withMargin (5));
 
     // Add columns to effects box
-    effectsBox.items.add(juce::FlexItem(effectsColumn1).withFlex(1.0f));
-    effectsBox.items.add(juce::FlexItem(effectsColumn2).withFlex(1.0f));
-    effectsBox.items.add(juce::FlexItem(effectsColumn3).withFlex(1.0f));
+    effectsBox.items.add (juce::FlexItem (effectsColumn1).withFlex (1.0f));
+    effectsBox.items.add (juce::FlexItem (effectsColumn2).withFlex (1.0f));
+    effectsBox.items.add (juce::FlexItem (effectsColumn3).withFlex (1.0f));
 
     // Add rows to main box
-    mainBox.items.add(juce::FlexItem(topRow).withFlex(0.3f));
-    mainBox.items.add(juce::FlexItem(effectsBox).withFlex(0.7f));
+    mainBox.items.add (juce::FlexItem (topRow).withFlex (0.3f));
+    mainBox.items.add (juce::FlexItem (effectsBox).withFlex (0.7f));
 
     // Perform the layout
-    mainBox.performLayout(bounds);
+    mainBox.performLayout (bounds);
 }
 
 void MainComponent::play()
@@ -197,9 +211,9 @@ void MainComponent::updateTempo()
     double newBpm = screwComponent->getTempo();
 
     // Insert tempo change at the beginning of the track
-    auto tempoSetting = edit->tempoSequence.insertTempo(tracktion::TimePosition::fromSeconds(0.0));
+    auto tempoSetting = edit->tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
     if (tempoSetting != nullptr)
-        tempoSetting->setBpm(newBpm);
+        tempoSetting->setBpm (newBpm);
 
     // Calculate ratio for thumbnail display
     const double ratio = baseTempo / newBpm;
@@ -207,24 +221,24 @@ void MainComponent::updateTempo()
     // Update the delay component if it exists
     if (delayComponent)
     {
-        delayComponent->setTempo(newBpm);
+        delayComponent->setTempo (newBpm);
     }
 }
 
 void MainComponent::setupChopComponent()
 {
     // Create ChopComponent and pass the command manager
-    chopComponent = std::make_unique<ChopComponent>(*edit);
-    addAndMakeVisible(*chopComponent);
+    chopComponent = std::make_unique<ChopComponent> (*edit);
+    addAndMakeVisible (*chopComponent);
 
     // Set the command manager for the ChopComponent
-    chopComponent->setCommandManager(commandManager.get());
+    chopComponent->setCommandManager (commandManager.get());
 
     // Register all commands with the command manager
-    commandManager->registerAllCommandsForTarget(this);
+    commandManager->registerAllCommandsForTarget (this);
 
     // Add key mappings to the top level component
-    addKeyListener(commandManager->getKeyMappings());
+    addKeyListener (commandManager->getKeyMappings());
 
     // Set up the tempo callback
     chopComponent->getTempoCallback = [this]() {
@@ -235,33 +249,32 @@ void MainComponent::setupChopComponent()
 void MainComponent::setupLibraryComponent()
 {
     // Create the library window
-    libraryWindow = std::make_unique<LibraryWindow>(engine);
-    
+    libraryWindow = std::make_unique<LibraryWindow> (engine);
+
     // Create the library bar
     libraryBar = std::make_unique<LibraryBar>();
-    addAndMakeVisible(libraryBar.get());
-    
+    addAndMakeVisible (libraryBar.get());
+
     // Set up the show library button callback
     libraryBar->getShowLibraryButton().onClick = [this]() {
         if (libraryWindow)
         {
-            libraryWindow->setVisible(true);
-            libraryWindow->toFront(true);
+            libraryWindow->setVisible (true);
+            libraryWindow->toFront (true);
             libraryWindow->grabKeyboardFocus();
         }
     };
-    
+
     // Update to use Edit selection instead of File selection
-    libraryWindow->getLibraryComponent()->onEditSelected = [this](std::unique_ptr<tracktion::engine::Edit> newEdit) {
-        handleEditSelection(std::move(newEdit));
+    libraryWindow->getLibraryComponent()->onEditSelected = [this] (std::unique_ptr<tracktion::engine::Edit> newEdit) {
+        handleEditSelection (std::move (newEdit));
     };
 
     // Show library window by default since no edit is loaded
     // Use a timer to ensure window is shown after component is fully initialized
-  
 }
 
-void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit> newEdit)
+void MainComponent::handleEditSelection (std::unique_ptr<tracktion::engine::Edit> newEdit)
 {
     if (!newEdit)
         return;
@@ -269,8 +282,8 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     // Stop any current playback if we have an existing edit
     if (edit)
     {
-        edit->getTransport().stop(false, false);
-        
+        edit->getTransport().stop (false, false);
+
         // Clean up all edit-dependent components first
         transportComponent = nullptr;
         reverbComponent = nullptr;
@@ -285,64 +298,64 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     }
 
     // Release current edit and assign new one
-    edit = std::move(newEdit);
+    edit = std::move (newEdit);
 
     // Update library bar with track name
-    libraryBar->setCurrentTrackName(edit->getName());
+    libraryBar->setCurrentTrackName (edit->getName());
 
     // Hide library window since we now have an edit loaded
-    libraryWindow->setVisible(false);
+    libraryWindow->setVisible (false);
 
     // Get the stored BPM from the Edit
-    float bpm = edit->state.getProperty("bpm", 120.0f);
-    baseTempo = bpm;  // Update base tempo
+    float bpm = edit->state.getProperty ("bpm", 120.0f);
+    baseTempo = bpm; // Update base tempo
 
     // Setup audio graph
     setupAudioGraph();
 
     // Initialize all edit-dependent components
-    reverbComponent = std::make_unique<ReverbComponent>(*edit);
-    addAndMakeVisible(*reverbComponent);
+    reverbComponent = std::make_unique<ReverbComponent> (*edit);
+    addAndMakeVisible (*reverbComponent);
 
-    DBG("Setup reverb component");
+    DBG ("Setup reverb component");
 
     setupChopComponent();
 
-    DBG("Setup chop component");
+    DBG ("Setup chop component");
 
-    flangerComponent = std::make_unique<FlangerComponent>(*edit);
-    addAndMakeVisible(*flangerComponent);
+    flangerComponent = std::make_unique<FlangerComponent> (*edit);
+    addAndMakeVisible (*flangerComponent);
 
-    delayComponent = std::make_unique<DelayComponent>(*edit);
-    addAndMakeVisible(*delayComponent);
+    delayComponent = std::make_unique<DelayComponent> (*edit);
+    addAndMakeVisible (*delayComponent);
 
-    phaserComponent = std::make_unique<PhaserComponent>(*edit);
-    addAndMakeVisible(*phaserComponent);
+    phaserComponent = std::make_unique<PhaserComponent> (*edit);
+    addAndMakeVisible (*phaserComponent);
 
-    DBG("Setup phaser component");
+    DBG ("Setup phaser component");
 
     setupVinylBrakeComponent();
     setupScrewComponent();
     setupScratchComponent();
 
     // Create transport component
-    transportComponent = std::make_unique<TransportComponent>(*edit);
-    addAndMakeVisible(*transportComponent);
+    transportComponent = std::make_unique<TransportComponent> (*edit);
+    addAndMakeVisible (*transportComponent);
 
     // Reset component states
     if (screwComponent)
     {
-        screwComponent->setBaseTempo(baseTempo);
-        screwComponent->setTempo(baseTempo, juce::dontSendNotification);
+        screwComponent->setBaseTempo (baseTempo);
+        screwComponent->setTempo (baseTempo, juce::dontSendNotification);
     }
 
     // Initialize the tempo sequence with the base tempo
-    auto tempoSetting = edit->tempoSequence.insertTempo(tracktion::TimePosition::fromSeconds(0.0));
+    auto tempoSetting = edit->tempoSequence.insertTempo (tracktion::TimePosition::fromSeconds (0.0));
     if (tempoSetting != nullptr)
-        tempoSetting->setBpm(baseTempo);
+        tempoSetting->setBpm (baseTempo);
 
     // Reset transport position and state
-    edit->getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
+    edit->getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
     playState = PlayState::Stopped;
 
     // Reset delay time to 1/4 note if component exists
@@ -350,13 +363,13 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     {
         // Calculate quarter note duration in milliseconds
         double quarterNoteMs = (60.0 / baseTempo) * 1000.0;
-        delayComponent->setDelayTime(quarterNoteMs);
-        delayComponent->setTempo(baseTempo);
+        delayComponent->setDelayTime (quarterNoteMs);
+        delayComponent->setTempo (baseTempo);
     }
 
     // Update plugin components
     if (oscilloscopePlugin)
-        oscilloscopePlugin->setEnabled(true);
+        oscilloscopePlugin->setEnabled (true);
 
     // Apply the current tempo to the clips
     updateTempo();
@@ -369,33 +382,33 @@ void MainComponent::handleEditSelection(std::unique_ptr<tracktion::engine::Edit>
     resized();
 }
 
-void MainComponent::armTrack(int trackIndex, bool arm)
+void MainComponent::armTrack (int trackIndex, bool arm)
 {
-    if (auto track = EngineHelpers::getAudioTrack(*edit, trackIndex))
+    if (auto track = EngineHelpers::getAudioTrack (*edit, trackIndex))
     {
-        EngineHelpers::armTrack(*track, arm);
+        EngineHelpers::armTrack (*track, arm);
     }
 }
 
 void MainComponent::startRecording()
 {
     // Arm the first track for recording
-    armTrack(0, true);
+    armTrack (0, true);
 
     // Start transport recording
-    edit->getTransport().record(true);
+    edit->getTransport().record (true);
 }
 
 void MainComponent::stopRecording()
 {
     // Stop recording
-    edit->getTransport().stop(false, false);
+    edit->getTransport().stop (false, false);
 
     // Disarm track
-    armTrack(0, false);
+    armTrack (0, false);
 }
 
-void MainComponent::gamepadButtonPressed(int buttonId)
+void MainComponent::gamepadButtonPressed (int buttonId)
 {
     float currentPosition;
     switch (buttonId)
@@ -407,25 +420,25 @@ void MainComponent::gamepadButtonPressed(int buttonId)
         case SDL_GAMEPAD_BUTTON_DPAD_UP:
         {
             if (reverbComponent)
-                reverbComponent->rampMixLevel(true);
+                reverbComponent->rampMixLevel (true);
             break;
         }
         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
         {
             if (delayComponent)
-                delayComponent->rampMixLevel(true);
+                delayComponent->rampMixLevel (true);
             break;
         }
         case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
         {
             if (flangerComponent)
-                flangerComponent->rampMixLevel(true);
+                flangerComponent->rampMixLevel (true);
             break;
         }
     }
 }
 
-void MainComponent::gamepadButtonReleased(int buttonId)
+void MainComponent::gamepadButtonReleased (int buttonId)
 {
     switch (buttonId)
     {
@@ -436,19 +449,19 @@ void MainComponent::gamepadButtonReleased(int buttonId)
         case SDL_GAMEPAD_BUTTON_DPAD_UP:
         {
             if (reverbComponent)
-                reverbComponent->rampMixLevel(false);
+                reverbComponent->rampMixLevel (false);
             break;
         }
         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
         {
             if (delayComponent)
-                delayComponent->rampMixLevel(false);
+                delayComponent->rampMixLevel (false);
             break;
         }
         case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
         {
             if (flangerComponent)
-                flangerComponent->rampMixLevel(false);
+                flangerComponent->rampMixLevel (false);
             break;
         }
     }
@@ -622,11 +635,11 @@ void MainComponent::setupScratchComponent()
 void MainComponent::setupAudioGraph()
 {
     // Ensure transport is stopped
-    edit->getTransport().stop(false, false);
-    
+    edit->getTransport().stop (false, false);
+
     // Reset transport position
-    edit->getTransport().setPosition(tracktion::TimePosition::fromSeconds(0.0));
-    
+    edit->getTransport().setPosition (tracktion::TimePosition::fromSeconds (0.0));
+
     // Ensure playback context is allocated
     edit->getTransport().ensureContextAllocated();
 }
@@ -677,38 +690,90 @@ void MainComponent::releaseResources()
     gamepadManager = nullptr;
 }
 
-void MainComponent::getAllCommands(juce::Array<juce::CommandID>& commands)
+void MainComponent::getAllCommands (juce::Array<juce::CommandID>& commands)
 {
-    commands.add(CommandIDs::DeleteSelectedRegion);
+    commands.add (CommandIDs::DeleteSelectedRegion);
+    commands.add (CommandIDs::SaveProject);
 }
 
-void MainComponent::getCommandInfo(juce::CommandID commandID, juce::ApplicationCommandInfo& result)
+void MainComponent::getCommandInfo (juce::CommandID commandID, juce::ApplicationCommandInfo& result)
 {
     switch (commandID)
     {
         case CommandIDs::DeleteSelectedRegion:
-            result.setInfo("Delete Selected Region", "Deletes the currently selected crossfader region", "Editing", 0);
-            result.addDefaultKeypress(juce::KeyPress::deleteKey, 0);
-            result.addDefaultKeypress(juce::KeyPress::backspaceKey, 0);
+            result.setInfo ("Delete Selected Region", "Deletes the currently selected region", "Edit", 0);
+            result.addDefaultKeypress (juce::KeyPress::deleteKey, 0);
             break;
+
+        case CommandIDs::SaveProject:
+            result.setInfo ("Save", "Saves the current project", "File", 0);
+            result.addDefaultKeypress ('s', juce::ModifierKeys::commandModifier);
+            break;
+
         default:
             break;
     }
 }
 
-bool MainComponent::perform(const juce::ApplicationCommandTarget::InvocationInfo& info)
+bool MainComponent::perform (const juce::ApplicationCommandTarget::InvocationInfo& info)
 {
     switch (info.commandID)
     {
         case CommandIDs::DeleteSelectedRegion:
             if (transportComponent != nullptr)
-            {
                 transportComponent->deleteSelectedChopRegion();
-                return true;
+            break;
+
+        case CommandIDs::SaveProject:
+            if (edit != nullptr)
+            {
+                // 1. Flush the current state to the ValueTree
+                edit->flushState();
+
+                // 2. Create EditFileOperations
+                EditFileOperations operations (*edit);
+
+                // 3. Save with desired options
+                // - warnOfFailure: Show error dialog if save fails
+                // - forceSaveEvenIfNotModified: Save even if no changes
+                // - offerToDiscardChanges: Show dialog asking to save changes
+                bool success = operations.save (true, false, false);
+
+
+                if (success == true)
+                {
+                    juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::InfoIcon,
+                        "Save",
+                        "Project saved successfully!");
+                }
             }
             break;
+
         default:
-            break;
+            return false;
     }
-    return false;
+
+    return true;
+}
+
+juce::StringArray MainComponent::getMenuBarNames()
+{
+    return { "File" };
+}
+
+juce::PopupMenu MainComponent::getMenuForIndex (int topLevelMenuIndex, const juce::String& menuName)
+{
+    juce::PopupMenu menu;
+
+    if (topLevelMenuIndex == 0) // File menu
+    {
+        menu.addCommandItem (commandManager.get(), CommandIDs::SaveProject, "Save");
+    }
+
+    return menu;
+}
+
+void MainComponent::menuItemSelected (int menuItemID, int topLevelMenuIndex)
+{
+    // Handle menu item selection if needed
 }

@@ -52,7 +52,8 @@ class MainComponent : public juce::Component,
                       public GamepadManager::Listener,
                       public juce::ChangeListener,
                       public tracktion::engine::OscilloscopePlugin::Listener,
-                      public juce::ApplicationCommandTarget
+                      public juce::ApplicationCommandTarget,
+                      public juce::MenuBarModel
 {
 public:
     //==============================================================================
@@ -62,6 +63,11 @@ public:
     //==============================================================================
     void paint(juce::Graphics &) override;
     void resized() override;
+
+    // MenuBarModel implementation
+    juce::StringArray getMenuBarNames() override;
+    juce::PopupMenu getMenuForIndex(int topLevelMenuIndex, const juce::String& menuName) override;
+    void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
 
     // GameControllerListener overrides
     void gamepadButtonPressed(int buttonId) override;
@@ -117,7 +123,8 @@ public:
     // Command IDs
     enum CommandIDs
     {
-        DeleteSelectedRegion = 1001
+        DeleteSelectedRegion = 1001,
+        SaveProject = 1002
     };
 
     // Command handler
