@@ -15,6 +15,7 @@
 #include "CrossfaderAutomationLane.h"
 #include "PluginAutomationComponent.h"
 #include "TransportBar.h"
+#include "ThumbnailComponent.h"
 
 class TransportComponent : public juce::Component,
                          public juce::Timer,
@@ -33,7 +34,6 @@ public:
     void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
     
     void updateThumbnail();
-
     void deleteSelectedChopRegion();
 
     void updatePlayheadPosition();
@@ -49,7 +49,7 @@ private:
     TransportBar transportBar;
     
     // Waveform thumbnail
-    tracktion::engine::SmartThumbnail thumbnail;
+    std::unique_ptr<ThumbnailComponent> thumbnailComponent;
     
     std::unique_ptr<CrossfaderAutomationLane> crossfaderAutomationLane;
     std::unique_ptr<AutomationLane> reverbWetAutomationLane;
