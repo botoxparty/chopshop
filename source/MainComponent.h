@@ -113,6 +113,8 @@ public:
     MainComponent();
     ~MainComponent() override;
 
+    tracktion::engine::Edit* getEdit() { return edit.get(); }
+
     // AudioAppComponent methods
     void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
     void getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill) override;
@@ -268,6 +270,7 @@ private:
 
     // Change to handle Edits instead of Files
     void handleEditSelection(std::unique_ptr<tracktion::engine::Edit> newEdit);
+    void loadNewEdit(std::unique_ptr<tracktion::engine::Edit> newEdit);
 
     // Moonbase API member
     MOONBASE_DECLARE_LICENSING_USING_JUCE_PROJECTINFO;

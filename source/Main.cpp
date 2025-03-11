@@ -11,6 +11,7 @@
 #include <juce_graphics/juce_graphics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <melatonin_inspector/melatonin_inspector.h>
+#include <tracktion_engine/tracktion_engine.h>
 
 #include "MainComponent.h"
 #include "CustomLookAndFeel.h"
@@ -51,8 +52,47 @@ public:
     //==============================================================================
     void systemRequestedQuit() override
     {
-        // This is called when the app is being asked to quit: you can ignore this
-        // request and let the app carry on running, or call quit() to allow the app to close.
+        // Check if there are any unsaved changes
+        if (auto* mainComp = dynamic_cast<MainComponent*>(mainWindow->getContentComponent()))
+        {
+            if (auto* edit = mainComp->getEdit())
+            {
+                if (edit->hasChangedSinceSaved())
+                {
+                    auto options = juce::MessageBoxOptions::makeOptionsYesNoCancel(
+                        juce::MessageBoxIconType::QuestionIcon,
+                        "Save Changes?",
+                        "Do you want to save the changes to \"" + edit->getName() + "\" before quitting?",
+                        "Save",
+                        "Discard",
+                        "Cancel"
+                    );
+
+                    juce::AlertWindow::showAsync(options, [this](int result) {
+                        if (result == 1) // Save
+                        {
+                            // Save current edit
+                            if (auto* mainComp = dynamic_cast<MainComponent*>(mainWindow->getContentComponent()))
+                            {
+                                if (auto* edit = mainComp->getEdit())
+                                {
+                                    tracktion::engine::EditFileOperations(*edit).save(true, false, false);
+                                    quit();
+                                }
+                            }
+                        }
+                        else if (result == 2) // Discard
+                        {
+                            quit();
+                        }
+                        // If result == 0 (Cancel), do nothing and keep app running
+                    });
+                    return;
+                }
+            }
+        }
+
+        // If no unsaved changes, quit immediately
         quit();
     }
 

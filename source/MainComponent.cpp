@@ -6,7 +6,7 @@
 #define JUCE_USE_DIRECTWRITE 0 // Fix drawing of Monospace fonts in Code Editor!
 
 // Initialize settings icon path data
-const uint8 MainComponent::settingsIconPathData[486] = { 110, 109, 202, 111, 210, 64, 243, 226, 61, 64, 108, 0, 0, 224, 64, 0, 0, 0, 0, 108, 0, 0, 48, 65, 0, 0, 0, 0, 108, 27, 200, 54, 65, 243, 226, 61, 64, 98, 91, 248, 63, 65, 174, 170, 76, 64, 95, 130, 72, 65, 231, 138, 96, 64, 46, 46, 80, 65, 180, 163, 120, 64, 108, 42, 181, 124, 65, 20, 38, 49, 64, 108, 149, 90, 142, 65, 246, 108, 199, 64, 108, 68, 249, 118, 65, 2, 85, 1, 65, 98, 112, 166, 119, 65, 201, 31, 6, 65, 0, 0, 120, 65, 111, 5, 11, 65, 0, 0, 120, 65, 0, 0, 16, 65, 98, 0, 0, 120, 65, 145, 250, 20, 65, 108, 166, 119, 65, 55, 224, 25, 65, 72, 249, 118, 65, 254, 170, 30, 65, 108, 151, 90, 142, 65, 133, 73, 60, 65, 108, 46, 181, 124, 65, 123, 182, 115, 65, 108, 50, 46, 80, 65, 18, 215, 97, 65, 98, 99, 130, 72, 65, 70, 221, 103, 65, 96, 248, 63, 65, 83, 213, 108, 65, 32, 200, 54, 65, 66, 135, 112, 65, 108, 0, 0, 48, 65, 0, 0, 144, 65, 108, 0, 0, 224, 64, 0, 0, 144, 65, 108, 202, 111, 210, 64, 67, 135, 112, 65, 98, 74, 15, 192, 64, 84, 213, 108, 65, 65, 251, 174, 64, 70, 221, 103, 65, 164, 163, 159, 64, 19, 215, 97, 65, 108, 92, 43, 13, 64, 123, 182, 115, 65, 108, 187, 181, 82, 62, 133, 73, 60, 65, 108, 244, 26, 36, 64, 254, 170, 30, 65, 98, 64, 102, 33, 64, 55, 224, 25, 65, 0, 0, 32, 64, 145, 250, 20, 65, 0, 0, 32, 64, 0, 0, 16, 65, 98, 0, 0, 32, 64, 111, 5, 11, 65, 64, 102, 33, 64, 201, 31, 6, 65, 244, 26, 36, 64, 2, 85, 1, 65, 108, 187, 181, 82, 62, 246, 108, 199, 64, 108, 92, 43, 13, 64, 20, 38, 49, 64, 108, 164, 163, 159, 64, 180, 163, 120, 64, 98, 65, 251, 174, 64, 231, 138, 96, 64, 74, 15, 192, 64, 175, 170, 76, 64, 202, 111, 210, 64, 243, 226, 61, 64, 99, 109, 0, 0, 16, 65, 0, 0, 64, 65, 98, 121, 130, 42, 65, 0, 0, 64, 65, 0, 0, 64, 65, 121, 130, 42, 65, 0, 0, 64, 65, 0, 0, 16, 65, 98, 0, 0, 64, 65, 13, 251, 234, 64, 121, 130, 42, 65, 0, 0, 192, 64, 0, 0, 16, 65, 0, 0, 192, 64, 98, 13, 251, 234, 64, 0, 0, 192, 64, 0, 0, 192, 64, 13, 251, 234, 64, 0, 0, 192, 64, 0, 0, 16, 65, 98, 0, 0, 192, 64, 121, 130, 42, 65, 13, 251, 234, 64, 0, 0, 64, 65, 0, 0, 16, 65, 0, 0, 64, 65, 99, 101, 0, 0 };
+const uint8 MainComponent::settingsIconPathData[486] = { 110, 109, 202, 111, 210, 64, 243, 226, 61, 64, 108, 0, 0, 224, 64, 0, 0, 0, 0, 108, 0, 0, 48, 65, 0, 0, 0, 0, 108, 27, 200, 54, 65, 243, 226, 61, 64, 98, 91, 248, 63, 65, 174, 170, 76, 64, 95, 130, 72, 65, 231, 138, 96, 64, 46, 46, 80, 65, 180, 163, 120, 64, 108, 42, 181, 124, 65, 20, 38, 49, 64, 108, 149, 90, 142, 65, 246, 108, 199, 64, 108, 68, 249, 118, 65, 2, 85, 1, 65, 98, 112, 166, 119, 65, 201, 31, 6, 65, 0, 0, 120, 65, 111, 5, 11, 65, 0, 0, 120, 65, 0, 0, 16, 65, 98, 0, 0, 120, 65, 145, 250, 20, 65, 108, 166, 119, 65, 55, 224, 25, 65, 72, 249, 118, 65, 254, 170, 30, 65, 108, 151, 90, 142, 65, 133, 73, 60, 65, 108, 46, 181, 124, 65, 123, 182, 115, 65, 108, 50, 46, 80, 65, 18, 215, 97, 65, 98, 99, 130, 72, 65, 70, 221, 103, 65, 96, 248, 63, 65, 83, 213, 108, 65, 32, 200, 54, 65, 66, 135, 112, 65, 108, 0, 0, 48, 65, 0, 0, 144, 65, 108, 0, 0, 224, 64, 0, 0, 144, 65, 108, 202, 111, 210, 64, 67, 135, 112, 65, 98, 74, 15, 192, 64, 84, 213, 108, 65, 65, 251, 174, 64, 70, 221, 103, 65, 164, 163, 159, 64, 19, 215, 97, 65, 108, 92, 43, 13, 64, 20, 38, 49, 64, 108, 164, 163, 159, 64, 180, 163, 120, 64, 98, 65, 251, 174, 64, 231, 138, 96, 64, 74, 15, 192, 64, 175, 170, 76, 64, 202, 111, 210, 64, 243, 226, 61, 64, 99, 109, 0, 0, 16, 65, 0, 0, 64, 65, 98, 121, 130, 42, 65, 0, 0, 64, 65, 0, 0, 64, 65, 121, 130, 42, 65, 0, 0, 64, 65, 0, 0, 16, 65, 98, 0, 0, 64, 65, 13, 251, 234, 64, 121, 130, 42, 65, 0, 0, 192, 64, 0, 0, 16, 65, 0, 0, 192, 64, 98, 13, 251, 234, 64, 0, 0, 192, 64, 0, 0, 192, 64, 13, 251, 234, 64, 0, 0, 192, 64, 0, 0, 16, 65, 98, 0, 0, 192, 64, 121, 130, 42, 65, 13, 251, 234, 64, 0, 0, 64, 65, 0, 0, 16, 65, 0, 0, 64, 65, 99, 101, 0, 0 };
 
 //==============================================================================
 MainComponent::MainComponent()
@@ -146,15 +146,16 @@ void MainComponent::paint (juce::Graphics& g)
 
 void MainComponent::resized()
 {
-    auto bounds = getLocalBounds();
-    bounds.reduce(10, 10); // Add some padding
-
-    // Position menu bar at the top for all platforms
+    // Position menu bar at the very top without padding
     if (menuBar)
     {
-        menuBar->setBounds(bounds.removeFromTop(25));
-        bounds.removeFromTop(5); // Add a small gap after the menu bar
+        menuBar->setBounds(0, 0, getWidth(), 25);
     }
+
+    // Add padding for the rest of the content
+    auto bounds = getLocalBounds();
+    bounds.removeFromTop(25); // Remove menu bar height
+    bounds.reduce(10, 10); // Add padding for remaining content
 
     // Position activation UI button
     juce::Rectangle<int> activationUiButtonArea(250, 30);
@@ -355,10 +356,52 @@ void MainComponent::handleEditSelection (std::unique_ptr<tracktion::engine::Edit
     if (!newEdit)
         return;
 
+    // Check for unsaved changes in current edit
+    if (edit && edit->hasChangedSinceSaved())
+    {
+        // Store newEdit in a shared_ptr temporarily so it can be captured by copy in the lambda
+        auto sharedNewEdit = std::make_shared<std::unique_ptr<tracktion::engine::Edit>>(std::move(newEdit));
+        
+        auto options = juce::MessageBoxOptions::makeOptionsYesNoCancel(
+            juce::MessageBoxIconType::QuestionIcon,
+            "Save Changes?",
+            "Do you want to save the changes to \"" + edit->getName() + "\" before loading a new edit?",
+            "Save",
+            "Discard",
+            "Cancel"
+        );
+
+        juce::AlertWindow::showAsync(options, [this, sharedNewEdit](int result) {
+            if (result == 1) // Save
+            {
+                // Save current edit
+                te::EditFileOperations(*edit).save(true, false, false);
+                // Then proceed with loading new edit
+                loadNewEdit(std::move(*sharedNewEdit));
+            }
+            else if (result == 2) // Discard
+            {
+                // Proceed with loading new edit without saving
+                loadNewEdit(std::move(*sharedNewEdit));
+            }
+            // If result == 0 (Cancel), do nothing and keep current edit
+        });
+        return;
+    }
+
+    // If no unsaved changes, proceed with loading new edit
+    loadNewEdit(std::move(newEdit));
+}
+
+void MainComponent::loadNewEdit(std::unique_ptr<tracktion::engine::Edit> newEdit)
+{
+    if (!newEdit)
+        return;
+
     // Stop any current playback if we have an existing edit
     if (edit)
     {
-        edit->getTransport().stop (false, false);
+        edit->getTransport().stop(false, false);
 
         // Clean up all edit-dependent components first
         transportComponent = nullptr;
@@ -374,49 +417,49 @@ void MainComponent::handleEditSelection (std::unique_ptr<tracktion::engine::Edit
     }
 
     // Release current edit and assign new one
-    edit = std::move (newEdit);
+    edit = std::move(newEdit);
 
     // Update library bar with track name
-    libraryBar->setCurrentTrackName (edit->getName());
+    libraryBar->setCurrentTrackName(edit->getName());
 
     // Hide library window since we now have an edit loaded
-    libraryComponent->setVisible (false);
+    libraryComponent->setVisible(false);
 
     // Get the stored BPM from the Edit
-    float bpm = edit->state.getProperty ("bpm", 120.0f);
+    float bpm = edit->state.getProperty("bpm", 120.0f);
     baseTempo = bpm; // Update base tempo
 
     // Setup audio graph
     setupAudioGraph();
 
     // Initialize all edit-dependent components
-    reverbComponent = std::make_unique<ReverbComponent> (*edit);
-    addAndMakeVisible (*reverbComponent);
+    reverbComponent = std::make_unique<ReverbComponent>(*edit);
+    addAndMakeVisible(*reverbComponent);
 
-    DBG ("Setup reverb component");
+    DBG("Setup reverb component");
 
     setupChopComponent();
 
-    DBG ("Setup chop component");
+    DBG("Setup chop component");
 
-    flangerComponent = std::make_unique<FlangerComponent> (*edit);
-    addAndMakeVisible (*flangerComponent);
+    flangerComponent = std::make_unique<FlangerComponent>(*edit);
+    addAndMakeVisible(*flangerComponent);
 
-    delayComponent = std::make_unique<DelayComponent> (*edit);
-    addAndMakeVisible (*delayComponent);
+    delayComponent = std::make_unique<DelayComponent>(*edit);
+    addAndMakeVisible(*delayComponent);
 
-    phaserComponent = std::make_unique<PhaserComponent> (*edit);
-    addAndMakeVisible (*phaserComponent);
+    phaserComponent = std::make_unique<PhaserComponent>(*edit);
+    addAndMakeVisible(*phaserComponent);
 
-    DBG ("Setup phaser component");
+    DBG("Setup phaser component");
 
     setupVinylBrakeComponent();
     setupScrewComponent();
     setupScratchComponent();
 
     // Create transport component
-    transportComponent = std::make_unique<TransportComponent> (*edit);
-    addAndMakeVisible (*transportComponent);
+    transportComponent = std::make_unique<TransportComponent>(*edit);
+    addAndMakeVisible(*transportComponent);
 
     // Reset component states
     if (screwComponent)
