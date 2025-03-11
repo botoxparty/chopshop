@@ -332,7 +332,6 @@ void LibraryComponent::addToLibrary (const juce::File& file)
     auto options = te::Edit::Options {engine};
     options.editState = te::createEmptyEdit (engine);
     options.editProjectItemID = te::ProjectItemID::fromProperty (options.editState, te::IDs::projectID);
-    options.numUndoLevelsToStore = 0;
     options.numAudioTracks = 2;
     options.role = te::Edit::forEditing;
 

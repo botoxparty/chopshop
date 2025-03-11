@@ -723,6 +723,8 @@ void MainComponent::getAllCommands (juce::Array<juce::CommandID>& commands)
 {
     commands.add (CommandIDs::DeleteSelectedRegion);
     commands.add (CommandIDs::SaveProject);
+    commands.add (CommandIDs::Undo);
+    commands.add (CommandIDs::Redo);
 }
 
 void MainComponent::getCommandInfo (juce::CommandID commandID, juce::ApplicationCommandInfo& result)
@@ -737,6 +739,18 @@ void MainComponent::getCommandInfo (juce::CommandID commandID, juce::Application
         case CommandIDs::SaveProject:
             result.setInfo ("Save", "Saves the current project", "File", 0);
             result.addDefaultKeypress ('s', juce::ModifierKeys::commandModifier);
+            break;
+
+        case CommandIDs::Undo:
+            result.setInfo ("Undo", "Undo the last action", "Edit", 0);
+            result.addDefaultKeypress ('z', juce::ModifierKeys::commandModifier);
+            result.setActive (edit != nullptr && edit->getUndoManager().canUndo());
+            break;
+
+        case CommandIDs::Redo:
+            result.setInfo ("Redo", "Redo the last undone action", "Edit", 0);
+            result.addDefaultKeypress ('z', juce::ModifierKeys::commandModifier | juce::ModifierKeys::shiftModifier);
+            result.setActive (edit != nullptr && edit->getUndoManager().canRedo());
             break;
 
         default:
@@ -768,13 +782,30 @@ bool MainComponent::perform (const juce::ApplicationCommandTarget::InvocationInf
                 // - offerToDiscardChanges: Show dialog asking to save changes
                 bool success = operations.save (true, false, false);
 
-
                 if (success == true)
                 {
                     juce::AlertWindow::showMessageBoxAsync (juce::AlertWindow::InfoIcon,
                         "Save",
                         "Project saved successfully!");
                 }
+            }
+            break;
+
+        case CommandIDs::Undo:
+            if (edit != nullptr)
+            {
+                edit->getUndoManager().undo();
+                // Update UI state after undo
+                commandManager->commandStatusChanged();
+            }
+            break;
+
+        case CommandIDs::Redo:
+            if (edit != nullptr)
+            {
+                edit->getUndoManager().redo();
+                // Update UI state after redo
+                commandManager->commandStatusChanged();
             }
             break;
 
@@ -787,7 +818,7 @@ bool MainComponent::perform (const juce::ApplicationCommandTarget::InvocationInf
 
 juce::StringArray MainComponent::getMenuBarNames()
 {
-    return { "File" };
+    return { "File", "Edit" };
 }
 
 juce::PopupMenu MainComponent::getMenuForIndex (int topLevelMenuIndex, const juce::String& /*menuName*/)
@@ -802,6 +833,13 @@ juce::PopupMenu MainComponent::getMenuForIndex (int topLevelMenuIndex, const juc
         menu.addItem(3, "Game Controller Settings", true, false);
         menu.addSeparator();
         menu.addItem(2, "Quit", true, false);
+    }
+    else if (topLevelMenuIndex == 1) // Edit menu
+    {
+        menu.addCommandItem(commandManager.get(), CommandIDs::Undo);
+        menu.addCommandItem(commandManager.get(), CommandIDs::Redo);
+        menu.addSeparator();
+        menu.addCommandItem(commandManager.get(), CommandIDs::DeleteSelectedRegion);
     }
 
     return menu;

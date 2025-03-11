@@ -95,6 +95,10 @@ public:
             chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
             chopReleaseDelay = 0;
         }
+
+        // Update command states for undo/redo
+        if (commandManager != nullptr && edit != nullptr)
+            commandManager->commandStatusChanged();
     }
 
     void changeListenerCallback(juce::ChangeBroadcaster*) override
@@ -124,7 +128,9 @@ public:
     enum CommandIDs
     {
         DeleteSelectedRegion = 1001,
-        SaveProject = 1002
+        SaveProject = 1002,
+        Undo = 1003,
+        Redo = 1004
     };
 
     // Command handler
