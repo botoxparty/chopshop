@@ -16,7 +16,6 @@ public:
     void resized() override;
 
     void setPlugin(tracktion::engine::Plugin* plugin);
-    void setClip(tracktion::engine::WaveAudioClip* clip);
 
 private:
     void updateAutomationLanes();
@@ -26,7 +25,6 @@ private:
 
     tracktion::engine::Edit& edit;
     tracktion::engine::Plugin* plugin = nullptr;
-    tracktion::engine::WaveAudioClip* currentClip = nullptr;
     bool isGroupCollapsed = false;
     std::unique_ptr<juce::DrawableButton> groupCollapseButton;
     ZoomState& zoomState;

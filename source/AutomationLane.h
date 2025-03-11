@@ -5,6 +5,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <tracktion_engine/tracktion_engine.h>
 #include "ZoomState.h"
+#include "Utilities.h"
 
 class AutomationLane : public juce::Component,
                      public tracktion::engine::AutomatableParameter::Listener,
@@ -29,12 +30,13 @@ public:
     void setParameter(tracktion::engine::AutomatableParameter*);
     virtual void updatePoints();
     
-    // Clip handling
-    void setClip(tracktion::engine::WaveAudioClip* clip) { currentClip = clip; }
     double getSourceLength() const 
     { 
-        if (currentClip != nullptr)
-            return currentClip->getPosition().getLength().inSeconds();
+        auto clip = EngineHelpers::getCurrentClip(edit);
+        if (clip != nullptr)
+            return clip->getPosition().getLength().inSeconds();
+
+        DBG("No clip found, returning default length");
         return 60.0; // Default length if no clip
     }
 

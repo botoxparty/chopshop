@@ -199,14 +199,6 @@ void PluginAutomationComponent::setPlugin(tracktion::engine::Plugin* p)
     resized();
 }
 
-void PluginAutomationComponent::setClip(tracktion::engine::WaveAudioClip* clip)
-{
-    currentClip = clip;
-    for (auto& laneInfo : automationLanes)
-        if (laneInfo.lane != nullptr)
-            laneInfo.lane->setClip(currentClip);
-}
-
 void PluginAutomationComponent::updateAutomationLanes()
 {
     // Clear existing lanes
@@ -238,7 +230,6 @@ void PluginAutomationComponent::createAutomationLaneForParameter(tracktion::engi
     // Create and setup automation lane
     laneInfo.lane = std::make_unique<AutomationLane>(edit, zoomState);
     laneInfo.lane->setParameter(param);
-    laneInfo.lane->setClip(currentClip);
     addAndMakeVisible(*laneInfo.lane);
     
     // Setup label

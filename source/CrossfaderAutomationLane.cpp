@@ -22,10 +22,12 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
     // Draw grid lines
     g.setColour(juce::Colours::grey.withAlpha(0.5f));
     
-    // Calculate visible beat range
+    // Calculate visible time range in seconds
     auto visibleTimeStart = getSourceLength() * zoomState.getScrollPosition();
-    auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
     auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomState.getZoomLevel());
+    
+    // Convert to beats for grid drawing
+    auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
     auto visibleTimeEndBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeEnd));
     
     // Draw vertical grid lines based on gridDivision
@@ -38,23 +40,29 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
         gridTimeBeats += gridDivision;
     }
     
-    // Draw only A-side chop regions
+    // Draw only A-side chop regions that are within the visible range
     for (size_t i = 0; i < chopRegions.size(); ++i)
     {
         const auto& region = chopRegions[i];
         if (!region.isASide) continue; // Skip non-A-side regions
         
+        // Skip regions that are completely outside the visible range
+        if (region.endTime < visibleTimeStart || region.startTime > visibleTimeEnd)
+            continue;
+        
+        // Clamp region times to visible range
+        double clampedStartTime = juce::jlimit(visibleTimeStart, visibleTimeEnd, region.startTime);
+        double clampedEndTime = juce::jlimit(visibleTimeStart, visibleTimeEnd, region.endTime);
+        
         // Convert region times through beats for proper tempo handling
-        auto startBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(region.startTime));
-        auto endBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(region.endTime));
+        auto startBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(clampedStartTime));
+        auto endBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(clampedEndTime));
         
         auto startTimeSeconds = tempoSequence.toTime(startBeats).inSeconds();
         auto endTimeSeconds = tempoSequence.toTime(endBeats).inSeconds();
         
         auto startPoint = timeToXY(startTimeSeconds, 1.0);
         auto endPoint = timeToXY(endTimeSeconds, 1.0);
-
-        DBG("region.startTime: " << startTimeSeconds << " region.endTime: " << endTimeSeconds);
         
         // Calculate rectangle bounds for A-side
         juce::Rectangle<float> regionBounds(

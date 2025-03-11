@@ -189,6 +189,12 @@ namespace EngineHelpers
         return nullptr;
     }
 
+    inline tracktion::engine::Clip* getCurrentClip(tracktion::engine::Edit& edit)
+    {
+        auto track = EngineHelpers::getAudioTrack(edit, 0);
+        return track->getClips()[0];
+    }
+
     inline void togglePlay (te::Edit& edit, ReturnToStart rts = ReturnToStart::no)
     {
         auto& transport = edit.getTransport();
