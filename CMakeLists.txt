@@ -74,6 +74,9 @@ add_subdirectory(tracktion_engine/modules)
 # Add the SDL3 library
 add_subdirectory(vendor/SDL3 EXCLUDE_FROM_ALL)
 
+# Add the moonbase JUCEClient module
+add_subdirectory (modules/moonbase_JUCEClient)
+
 # Create a library for the minibpm module
 add_library(minibpm STATIC
     source/minibpm.cpp
@@ -194,6 +197,8 @@ target_link_libraries("${PROJECT_NAME}" PRIVATE SharedCode)
 # Link the SDL3 library to the JUCE app target
 target_link_libraries("${PROJECT_NAME}" PRIVATE SDL3::SDL3)
 
+# Link the moonbase JUCEClient module to the JUCE app target
+target_link_libraries("${PROJECT_NAME}" PRIVATE moonbase_JUCEClient)
 
 # IPP support, comment out to disable
 include(PamplejuceIPP)
@@ -255,6 +260,7 @@ juce_add_binary_data(Assets
     SOURCES
         source/Audiowide-Regular.ttf
         source/JetBrainsMono-VariableFont_wght.ttf
-        Resources/vinyl.png
+        assets/moonbase_api_config.json
+        assets/PoundingSystemsLogo.png
 )
 

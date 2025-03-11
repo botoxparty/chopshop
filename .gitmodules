@@ -17,3 +17,7 @@
 [submodule "vendor/SDL3"]
 	path = vendor/SDL3
 	url = git@github.com:libsdl-org/SDL.git
+[submodule "modules/moonbase_JUCEClient"]
+	path = modules/moonbase_JUCEClient
+	url = https://github.com/Moonbase-sh/moonbase_JUCEClient
+	branch = main

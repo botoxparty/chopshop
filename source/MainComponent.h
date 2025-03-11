@@ -6,6 +6,7 @@
 #include <juce_graphics/juce_graphics.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <tracktion_engine/tracktion_engine.h>
+#include <moonbase_JUCEClient/moonbase_JUCEClient.h>
 
 namespace ProjectInfo
 {
@@ -15,6 +16,7 @@ namespace ProjectInfo
     const int          versionNumber  = 0x10000;
 }
 
+#define ANIMATE_COMPANY_LOGO 1
 
 #include "Utilities.h"
 #include "CustomLookAndFeel.h"
@@ -47,7 +49,58 @@ namespace ProjectInfo
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent : public juce::Component,
+class CompanyLogo : public juce::Component,
+                    private juce::Timer
+{
+public:
+    CompanyLogo()
+    {
+        logo = juce::Drawable::createFromImageData(BinaryData::PoundingSystemsLogo_png,
+                                                  BinaryData::PoundingSystemsLogo_pngSize);
+
+        #if ANIMATE_COMPANY_LOGO
+            jitterX.reset(15);
+            jitterY.reset(15);
+            startTimerHz(30);
+        #endif
+    }
+
+private:
+    std::unique_ptr<juce::Drawable> logo;
+    
+    void paint(juce::Graphics& g) override
+    {
+        const auto width = getWidth();
+        const auto height = getHeight();
+        auto area = getLocalBounds().toFloat().reduced(height * 0.1f);
+        
+        #if ANIMATE_COMPANY_LOGO
+            const auto currentJitterX = jitterX.getNextValue();
+            const auto currentJitterY = jitterY.getNextValue();
+            area = area.translated(width * currentJitterX, height * currentJitterY);
+        #endif
+        
+        if (logo != nullptr)
+            logo->drawWithin(g, area, juce::RectanglePlacement::centred, 1.0f);
+    }
+    
+    void timerCallback() override
+    {
+        const auto jitterRange = 0.1f;
+        jitterX.setTargetValue(juce::jmap(random.nextFloat(), 0.f, 1.f, -jitterRange, jitterRange));
+        jitterY.setTargetValue(juce::jmap(random.nextFloat(), 0.f, 1.f, -jitterRange, jitterRange));
+        repaint();
+    }
+
+    juce::LinearSmoothedValue<float> jitterX{0.f};
+    juce::LinearSmoothedValue<float> jitterY{0.f};
+    juce::Random random;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CompanyLogo)
+};
+
+//==============================================================================
+class MainComponent : public juce::AudioAppComponent,
                       public juce::Timer,
                       public GamepadManager::Listener,
                       public juce::ChangeListener,
@@ -59,6 +112,11 @@ public:
     //==============================================================================
     MainComponent();
     ~MainComponent() override;
+
+    // AudioAppComponent methods
+    void prepareToPlay(int samplesPerBlockExpected, double sampleRate) override;
+    void getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill) override;
+    void releaseResources() override;
 
     //==============================================================================
     void paint(juce::Graphics &) override;
@@ -204,14 +262,20 @@ private:
 
     void gamepadTouchpadMoved(float x, float y, bool touched) override;
 
-    void releaseResources();
-
     std::unique_ptr<juce::ApplicationCommandManager> commandManager;
 
     std::unique_ptr<TransportComponent> transportComponent;
 
     // Change to handle Edits instead of Files
     void handleEditSelection(std::unique_ptr<tracktion::engine::Edit> newEdit);
+
+    // Moonbase API member
+    MOONBASE_DECLARE_LICENSING_USING_JUCE_PROJECTINFO;
+    
+    // Moonbase Activation UI member
+    MOONBASE_DECLARE_AND_INIT_ACTIVATION_UI_SAME_PARENT;
+    
+    juce::TextButton showActivationUiButton{"Show Activation UI"};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

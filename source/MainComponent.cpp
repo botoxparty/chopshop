@@ -29,10 +29,26 @@ MainComponent::MainComponent()
     addAndMakeVisible(*menuBar);
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
-    LookAndFeel::setDefaultLookAndFeel (customLookAndFeel.get());
-    getLookAndFeel().setDefaultSansSerifTypefaceName ("Arial");
-    setSize (924, 720);
-    startTimerHz (30);
+    LookAndFeel::setDefaultLookAndFeel(customLookAndFeel.get());
+    getLookAndFeel().setDefaultSansSerifTypefaceName("Arial");
+    setSize(924, 720);
+    startTimerHz(30);
+
+    // Initialize licensing UI
+    addAndMakeVisible(showActivationUiButton);
+    showActivationUiButton.onClick = [&]()
+    {
+        MOONBASE_SHOW_ACTIVATION_UI;
+    };
+
+    if (activationUI != nullptr)
+    {
+        activationUI->setWelcomePageText("ChopShop", "License Management");
+        activationUI->setSpinnerLogo(juce::Drawable::createFromImageData(BinaryData::PoundingSystemsLogo_png, 
+                                                                        BinaryData::PoundingSystemsLogo_pngSize));
+        activationUI->setCompanyLogo(std::make_unique<CompanyLogo>());
+        activationUI->setWelcomeButtonTextScale(0.3f);
+    }
 
     // Register our custom plugins with the engine
     engine.getPluginManager().createBuiltInType<tracktion::engine::OscilloscopePlugin>();
@@ -70,6 +86,34 @@ MainComponent::MainComponent()
     addAndMakeVisible (*controllerMappingComponent);
 
     resized();
+
+    if (juce::RuntimePermissions::isRequired(juce::RuntimePermissions::recordAudio)
+        && !juce::RuntimePermissions::isGranted(juce::RuntimePermissions::recordAudio))
+    {
+        juce::RuntimePermissions::request(juce::RuntimePermissions::recordAudio,
+                                        [&](bool granted) { setAudioChannels(granted ? 2 : 0, 2); });
+    }
+    else
+    {
+        setAudioChannels(2, 2);
+    }
+}
+
+void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
+{
+    MOONBASE_PREPARE_TO_PLAY(sampleRate, samplesPerBlockExpected);
+}
+
+void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
+{
+    bufferToFill.clearActiveBufferRegion();
+
+    // Your audio processing code here
+
+    if (auto* buffer = bufferToFill.buffer)
+    {
+        MOONBASE_PROCESS(*buffer);
+    }
 }
 
 MainComponent::~MainComponent()
@@ -79,6 +123,7 @@ MainComponent::~MainComponent()
 
     // Call releaseResources first to ensure proper cleanup
     releaseResources();
+    shutdownAudio();
 
     // Additional cleanup if needed
     LookAndFeel::setDefaultLookAndFeel (nullptr);
@@ -110,6 +155,13 @@ void MainComponent::resized()
         menuBar->setBounds(bounds.removeFromTop(25));
         bounds.removeFromTop(5); // Add a small gap after the menu bar
     }
+
+    // Position activation UI button
+    juce::Rectangle<int> activationUiButtonArea(250, 30);
+    activationUiButtonArea.setCentre(bounds.getCentre().withY(bounds.getY() + 40));
+    showActivationUiButton.setBounds(activationUiButtonArea);
+
+    MOONBASE_RESIZE_ACTIVATION_UI;
 
     // Always position the library bar at the top
     if (libraryBar != nullptr)
