@@ -23,11 +23,10 @@ MainComponent::MainComponent()
     // Set this as the first command target
     commandManager->setFirstCommandTarget(this);
 
-    // Set up menu bar  
-    if (__APPLE__)
-    {
-        juce::MenuBarModel::setMacMainMenu(this);
-    }
+    // Set up menu bar (in-window for all platforms)
+    setApplicationCommandManagerToWatch(commandManager.get());
+    menuBar = std::make_unique<juce::MenuBarComponent>(this);
+    addAndMakeVisible(*menuBar);
 
     customLookAndFeel = std::make_unique<CustomLookAndFeel>();
     LookAndFeel::setDefaultLookAndFeel (customLookAndFeel.get());
@@ -75,9 +74,6 @@ MainComponent::MainComponent()
 
 MainComponent::~MainComponent()
 {
-    // Remove the menu bar
-    juce::MenuBarModel::setMacMainMenu (nullptr);
-
     // Remove key listener before destroying command manager
     removeKeyListener (commandManager->getKeyMappings());
 
@@ -107,6 +103,13 @@ void MainComponent::resized()
 {
     auto bounds = getLocalBounds();
     bounds.reduce(10, 10); // Add some padding
+
+    // Position menu bar at the top for all platforms
+    if (menuBar)
+    {
+        menuBar->setBounds(bounds.removeFromTop(25));
+        bounds.removeFromTop(5); // Add a small gap after the menu bar
+    }
 
     // Always position the library bar at the top
     if (libraryBar != nullptr)

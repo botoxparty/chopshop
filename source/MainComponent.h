@@ -152,6 +152,7 @@ private:
     static const uint8 settingsIconPathData[486];
     
     std::unique_ptr<juce::DrawableButton> audioSettingsButton;
+    std::unique_ptr<juce::MenuBarComponent> menuBar;
 
     double baseTempo = 120.0;
     double trackOffset = 0.0;
