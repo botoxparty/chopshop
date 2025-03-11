@@ -4,6 +4,7 @@ PluginAutomationComponent::PluginAutomationComponent(tracktion::engine::Edit& e,
     : edit(e)
     , plugin(nullptr)
     , zoomState(zs)
+    , isGroupCollapsed(true)  // Initialize as collapsed
 {
     // Create group collapse button with custom path
     auto* collapseIcon = new juce::DrawablePath();
@@ -22,6 +23,7 @@ PluginAutomationComponent::PluginAutomationComponent(tracktion::engine::Edit& e,
     
     groupCollapseButton = std::make_unique<juce::DrawableButton>("groupCollapse", juce::DrawableButton::ImageFitted);
     groupCollapseButton->setImages(collapseIcon, nullptr, nullptr, nullptr, collapseIconClosed);
+    groupCollapseButton->setToggleState(true, juce::dontSendNotification); // Set initial state to collapsed
     groupCollapseButton->onClick = [this]() { toggleGroupCollapsed(); };
     addAndMakeVisible(*groupCollapseButton);
 
