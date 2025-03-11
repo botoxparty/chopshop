@@ -669,21 +669,27 @@ void MainComponent::releaseResources()
     // Stop any active timers
     stopTimer();
 
-    // Stop playback if active
-    if (edit->getTransport().isPlaying())
-        edit->getTransport().stop (true, false);
+    // Stop playback if active and edit is valid
+    if (edit != nullptr)
+    {
+        if (edit->getTransport().isPlaying())
+            edit->getTransport().stop(true, false);
+    }
+
+    // First, clean up transport component as it has automation listeners
+    transportComponent = nullptr;
 
     // Debug reference counting
     if (oscilloscopePlugin != nullptr)
     {
-        DBG ("Oscilloscope plugin reference count: " + juce::String (oscilloscopePlugin->getReferenceCount()));
+        DBG("Oscilloscope plugin reference count: " + juce::String(oscilloscopePlugin->getReferenceCount()));
     }
 
     // Remove oscilloscope listener
-    if (auto* oscPlugin = dynamic_cast<tracktion::engine::OscilloscopePlugin*> (oscilloscopePlugin.get()))
+    if (auto* oscPlugin = dynamic_cast<tracktion::engine::OscilloscopePlugin*>(oscilloscopePlugin.get()))
     {
-        oscPlugin->removeListener (this);
-        DBG ("Removed oscilloscope listener");
+        oscPlugin->removeListener(this);
+        DBG("Removed oscilloscope listener");
     }
 
     // Clear all component pointers in a specific order
@@ -706,8 +712,11 @@ void MainComponent::releaseResources()
 
     // Clear gamepad manager
     if (gamepadManager)
-        gamepadManager->removeListener (this);
+        gamepadManager->removeListener(this);
     gamepadManager = nullptr;
+
+    // Clear edit pointer last
+    edit = nullptr;
 }
 
 void MainComponent::getAllCommands (juce::Array<juce::CommandID>& commands)
@@ -821,4 +830,10 @@ void MainComponent::menuItemSelected (int menuItemID, int topLevelMenuIndex)
                 break;
         }
     }
+}
+
+void MainComponent::gamepadTouchpadMoved(float x, float y, bool touched)
+{
+    // Implement touchpad handling here if needed
+    // For now, we can leave it empty if you're not using the touchpad
 }

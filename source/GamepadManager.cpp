@@ -1,6 +1,6 @@
 #include "GamepadManager.h"
 
-GamepadManager::GamepadManager()
+GamepadManager::GamepadManager() : shouldContinue(true)
 {
     DBG("Initializing GamepadManager...");
     
@@ -52,93 +52,103 @@ GamepadManager::GamepadManager()
         DBG("No game pads found or connected");
     }
 
-    startTimerHz(60);
+    // Start the event thread
+    eventThread = std::make_unique<std::thread>(&GamepadManager::eventLoop, this);
 }
 
 GamepadManager::~GamepadManager()
 {
+    // Signal the event loop to stop
+    shouldContinue = false;
+    
+    // Wait for the event thread to finish
+    if (eventThread && eventThread->joinable())
+    {
+        eventThread->join();
+    }
+
     if (gamepad)
+    {
         SDL_CloseGamepad(gamepad);
+        gamepad = nullptr;
+    }
     
     SDL_Quit();
 }
 
 void GamepadManager::addListener(Listener* listener)
 {
+    std::lock_guard<std::mutex> lock(listenerMutex);
     listeners.add(listener);
 }
 
 void GamepadManager::removeListener(Listener* listener)
 {
+    std::lock_guard<std::mutex> lock(listenerMutex);
     listeners.remove(listener);
 }
 
-void GamepadManager::timerCallback()
+void GamepadManager::eventLoop()
 {
-    handleGamepadEvents();
-}
-
-void GamepadManager::handleGamepadEvents()
-{
-    SDL_Event event;
-    while (SDL_PollEvent(&event))
+    while (shouldContinue)
     {
-        switch (event.type)
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
         {
-            case SDL_EVENT_GAMEPAD_ADDED:
-                DBG("Gamepad connected:");
-                // Try to open the newly connected gamepad
-                if (!gamepad && SDL_IsGamepad(event.gdevice.which)) {
-                    gamepad = SDL_OpenGamepad(event.gdevice.which);
-                    if (gamepad) {
-                        DBG("Successfully opened gamepad: " << SDL_GetGamepadName(gamepad));
-                        DBG("Gamepad mapping: " << SDL_GetGamepadMapping(gamepad));
-                        
-                        // Enable touchpad support for PS5 controller
-                        SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_ACCEL, true);
-                        SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_GYRO, true);
+            std::lock_guard<std::mutex> lock(listenerMutex);
+            
+            switch (event.type)
+            {
+                case SDL_EVENT_GAMEPAD_ADDED:
+                    DBG("Gamepad connected:");
+                    if (!gamepad && SDL_IsGamepad(event.gdevice.which)) {
+                        gamepad = SDL_OpenGamepad(event.gdevice.which);
+                        if (gamepad) {
+                            DBG("Successfully opened gamepad: " << SDL_GetGamepadName(gamepad));
+                            DBG("Gamepad mapping: " << SDL_GetGamepadMapping(gamepad));
+                            
+                            SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_ACCEL, true);
+                            SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_GYRO, true);
+                        }
                     }
-                }
-                break;
-                
-            case SDL_EVENT_GAMEPAD_REMOVED:
-                DBG("Gamepad disconnected:");
-                // If this was our active gamepad, close it
-                if (gamepad && SDL_GetGamepadID(gamepad) == event.gdevice.which) {
-                    SDL_CloseGamepad(gamepad);
-                    gamepad = nullptr;
-                    DBG("Active gamepad was disconnected");
-                }
-                break;
-                
-            case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION:
-                DBG("Touchpad event received: x=" + juce::String(event.gtouchpad.x) + 
-                    " y=" + juce::String(event.gtouchpad.y) + 
-                    " finger=" + juce::String(event.gtouchpad.finger));
+                    break;
                     
-                if (event.gtouchpad.touchpad == 0)  // PS5 main touchpad
-                {
-                    // Raw values are already in 0-1 range, no need to normalize
-                    float x = event.gtouchpad.x;
-                    float y = event.gtouchpad.y;
-                    listeners.call([&](Listener& l) { 
-                        l.gamepadTouchpadMoved(x, y, true);  // Always send touched=true for motion events
-                    });
-                }
-                break;
+                case SDL_EVENT_GAMEPAD_REMOVED:
+                    DBG("Gamepad disconnected:");
+                    if (gamepad && SDL_GetGamepadID(gamepad) == event.gdevice.which) {
+                        SDL_CloseGamepad(gamepad);
+                        gamepad = nullptr;
+                        DBG("Active gamepad was disconnected");
+                    }
+                    break;
+                    
+                case SDL_EVENT_GAMEPAD_TOUCHPAD_MOTION:
+                    if (event.gtouchpad.touchpad == 0)  // PS5 main touchpad
+                    {
+                        float x = event.gtouchpad.x;
+                        float y = event.gtouchpad.y;
+                        listeners.call([&](Listener& l) { 
+                            l.gamepadTouchpadMoved(x, y, true);
+                        });
+                    }
+                    break;
 
-            case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-                listeners.call([&](Listener& l) { l.gamepadButtonPressed(event.gbutton.button); });
-                break;
+                case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+                    listeners.call([&](Listener& l) { l.gamepadButtonPressed(event.gbutton.button); });
+                    break;
 
-            case SDL_EVENT_GAMEPAD_BUTTON_UP:
-                listeners.call([&](Listener& l) { l.gamepadButtonReleased(event.gbutton.button); });
-                break;
+                case SDL_EVENT_GAMEPAD_BUTTON_UP:
+                    listeners.call([&](Listener& l) { l.gamepadButtonReleased(event.gbutton.button); });
+                    break;
 
-            case SDL_EVENT_GAMEPAD_AXIS_MOTION:
-                float value = event.gaxis.value / 32767.0f; // Normalize to -1.0 to 1.0
-                listeners.call([&](Listener& l) { l.gamepadAxisMoved(event.gaxis.axis, value); });
-                break;
+                case SDL_EVENT_GAMEPAD_AXIS_MOTION:
+                    float value = event.gaxis.value / 32767.0f;
+                    listeners.call([&](Listener& l) { l.gamepadAxisMoved(event.gaxis.axis, value); });
+                    break;
+            }
         }
+        
+        // Add a small sleep to prevent busy-waiting
+        SDL_Delay(16); // roughly 60Hz
     }
 } 

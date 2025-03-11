@@ -135,6 +135,7 @@ public:
 
     void setupAudioGraph();
 
+
 private:
     //==============================================================================
     tracktion::engine::Engine engine{ProjectInfo::projectName};
@@ -193,6 +194,8 @@ private:
     void setupOscilloscopeComponent();
     void setupScrewComponent();
     void setupScratchComponent();
+
+    void gamepadTouchpadMoved(float x, float y, bool touched) override;
 
     void releaseResources();
 
