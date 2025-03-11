@@ -579,105 +579,118 @@ void LibraryComponent::showBpmEditorWindow (int rowIndex)
         DBG ("Current BPM: " + juce::String (currentBpm, 1));
     }
 
+    class BPMEditorContent : public juce::Component
+    {
+    public:
+        BPMEditorContent(LibraryComponent& owner, te::ProjectItem::Ptr item, float startBpm)
+            : libraryComponent(owner), projectItem(item), currentBpm(startBpm)
+        {
+            setSize(200, 150);
+
+            editor.setBounds(50, 20, 100, 24);
+            editor.setText(juce::String(currentBpm, 1));
+            editor.setInputRestrictions(6, "0123456789.");
+            editor.setColour(juce::TextEditor::backgroundColourId, juce::Colours::black);
+            editor.setColour(juce::TextEditor::textColourId, juce::Colour(0xFF00FF41));
+            editor.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xFF00FF41).withAlpha(0.5f));
+            addAndMakeVisible(editor);
+
+            halfButton.setButtonText("1/2x");
+            halfButton.setBounds(30, 60, 60, 24);
+            halfButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
+            halfButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF00FF41));
+            halfButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFF00FF41));
+            halfButton.onClick = [this]() {
+                double currentValue = editor.getText().getDoubleValue();
+                double newValue = currentValue * 0.5;
+                editor.setText(juce::String(newValue, 1));
+                DBG("BPM halved: " + juce::String(currentValue, 1) + " -> " + juce::String(newValue, 1));
+            };
+            addAndMakeVisible(halfButton);
+
+            doubleButton.setButtonText("2x");
+            doubleButton.setBounds(110, 60, 60, 24);
+            doubleButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
+            doubleButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF00FF41));
+            doubleButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFF00FF41));
+            doubleButton.onClick = [this]() {
+                double currentValue = editor.getText().getDoubleValue();
+                double newValue = currentValue * 2.0;
+                editor.setText(juce::String(newValue, 1));
+                DBG("BPM doubled: " + juce::String(currentValue, 1) + " -> " + juce::String(newValue, 1));
+            };
+            addAndMakeVisible(doubleButton);
+
+            okButton.setButtonText("OK");
+            okButton.setBounds(50, 100, 100, 24);
+            okButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
+            okButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF00FF41));
+            okButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFF00FF41));
+            okButton.onClick = [this]() {
+                float newBpm = editor.getText().getFloatValue();
+
+                if (newBpm <= 0)
+                {
+                    DBG("ERROR: Invalid BPM value entered: " + editor.getText());
+                    return;
+                }
+
+                if (projectItem != nullptr)
+                {
+                    DBG("Updating BPM for item: " + projectItem->getName() + " from " + juce::String(currentBpm, 1) + " to " + juce::String(newBpm, 1));
+
+                    try
+                    {
+                        projectItem->setNamedProperty("bpm", juce::String(newBpm));
+
+                        DBG("Saving project after BPM update...");
+                        libraryComponent.libraryProject->save();
+
+                        libraryComponent.playlistTable->updateContent();
+                        DBG("BPM updated successfully");
+                    }
+                    catch (const std::exception& e)
+                    {
+                        DBG("EXCEPTION while updating BPM: " + juce::String(e.what()));
+                    }
+                    catch (...)
+                    {
+                        DBG("UNKNOWN EXCEPTION while updating BPM");
+                    }
+                }
+                else
+                {
+                    DBG("ERROR: Project item reference is null");
+                }
+
+                if (auto* dw = juce::Component::getCurrentlyModalComponent())
+                    dw->exitModalState(0);
+            };
+            addAndMakeVisible(okButton);
+
+            setColour(juce::ResizableWindow::backgroundColourId, juce::Colours::black);
+        }
+
+    private:
+        LibraryComponent& libraryComponent;
+        te::ProjectItem::Ptr projectItem;
+        float currentBpm;
+
+        juce::TextEditor editor;
+        juce::TextButton halfButton;
+        juce::TextButton doubleButton;
+        juce::TextButton okButton;
+    };
+
     juce::DialogWindow::LaunchOptions options;
-
-    auto content = std::make_unique<juce::Component>();
-    content->setSize (200, 150);
-
-    auto editor = new juce::TextEditor();
-    editor->setBounds (50, 20, 100, 24);
-    editor->setText (juce::String (currentBpm, 1));
-    editor->setInputRestrictions (6, "0123456789.");
-    editor->setColour (juce::TextEditor::backgroundColourId, black);
-    editor->setColour (juce::TextEditor::textColourId, matrixGreen);
-    editor->setColour (juce::TextEditor::outlineColourId, matrixGreen.withAlpha (0.5f));
-    content->addAndMakeVisible (editor);
-
-    auto halfButton = new juce::TextButton ("1/2x");
-    halfButton->setBounds (30, 60, 60, 24);
-    halfButton->setColour (juce::TextButton::buttonColourId, black);
-    halfButton->setColour (juce::TextButton::textColourOffId, matrixGreen);
-    halfButton->setColour (juce::TextButton::textColourOnId, matrixGreen);
-    halfButton->onClick = [editor]() {
-        double currentValue = editor->getText().getDoubleValue();
-        double newValue = currentValue * 0.5;
-        editor->setText (juce::String (newValue, 1));
-        DBG ("BPM halved: " + juce::String (currentValue, 1) + " -> " + juce::String (newValue, 1));
-    };
-    content->addAndMakeVisible (halfButton);
-
-    auto doubleButton = new juce::TextButton ("2x");
-    doubleButton->setBounds (110, 60, 60, 24);
-    doubleButton->setColour (juce::TextButton::buttonColourId, black);
-    doubleButton->setColour (juce::TextButton::textColourOffId, matrixGreen);
-    doubleButton->setColour (juce::TextButton::textColourOnId, matrixGreen);
-    doubleButton->onClick = [editor]() {
-        double currentValue = editor->getText().getDoubleValue();
-        double newValue = currentValue * 2.0;
-        editor->setText (juce::String (newValue, 1));
-        DBG ("BPM doubled: " + juce::String (currentValue, 1) + " -> " + juce::String (newValue, 1));
-    };
-    content->addAndMakeVisible (doubleButton);
-
-    auto okButton = new juce::TextButton ("OK");
-    okButton->setBounds (50, 100, 100, 24);
-    okButton->setColour (juce::TextButton::buttonColourId, black);
-    okButton->setColour (juce::TextButton::textColourOffId, matrixGreen);
-    okButton->setColour (juce::TextButton::textColourOnId, matrixGreen);
-
-    // Store a reference to the project item for the lambda
-    te::ProjectItem::Ptr itemRef = projectItem;
-
-    okButton->onClick = [this, itemRef, editor, currentBpm]() {
-        float newBpm = editor->getText().getFloatValue();
-
-        if (newBpm <= 0)
-        {
-            DBG ("ERROR: Invalid BPM value entered: " + editor->getText());
-            return;
-        }
-
-        if (itemRef != nullptr)
-        {
-            DBG ("Updating BPM for item: " + itemRef->getName() + " from " + juce::String (currentBpm, 1) + " to " + juce::String (newBpm, 1));
-
-            try
-            {
-                itemRef->setNamedProperty ("bpm", juce::String (newBpm));
-
-                DBG ("Saving project after BPM update...");
-                libraryProject->save();
-
-                playlistTable->updateContent();
-                DBG ("BPM updated successfully");
-            } catch (const std::exception& e)
-            {
-                DBG ("EXCEPTION while updating BPM: " + juce::String (e.what()));
-            } catch (...)
-            {
-                DBG ("UNKNOWN EXCEPTION while updating BPM");
-            }
-        }
-        else
-        {
-            DBG ("ERROR: Project item reference is null");
-        }
-
-        if (auto* dw = juce::Component::getCurrentlyModalComponent())
-            dw->exitModalState (0);
-    };
-    content->addAndMakeVisible (okButton);
-
-    content->setColour (juce::ResizableWindow::backgroundColourId, black);
-
-    options.content.setOwned (content.release());
+    options.content.setOwned(new BPMEditorContent(*this, projectItem, currentBpm));
     options.dialogTitle = "Edit BPM";
-    options.dialogBackgroundColour = black;
+    options.dialogBackgroundColour = juce::Colours::black;
     options.escapeKeyTriggersCloseButton = true;
     options.useNativeTitleBar = true;
     options.resizable = false;
 
-    DBG ("Launching BPM editor dialog");
+    DBG("Launching BPM editor dialog");
     options.launchAsync();
 }
 

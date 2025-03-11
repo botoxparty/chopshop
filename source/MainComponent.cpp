@@ -136,12 +136,13 @@ void MainComponent::resized()
         libraryBar->setBounds(libraryBounds);
     }
 
-    // Position library component or main content in the remaining space
+    // Position library component in the remaining space if visible
     if (libraryComponent && libraryComponent->isVisible()) {
         libraryComponent->setBounds(bounds);
-        return;
+        libraryComponent->toFront(false); // Bring to front but don't focus
     }
 
+    // Always layout other components even if library is visible
     // Row 1: Transport control
     if (transportComponent != nullptr)
     {
