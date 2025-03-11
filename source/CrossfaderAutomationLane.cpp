@@ -89,7 +89,10 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
 void CrossfaderAutomationLane::mouseDown(const juce::MouseEvent& event)
 {
     if (parameter == nullptr)
+    {
+        DBG("mouseDown: parameter is null");
         return;
+    }
         
     auto [time, value] = XYToTime(event.position.x, event.position.y);
     
@@ -100,31 +103,37 @@ void CrossfaderAutomationLane::mouseDown(const juce::MouseEvent& event)
         const auto& region = chopRegions[i];
         if (time >= region.startTime && time <= region.endTime)
         {
+            if(!region.isASide) {
+                break;
+            }
             selectedRegionIndex = i;
             repaint();
             return;
         }
     }
     
-    // If we didn't click on a region, add a new point
+    // If we didn't click on a region, add a new 1-second region
     if (snapEnabled)
+    {
+        auto originalTime = time;
         time = snapTimeToGrid(time);
+    }
         
     auto& curve = parameter->getCurve();
     
-    // If there are existing points, ensure we terminate the last region
-    if (curve.getNumPoints() > 0)
+    // Calculate end time for the new 1-second region
+    double endTime = time + 1.0;
+    
+    // Add the new region points
+    if (time > 0.001) // Add gap before if not at start
     {
-        auto lastPoint = curve.getPoint(curve.getNumPoints() - 1);
-        if (lastPoint.value > 0.5f)  // If last point was A-side
-        {
-            // Add a small gap before the new region
-            curve.addPoint(tracktion::TimePosition::fromSeconds(time - 0.001), 0.0f, 0.0f);
-        }
+        curve.addPoint(tracktion::TimePosition::fromSeconds(time - 0.001), 0.0f, 0.0f);
     }
     
-    // Add the new point for the region
     curve.addPoint(tracktion::TimePosition::fromSeconds(time), 1.0f, 0.0f);
+    curve.addPoint(tracktion::TimePosition::fromSeconds(endTime), 1.0f, 0.0f);
+    curve.addPoint(tracktion::TimePosition::fromSeconds(endTime + 0.001), 0.0f, 0.0f);
+    
     
     isDragging = true;
     updateChopRegionsFromCurve();
@@ -143,9 +152,9 @@ void CrossfaderAutomationLane::mouseDrag(const juce::MouseEvent& event)
     auto& curve = parameter->getCurve();
     
     int numPoints = curve.getNumPoints();
-    if (numPoints >= 2)
+    if (numPoints >= 4) // We should have 4 points for the current region
     {
-        // Move the end point and its terminator
+        // Move the end points of the region
         curve.movePoint(numPoints - 2, tracktion::TimePosition::fromSeconds(time), 1.0f, false);
         curve.movePoint(numPoints - 1, tracktion::TimePosition::fromSeconds(time + 0.001), 0.0f, false);
     }

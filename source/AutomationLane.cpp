@@ -279,8 +279,6 @@ juce::Point<float> AutomationLane::timeToXY(double timeInSeconds, double value) 
     // Convert time to beats using edit's tempo sequence
     auto beatPosition = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(timeInSeconds));
     
-    DBG("getSourceLength: " << getSourceLength());
-    
     // Calculate visible beat range
     auto visibleTimeStart = getSourceLength() * zoomState.getScrollPosition();
     auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
