@@ -9,6 +9,16 @@
 class PluginAutomationComponent : public juce::Component
 {
 public:
+    class HeightListener
+    {
+    public:
+        virtual ~HeightListener() = default;
+        virtual void heightChanged() = 0;
+    };
+
+    void addHeightListener(HeightListener* listener) { heightListener = listener; }
+    void removeHeightListener(HeightListener* listener) { if (heightListener == listener) heightListener = nullptr; }
+
     PluginAutomationComponent(tracktion::engine::Edit& e, tracktion::engine::Plugin* p = nullptr, ZoomState& zs = ZoomState::instance());
     ~PluginAutomationComponent() override;
 
@@ -16,16 +26,25 @@ public:
     void resized() override;
 
     void setPlugin(tracktion::engine::Plugin* plugin);
+    
+    // Add method to get preferred height
+    float getPreferredHeight() const;
+    void updateSize();
 
 private:
     void updateAutomationLanes();
     void createAutomationLaneForParameter(tracktion::engine::AutomatableParameter* param);
     void toggleLaneCollapsed(size_t laneIndex);
     void toggleGroupCollapsed();
+    void notifyHeightChanged() 
+    { 
+        if (heightListener != nullptr)
+            heightListener->heightChanged();
+    }
 
     tracktion::engine::Edit& edit;
     tracktion::engine::Plugin* plugin = nullptr;
-    bool isGroupCollapsed = false;
+    bool isGroupCollapsed = true;
     std::unique_ptr<juce::DrawableButton> groupCollapseButton;
     ZoomState& zoomState;
     
@@ -69,6 +88,8 @@ private:
     const float collapsedLaneHeight = 25.0f;
     const float labelWidth = 150.0f;
     const float headerHeight = 30.0f;
+    
+    HeightListener* heightListener = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginAutomationComponent)
 }; 

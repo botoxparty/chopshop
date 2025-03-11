@@ -37,36 +37,45 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     
     addAndMakeVisible(*crossfaderAutomationLane);
 
-    // Create and add automation lane for reverb wet parameter with zoom state
-    reverbWetAutomationLane = std::make_unique<AutomationLane>(edit, zoomState);
-    
-    // Find the reverb plugin and create automation component
+    // Find and create plugin automation components
     if (auto reverbPlugin = EngineHelpers::getPluginFromRack(edit, tracktion::engine::ReverbPlugin::xmlTypeName))
     {
         reverbAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, reverbPlugin.get(), zoomState);
-        pluginAutomationContainer.addAndMakeVisible(*reverbAutomationComponent);
+        pluginAutomationContainer.addPluginComponent(reverbAutomationComponent.get());
     }
 
-    // Find the delay plugin and create automation component
     if (auto delayPlugin = EngineHelpers::getPluginFromRack(edit, AutoDelayPlugin::xmlTypeName))
     {
         delayAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, delayPlugin.get(), zoomState);
-        pluginAutomationContainer.addAndMakeVisible(*delayAutomationComponent);
+        pluginAutomationContainer.addPluginComponent(delayAutomationComponent.get());
     }
 
-    // Find the phaser plugin and create automation component
     if (auto phaserPlugin = EngineHelpers::getPluginFromRack(edit, AutoPhaserPlugin::xmlTypeName))
     {
         phaserAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, phaserPlugin.get(), zoomState);
-        pluginAutomationContainer.addAndMakeVisible(*phaserAutomationComponent);
+        pluginAutomationContainer.addPluginComponent(phaserAutomationComponent.get());
     }
 
-    // Find the flanger plugin and create automation component
     if (auto flangerPlugin = EngineHelpers::getPluginFromRack(edit, FlangerPlugin::xmlTypeName))
     {
         flangerAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, flangerPlugin.get(), zoomState);
-        pluginAutomationContainer.addAndMakeVisible(*flangerAutomationComponent);
+        pluginAutomationContainer.addPluginComponent(flangerAutomationComponent.get());
     }
+
+    // Initialize layout manager
+    // We'll use indices 0-7 for our components (2 indices per component for spacing)
+    for (int i = 0; i < 8; ++i)
+        itemComponents.push_back(i);
+
+    // Set minimum sizes
+    layoutManager.setItemLayout(0, controlBarHeight, controlBarHeight, controlBarHeight);  // Transport bar (fixed)
+    layoutManager.setItemLayout(1, 2, 2, 2);  // Spacing
+    layoutManager.setItemLayout(2, thumbnailHeight, thumbnailHeight, thumbnailHeight);  // Thumbnail (fixed)
+    layoutManager.setItemLayout(3, 2, 2, 2);  // Spacing
+    layoutManager.setItemLayout(4, crossfaderHeight, crossfaderHeight, crossfaderHeight);  // Crossfader (fixed)
+    layoutManager.setItemLayout(5, 2, 2, 2);  // Spacing
+    layoutManager.setItemLayout(6, minPluginHeight, -1.0, -1.0);  // Plugin container (stretches)
+    layoutManager.setItemLayout(7, 2, 2, 2);  // Final spacing
 
     // Register as automation listener
     edit.getAutomationRecordManager().addListener(this);
@@ -94,61 +103,76 @@ void TransportComponent::paint(juce::Graphics& g)
 void TransportComponent::resized()
 {
     auto bounds = getLocalBounds();
+    layoutItemsWithCurrentBounds();
+}
+
+void TransportComponent::layoutItemsWithCurrentBounds()
+{
+    auto bounds = getLocalBounds();
+    auto w = bounds.getWidth();
     
-    // Constants for layout
-    const int controlBarHeight = 26;  // Fixed control bar height
-    const int crossfaderHeight = 25;  // Fixed crossfader height
-    const int thumbnailHeight = 60;   // Fixed thumbnail height
+    // Calculate positions for fixed-height components
+    transportBar.setBounds(bounds.getX(), bounds.getY(), w, controlBarHeight);
     
-    // Create main FlexBox for vertical layout of all components
-    juce::FlexBox mainFlex;
-    mainFlex.flexDirection = juce::FlexBox::Direction::column;
-    mainFlex.flexWrap = juce::FlexBox::Wrap::noWrap;
-    mainFlex.justifyContent = juce::FlexBox::JustifyContent::flexStart;
-    mainFlex.alignItems = juce::FlexBox::AlignItems::stretch;
+    auto y = bounds.getY() + controlBarHeight + 2; // Add spacing
     
-    // 1. Add transport bar
-    mainFlex.items.add(juce::FlexItem(transportBar).withHeight(controlBarHeight).withMargin(juce::FlexItem::Margin(0, 5, 0, 5)));
-    
-    // 2. Add thumbnail section
-    mainFlex.items.add(juce::FlexItem(*thumbnailComponent).withHeight(thumbnailHeight).withMargin(juce::FlexItem::Margin(0, 0, 0, 0)));
-    
-    // 3. Add crossfader automation lane
-    if (crossfaderAutomationLane != nullptr)
+    if (thumbnailComponent != nullptr)
     {
-        mainFlex.items.add(juce::FlexItem(*crossfaderAutomationLane).withHeight(crossfaderHeight).withMargin(juce::FlexItem::Margin(1, 0, 1, 0)));
+        thumbnailComponent->setBounds(bounds.getX(), y, w, thumbnailHeight);
+        y += thumbnailHeight + 2; // Add spacing
     }
     
-    // 4. Add plugin automation viewport
-    mainFlex.items.add(juce::FlexItem(pluginAutomationViewport).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 0, 0)));
+    if (crossfaderAutomationLane != nullptr)
+    {
+        crossfaderAutomationLane->setBounds(bounds.getX(), y, w, crossfaderHeight);
+        y += crossfaderHeight + 2; // Add spacing
+    }
     
-    // Perform the main layout
-    mainFlex.performLayout(bounds);
+    // Viewport gets remaining height
+    auto remainingHeight = bounds.getBottom() - y;
+    pluginAutomationViewport.setBounds(bounds.getX(), y, w, remainingHeight);
     
-    // Setup plugin automation container layout
-    juce::FlexBox pluginFlex;
-    pluginFlex.flexDirection = juce::FlexBox::Direction::column;
-    pluginFlex.flexWrap = juce::FlexBox::Wrap::noWrap;
+    // Layout plugin components in container
+    auto containerHeight = 0;
+    const int spacing = 1;
     
-    // Add automation components to plugin flex layout
     if (reverbAutomationComponent != nullptr)
-        pluginFlex.items.add(juce::FlexItem(*reverbAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+    {
+        auto height = reverbAutomationComponent->getPreferredHeight();
+        reverbAutomationComponent->setBounds(0, containerHeight, w, height);
+        containerHeight += height + spacing;
+    }
     
     if (delayAutomationComponent != nullptr)
-        pluginFlex.items.add(juce::FlexItem(*delayAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+    {
+        auto height = delayAutomationComponent->getPreferredHeight();
+        delayAutomationComponent->setBounds(0, containerHeight, w, height);
+        containerHeight += height + spacing;
+    }
     
     if (phaserAutomationComponent != nullptr)
-        pluginFlex.items.add(juce::FlexItem(*phaserAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+    {
+        auto height = phaserAutomationComponent->getPreferredHeight();
+        phaserAutomationComponent->setBounds(0, containerHeight, w, height);
+        containerHeight += height + spacing;
+    }
     
     if (flangerAutomationComponent != nullptr)
-        pluginFlex.items.add(juce::FlexItem(*flangerAutomationComponent).withFlex(1.0f).withMargin(juce::FlexItem::Margin(0, 0, 1, 0)));
+    {
+        auto height = flangerAutomationComponent->getPreferredHeight();
+        flangerAutomationComponent->setBounds(0, containerHeight, w, height);
+        containerHeight += height + spacing;
+    }
     
-    // Calculate total height for plugin container
-    auto totalHeight = pluginAutomationViewport.getHeight() * 4;
-    
-    // Set container bounds and perform plugin layout
-    pluginAutomationContainer.setBounds(0, 0, pluginAutomationViewport.getWidth(), totalHeight);
-    pluginFlex.performLayout(pluginAutomationContainer.getBounds());
+    // Update container size
+    pluginAutomationContainer.setSize(w, containerHeight);
+}
+
+void TransportComponent::updateLayout()
+{
+    // This method can be called when plugin components are collapsed/expanded
+    layoutItemsWithCurrentBounds();
+    repaint();
 }
 
 void TransportComponent::changeListenerCallback(juce::ChangeBroadcaster* source)

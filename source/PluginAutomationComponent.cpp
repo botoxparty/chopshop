@@ -140,7 +140,7 @@ void PluginAutomationComponent::resized()
     }
     
     // Reserve space for plugin name
-    bounds.removeFromTop(headerHeight);
+    auto headerBounds = bounds.removeFromTop(headerHeight);
     
     // If group is collapsed, don't layout the lanes
     if (isGroupCollapsed)
@@ -245,15 +245,26 @@ void PluginAutomationComponent::createAutomationLaneForParameter(tracktion::engi
     automationLanes.push_back(std::move(laneInfo));
 }
 
-void PluginAutomationComponent::toggleLaneCollapsed(size_t laneIndex)
+float PluginAutomationComponent::getPreferredHeight() const
 {
-    if (laneIndex < automationLanes.size())
+    if (isGroupCollapsed)
+        return headerHeight;
+
+    float totalHeight = headerHeight;
+    
+    for (const auto& laneInfo : automationLanes)
     {
-        auto& laneInfo = automationLanes[laneIndex];
-        laneInfo.isCollapsed = !laneInfo.isCollapsed;
-        laneInfo.collapseButton->setToggleState(laneInfo.isCollapsed, juce::dontSendNotification);
-        resized();
+        totalHeight += laneInfo.isCollapsed ? collapsedLaneHeight : laneHeight;
     }
+    
+    return totalHeight;
+}
+
+void PluginAutomationComponent::updateSize()
+{
+    auto preferredHeight = getPreferredHeight();
+    auto currentBounds = getBounds();
+    setBounds(currentBounds.withHeight(static_cast<int>(preferredHeight)));
 }
 
 void PluginAutomationComponent::toggleGroupCollapsed()
@@ -272,5 +283,22 @@ void PluginAutomationComponent::toggleGroupCollapsed()
             laneInfo.collapseButton->setVisible(!isGroupCollapsed);
     }
     
+    notifyHeightChanged();
     resized();
+}
+
+void PluginAutomationComponent::toggleLaneCollapsed(size_t laneIndex)
+{
+    if (laneIndex < automationLanes.size())
+    {
+        auto& laneInfo = automationLanes[laneIndex];
+        laneInfo.isCollapsed = !laneInfo.isCollapsed;
+        laneInfo.collapseButton->setToggleState(laneInfo.isCollapsed, juce::dontSendNotification);
+        
+        if (laneInfo.lane != nullptr)
+            laneInfo.lane->setVisible(!laneInfo.isCollapsed);
+            
+        notifyHeightChanged();
+        resized();
+    }
 } 

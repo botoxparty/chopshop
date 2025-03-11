@@ -18,21 +18,73 @@
 #include "ThumbnailComponent.h"
 #include "ZoomState.h"
 
+class PluginAutomationContainer : public juce::Component,
+                                public PluginAutomationComponent::HeightListener
+{
+public:
+    PluginAutomationContainer() = default;
+    ~PluginAutomationContainer() override = default;
+
+    void heightChanged() override
+    {
+        updateContainerBounds();
+    }
+
+    void addPluginComponent(PluginAutomationComponent* component)
+    {
+        if (component != nullptr)
+        {
+            addAndMakeVisible(component);
+            component->addHeightListener(this);
+            components.add(component);
+            updateContainerBounds();
+        }
+    }
+
+    void resized() override
+    {
+        updateContainerBounds();
+    }
+
+private:
+    void updateContainerBounds()
+    {
+        auto w = getWidth();
+        auto containerHeight = 0;
+        const int spacing = 1;
+
+        for (auto* component : components)
+        {
+            if (component != nullptr)
+            {
+                auto height = component->getPreferredHeight();
+                component->setBounds(0, containerHeight, w, height);
+                containerHeight += height + spacing;
+            }
+        }
+
+        setSize(w, containerHeight);
+    }
+
+    juce::Array<PluginAutomationComponent*> components;
+};
+
 class TransportComponent : public juce::Component,
                          public juce::Timer,
                          public juce::ChangeListener,
                          public tracktion::engine::AutomationRecordManager::Listener
 {
 public:
-    TransportComponent(tracktion::engine::Edit& e);
+    TransportComponent(tracktion::engine::Edit&);
     ~TransportComponent() override;
 
-    void paint(juce::Graphics& g) override;
+    void paint(juce::Graphics&) override;
     void resized() override;
-    void changeListenerCallback(juce::ChangeBroadcaster*) override;
     void timerCallback() override;
-    void mouseDown(juce::MouseEvent const& event) override;
-    void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
+    void changeListenerCallback(juce::ChangeBroadcaster*) override;
+    
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseWheelMove(const juce::MouseEvent&, const juce::MouseWheelDetails&) override;
     
     void updateThumbnail();
     void deleteSelectedChopRegion();
@@ -46,6 +98,9 @@ public:
     ZoomState& getZoomState() { return zoomState; }
 
 private:
+    void updateLayout();
+    void layoutItemsWithCurrentBounds();
+
     tracktion::engine::Edit& edit;
     tracktion::engine::TransportControl& transport;
     
@@ -65,7 +120,7 @@ private:
     std::unique_ptr<PluginAutomationComponent> flangerAutomationComponent;
     
     juce::Viewport pluginAutomationViewport;
-    juce::Component pluginAutomationContainer;
+    PluginAutomationContainer pluginAutomationContainer;
     
     // Zoom and scroll state
     double zoomLevel = 1.0;
@@ -81,6 +136,16 @@ private:
 
     // Global zoom state
     ZoomState zoomState;
+
+    // Layout management
+    juce::StretchableLayoutManager layoutManager;
+    std::vector<int> itemComponents;  // Indices of components in the layout
+    
+    // Constants for layout
+    static constexpr int controlBarHeight = 26;
+    static constexpr int crossfaderHeight = 25;
+    static constexpr int thumbnailHeight = 60;
+    static constexpr int minPluginHeight = 30;  // Minimum height when collapsed
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TransportComponent)
 }; 
