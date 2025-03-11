@@ -104,12 +104,14 @@ void ChopComponent::resized()
     using Track = juce::Grid::TrackInfo;
     using Fr = juce::Grid::Fr;
 
-    grid.templateRows = { Track (Fr (1)), Track (Fr (1)), Track (Fr (1)) };
+    // Add an extra row for spacing
+    grid.templateRows = { Track (Fr (1)), Track (Fr (1)), Track (Fr (1)), Track (Fr (1)) };
     grid.templateColumns = { Track (Fr (1)), Track (Fr (2)) };
 
     grid.items = {
         juce::GridItem (durationLabel).withColumn ({ 1 }).withAlignSelf (juce::GridItem::AlignSelf::center),
         juce::GridItem (chopDurationComboBox).withColumn ({ 2 }).withHeight (30).withAlignSelf (juce::GridItem::AlignSelf::center),
+        juce::GridItem().withColumn ({ 1, 3 }), // Empty row for spacing
         juce::GridItem (chopButton).withColumn ({ 1, 3 }).withHeight (30),
         // juce::GridItem (crossfaderSlider).withColumn ({ 1, 3 })
     };

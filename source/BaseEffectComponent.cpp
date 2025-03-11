@@ -31,16 +31,49 @@ void BaseEffectComponent::paint(juce::Graphics& g)
     // Use the full bounds including title area
     auto bounds = getLocalBounds().toFloat();
     
-    // Define colors from our purple theme
-    const auto primaryPurple = juce::Colour(0xFF4A148C);    // Deep purple
-    const auto accentPurple = juce::Colour(0xFF9C27B0);     // Bright purple
-    const auto lightPurple = juce::Colour(0xFFE1BEE7);      // Light purple
+    // Define colors from our metallic theme
+    const auto metalBase = juce::Colour(0xFF303438);      // Dark metallic base
+    const auto metalHighlight = juce::Colour(0xFF4A4E54); // Lighter metallic
+    const auto metalShine = juce::Colour(0xFF5A6066);     // Brightest metallic
+    const auto accentPurple = juce::Colour(0xFF9C27B0);   // Keep purple accent
 
-    // Fill background
-    g.setColour(juce::Colour(0xFF2A2A2A));
-    g.fillRoundedRectangle(bounds, 6.0f);
+    // Create sophisticated metallic background
+    {
+        // Main metallic gradient background
+        juce::ColourGradient backgroundGradient(
+            metalBase,
+            bounds.getTopLeft(),
+            metalHighlight,
+            bounds.getBottomRight(),
+            false
+        );
+        // Add sophisticated color stops for metallic effect
+        backgroundGradient.addColour(0.3f, metalBase.brighter(0.1f));
+        backgroundGradient.addColour(0.5f, metalShine);
+        backgroundGradient.addColour(0.7f, metalHighlight.darker(0.1f));
+        g.setGradientFill(backgroundGradient);
+        g.fillRoundedRectangle(bounds, 6.0f);
 
-    // Create depth effect with multiple layers
+        // Add brushed metal effect (horizontal lines)
+        for (int y = 0; y < bounds.getHeight(); y += 2) {
+            float alpha = (std::sin(y * 0.5f) + 1.0f) * 0.015f;
+            g.setColour(juce::Colours::white.withAlpha(alpha));
+            g.drawHorizontalLine(y, bounds.getX(), bounds.getRight());
+        }
+
+        // Add vertical metallic sheen
+        juce::ColourGradient sheenGradient(
+            juce::Colours::white.withAlpha(0.05f),
+            bounds.getTopLeft(),
+            juce::Colours::transparentWhite,
+            bounds.getTopLeft().translated(bounds.getWidth() * 0.4f, 0),
+            false
+        );
+        g.setGradientFill(sheenGradient);
+        g.fillRoundedRectangle(bounds, 6.0f);
+    }
+
+    // Keep existing depth effect with multiple layers
     for (int i = 4; i > 0; --i)
     {
         float alpha = 0.05f * i;
@@ -49,28 +82,62 @@ void BaseEffectComponent::paint(juce::Graphics& g)
         g.drawRoundedRectangle(layerBounds, 6.0f, 0.5f);
     }
 
-    // Draw main border
-    g.setColour(accentPurple);
-    g.drawRoundedRectangle(bounds, 6.0f, 1.5f);
+    // Keep existing border effect but adjust for metallic theme
+    {
+        // Outer glow
+        for (int i = 0; i < 4; ++i)
+        {
+            float alpha = 0.03f * (4 - i);
+            g.setColour(metalShine.withAlpha(alpha));
+            g.drawRoundedRectangle(bounds.expanded(i * 0.8f), 6.0f, 0.5f);
+        }
 
-    // Inner highlight
-    auto innerBounds = bounds.reduced(1.0f);
-    g.setColour(lightPurple.withAlpha(0.1f));
-    g.drawRoundedRectangle(innerBounds, 5.0f, 0.8f);
+        // Main border with enhanced metallic gradient
+        juce::ColourGradient borderGradient(
+            metalShine.brighter(0.3f),
+            bounds.getTopLeft(),
+            metalBase.darker(0.2f),
+            bounds.getBottomRight(),
+            false
+        );
+        borderGradient.addColour(0.3f, metalHighlight);
+        borderGradient.addColour(0.7f, metalBase);
+        g.setGradientFill(borderGradient);
+        g.drawRoundedRectangle(bounds, 6.0f, 1.5f);
+    }
 
-    // Add subtle top highlight
-    juce::Path topHighlight;
-    topHighlight.startNewSubPath(bounds.getX() + 6.0f, bounds.getY() + 0.5f);
-    topHighlight.lineTo(bounds.getRight() - 6.0f, bounds.getY() + 0.5f);
-    g.setColour(juce::Colours::white.withAlpha(0.15f));
-    g.strokePath(topHighlight, juce::PathStrokeType(1.0f));
+    // Enhanced edge lighting for metallic effect
+    {
+        // Top edge highlight
+        juce::Path topHighlight;
+        topHighlight.startNewSubPath(bounds.getX() + 6.0f, bounds.getY() + 0.5f);
+        topHighlight.lineTo(bounds.getRight() - 6.0f, bounds.getY() + 0.5f);
 
-    // Add subtle left highlight
-    juce::Path leftHighlight;
-    leftHighlight.startNewSubPath(bounds.getX() + 0.5f, bounds.getY() + 6.0f);
-    leftHighlight.lineTo(bounds.getX() + 0.5f, bounds.getBottom() - 6.0f);
-    g.setColour(juce::Colours::white.withAlpha(0.1f));
-    g.strokePath(leftHighlight, juce::PathStrokeType(1.0f));
+        juce::ColourGradient topGradient(
+            juce::Colours::white.withAlpha(0.2f),
+            bounds.getTopLeft(),
+            juce::Colours::transparentWhite,
+            bounds.getTopRight(),
+            false
+        );
+        g.setGradientFill(topGradient);
+        g.strokePath(topHighlight, juce::PathStrokeType(1.0f));
+
+        // Left edge highlight
+        juce::Path leftHighlight;
+        leftHighlight.startNewSubPath(bounds.getX() + 0.5f, bounds.getY() + 6.0f);
+        leftHighlight.lineTo(bounds.getX() + 0.5f, bounds.getBottom() - 6.0f);
+
+        juce::ColourGradient leftGradient(
+            juce::Colours::white.withAlpha(0.15f),
+            bounds.getTopLeft(),
+            juce::Colours::transparentWhite,
+            bounds.getBottomLeft(),
+            false
+        );
+        g.setGradientFill(leftGradient);
+        g.strokePath(leftHighlight, juce::PathStrokeType(1.0f));
+    }
 }
 
 void BaseEffectComponent::drawScrew(juce::Graphics& g, float x, float y)
