@@ -32,7 +32,6 @@ public:
     void parameterChanged(tracktion::engine::AutomatableParameter&, float) override;
 
     // Grid and pattern methods
-    void setGridDivision(float division);
     void setSnapToGrid(bool shouldSnap);
     double snapTimeToGrid(double time) const;
     
@@ -43,9 +42,11 @@ public:
 
     void deleteSelectedRegion();
 
+    // ZoomStateListener override
+    void gridSizeChanged(float newGridSize) override;
+
 private:
     std::vector<ChopRegion> chopRegions;
-    float gridDivision = 0.25f;  // Default to quarter notes
     bool snapEnabled = true;
     
     // For drag operations

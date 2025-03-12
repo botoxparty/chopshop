@@ -7,8 +7,9 @@ class ZoomStateListener
 {
 public:
     virtual ~ZoomStateListener() = default;
-    virtual void zoomLevelChanged(double newZoomLevel) = 0;
-    virtual void scrollPositionChanged(double newScrollPosition) = 0;
+    virtual void zoomLevelChanged(double newLevel) {}
+    virtual void scrollPositionChanged(double newPosition) {}
+    virtual void gridSizeChanged(float newGridSize) {}
 };
 
 class ZoomState : public juce::ChangeBroadcaster
@@ -20,10 +21,12 @@ public:
     double getZoomLevel() const { return zoomLevel; }
     double getScrollPosition() const { return scrollPosition; }
     double getMaxScrollPosition() const { return zoomLevel > 1.0 ? 1.0 - (1.0 / zoomLevel) : 0.0; }
+    float getGridSize() const { return gridSize; }
     
     // Setters (these will notify listeners)
     void setZoomLevel(double newLevel);
     void setScrollPosition(double newPosition);
+    void setGridSize(float newSize);
     
     // Listener management
     void addListener(ZoomStateListener* listener);
@@ -38,10 +41,12 @@ public:
 private:
     double zoomLevel;
     double scrollPosition;
+    float gridSize;
     juce::Array<ZoomStateListener*> listeners;
     
-    static constexpr double minZoom = 1.0;
-    static constexpr double maxZoom = 100.0;
+    static constexpr double minZoom = 0.1;
+    static constexpr double maxZoom = 10.0;
+    static constexpr float defaultGridSize = 0.25f;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoomState)
 }; 

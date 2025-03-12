@@ -8,8 +8,8 @@
 #include "Utilities.h"
 
 class AutomationLane : public juce::Component,
-                     public tracktion::engine::AutomatableParameter::Listener,
-                     public ZoomStateListener
+                     public virtual ZoomStateListener,
+                     public tracktion::engine::AutomatableParameter::Listener
 {
 public:
     AutomationLane(tracktion::engine::Edit&, ZoomState&);

@@ -21,9 +21,8 @@ public:
     std::function<double()> getTempoCallback;
 
     double getChopDurationInMs(double currentTempo) const;
-    float getCrossfaderValue() const { return static_cast<float>(crossfaderSlider.getValue()); }
-    void setCrossfaderValue(float value) { crossfaderSlider.setValue(value, juce::sendNotification); }
-
+    float getCrossfaderValue() const { return static_cast<float>(plugin->getAutomatableParameterByID("crossfader")->getCurrentValue()); }
+    void setCrossfaderValue(float value) { plugin->getAutomatableParameterByID("crossfader")->setParameter(value, juce::sendNotification); }
     ~ChopComponent() override;
     
     // ApplicationCommandTarget implementation
@@ -53,8 +52,6 @@ private:
     juce::TextButton chopButton{"Chop"};
     juce::ComboBox chopDurationComboBox;
     juce::Label durationLabel;
-    juce::Slider crossfaderSlider;
-    juce::Label crossfaderLabel;
 
     // Change from std::unique_ptr to a raw pointer
     juce::ApplicationCommandManager* commandManager = nullptr;

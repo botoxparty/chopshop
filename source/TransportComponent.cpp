@@ -1,9 +1,15 @@
 #include "TransportComponent.h"
+#include "Utilities.h"
+#include "Plugins/ChopPlugin.h"
+#include "Plugins/AutoDelayPlugin.h"
+#include "Plugins/AutoPhaserPlugin.h"
+#include "Plugins/FlangerPlugin.h"
 
-TransportComponent::TransportComponent(tracktion::engine::Edit& e)
+TransportComponent::TransportComponent(tracktion::engine::Edit& e, ZoomState& zs)
     : edit(e),
       transport(e.getTransport()),
-      transportBar(e)
+      zoomState(zs),
+      transportBar(e, zs)
 {
     // Add transport bar
     addAndMakeVisible(transportBar);

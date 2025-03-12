@@ -75,7 +75,7 @@ class TransportComponent : public juce::Component,
                          public tracktion::engine::AutomationRecordManager::Listener
 {
 public:
-    TransportComponent(tracktion::engine::Edit&);
+    TransportComponent(tracktion::engine::Edit& e, ZoomState& zs);
     ~TransportComponent() override;
 
     void paint(juce::Graphics&) override;
@@ -104,6 +104,7 @@ private:
 
     tracktion::engine::Edit& edit;
     tracktion::engine::TransportControl& transport;
+    ZoomState& zoomState;
     
     // Transport bar
     TransportBar transportBar;
@@ -135,18 +136,15 @@ private:
     // Playhead
     std::unique_ptr<juce::DrawableRectangle> playhead;
 
-    // Global zoom state
-    ZoomState zoomState;
-
     // Layout management
     juce::StretchableLayoutManager layoutManager;
     std::vector<int> itemComponents;  // Indices of components in the layout
     
     // Constants for layout
-    static constexpr int controlBarHeight = 26;
-    static constexpr int crossfaderHeight = 25;
-    static constexpr int thumbnailHeight = 60;
-    static constexpr int minPluginHeight = 30;  // Minimum height when collapsed
+    static constexpr int controlBarHeight = 30;
+    static constexpr int crossfaderHeight = 60;
+    static constexpr int thumbnailHeight = 100;
+    static constexpr int minPluginHeight = 100;  // Minimum height when collapsed
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TransportComponent)
 }; 

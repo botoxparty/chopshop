@@ -30,14 +30,14 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
     auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
     auto visibleTimeEndBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeEnd));
     
-    // Draw vertical grid lines based on gridDivision
-    double gridTimeBeats = std::floor(visibleTimeStartBeats.inBeats() / gridDivision) * gridDivision;
+    // Draw vertical grid lines based on current grid size
+    double gridTimeBeats = std::floor(visibleTimeStartBeats.inBeats() / zoomState.getGridSize()) * zoomState.getGridSize();
     while (gridTimeBeats <= visibleTimeEndBeats.inBeats())
     {
         auto gridTimeSeconds = tempoSequence.toTime(tracktion::BeatPosition::fromBeats(gridTimeBeats)).inSeconds();
         auto xPos = timeToXY(gridTimeSeconds, 0.0).x;
         g.drawVerticalLine(static_cast<int>(xPos), bounds.getY(), bounds.getBottom());
-        gridTimeBeats += gridDivision;
+        gridTimeBeats += zoomState.getGridSize();
     }
     
     // Draw only A-side chop regions that are within the visible range
@@ -169,12 +169,6 @@ void CrossfaderAutomationLane::mouseUp(const juce::MouseEvent&)
     activeRegion = nullptr;
 }
 
-void CrossfaderAutomationLane::setGridDivision(float division)
-{
-    gridDivision = division;
-    repaint();
-}
-
 void CrossfaderAutomationLane::setSnapToGrid(bool shouldSnap)
 {
     snapEnabled = shouldSnap;
@@ -182,7 +176,13 @@ void CrossfaderAutomationLane::setSnapToGrid(bool shouldSnap)
 
 double CrossfaderAutomationLane::snapTimeToGrid(double time) const
 {
-    return std::round(time / gridDivision) * gridDivision;
+    if (!snapEnabled)
+        return time;
+        
+    auto& tempoSequence = edit.tempoSequence;
+    auto timeInBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(time));
+    auto snappedBeats = std::round(timeInBeats.inBeats() / zoomState.getGridSize()) * zoomState.getGridSize();
+    return tempoSequence.toTime(tracktion::BeatPosition::fromBeats(snappedBeats)).inSeconds();
 }
 
 void CrossfaderAutomationLane::addChopRegion(const ChopRegion& region)
@@ -328,4 +328,9 @@ void CrossfaderAutomationLane::deleteSelectedRegion()
         selectedRegionIndex = std::nullopt;
         repaint();
     }
+}
+
+void CrossfaderAutomationLane::gridSizeChanged(float)
+{
+    repaint();
 } 

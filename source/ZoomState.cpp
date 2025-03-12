@@ -3,6 +3,7 @@
 ZoomState::ZoomState()
     : zoomLevel(1.0)
     , scrollPosition(0.0)
+    , gridSize(defaultGridSize)
 {
 }
 
@@ -35,6 +36,20 @@ void ZoomState::setScrollPosition(double newPosition)
         // Notify listeners
         for (auto* listener : listeners)
             listener->scrollPositionChanged(scrollPosition);
+            
+        sendChangeMessage();
+    }
+}
+
+void ZoomState::setGridSize(float newSize)
+{
+    if (std::abs(gridSize - newSize) > 0.0001f)
+    {
+        gridSize = newSize;
+        
+        // Notify listeners
+        for (auto* listener : listeners)
+            listener->gridSizeChanged(gridSize);
             
         sendChangeMessage();
     }

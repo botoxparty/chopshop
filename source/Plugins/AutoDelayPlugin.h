@@ -27,7 +27,7 @@ public:
     static const char* getPluginName()                  { return NEEDS_TRANS("Auto Delay"); }
     static constexpr const char* xmlTypeName = "auto-delay";
 
-    juce::String getName() const override               { return TRANS("Auto Delay"); }
+    juce::String getName() const override               { return TRANS("Delay"); }
     juce::String getPluginType() override              { return xmlTypeName; }
     juce::String getShortName(int) override            { return getName(); }
     juce::String getSelectableDescription() override   { return TRANS("Auto Delay Plugin"); }

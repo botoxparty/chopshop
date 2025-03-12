@@ -77,21 +77,26 @@ void ChopComponent::resized()
 
     auto bounds = contentComponent.getLocalBounds();
 
-    // Layout row heights - make controls more compact
-    const int controlHeight = 24; // Reduced from 30 to 24
-    const int buttonHeight = 40;
-    const int spacing = 10;
+    // Layout dimensions
+    const int labelHeight = 24;
+    const int comboBoxHeight = 36;  // Taller height specifically for the ComboBox
+    const int controlWidth = 120;
+    const int spacing = 12;
 
-    // First row: Label and ComboBox
-    auto topRow = bounds.removeFromTop(controlHeight);
-    durationLabel.setBounds(topRow.removeFromLeft(topRow.getWidth() / 3));
-    chopDurationComboBox.setBounds(topRow);
+    // Split the bounds into left and right sections
+    auto leftSection = bounds.removeFromLeft(controlWidth);
+    bounds.removeFromLeft(spacing / 2); // Add spacing between sections
 
-    // Add spacing between rows
-    bounds.removeFromTop(spacing);
+    // Left section: Label and ComboBox vertically
+    auto labelSection = leftSection.removeFromTop(labelHeight);
+    leftSection.removeFromTop(4); // Add spacing between label and combo
+    auto comboSection = leftSection.removeFromTop(comboBoxHeight);
 
-    // Second row: Button
-    chopButton.setBounds(bounds.removeFromTop(buttonHeight));
+    durationLabel.setBounds(labelSection);
+    chopDurationComboBox.setBounds(comboSection);
+
+    // Right section: Button (takes remaining space)
+    chopButton.setBounds(bounds);
 }
 
 double ChopComponent::getChopDurationInMs (double currentTempo) const
@@ -136,7 +141,7 @@ void ChopComponent::handleChopButtonPressed()
     chopStartTime = juce::Time::getMillisecondCounterHiRes();
         float currentPosition = getCrossfaderValue();
     if (plugin != nullptr)
-        plugin->getAutomatableParameterByID("crossfader")->setParameter (currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+        setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
 }
 
 void ChopComponent::handleChopButtonReleased()
@@ -151,7 +156,7 @@ void ChopComponent::handleChopButtonReleased()
     {
         float currentPosition = getCrossfaderValue();
         if (plugin != nullptr)
-            plugin->getAutomatableParameterByID("crossfader")->setParameter (currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
+            setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
     }
     else
     {
@@ -163,6 +168,9 @@ void ChopComponent::handleChopButtonReleased()
 void ChopComponent::timerCallback()
 {
     stopTimer();
+    float currentPosition = getCrossfaderValue();
+    if (plugin != nullptr)
+        setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
     chopReleaseDelay = 0;
 }
 

@@ -6,21 +6,24 @@
 #include <tracktion_engine/tracktion_engine.h>
 
 #include "CustomLookAndFeel.h"
+#include "ZoomState.h"
 
 class TransportBar : public juce::Component,
                     public juce::Timer,
-                    public juce::ChangeListener
+                    public juce::ChangeListener,
+                    public ZoomStateListener
 {
 public:
     // Function pointer type for snap callback
     using SnapCallback = std::function<void(bool)>;
     
-    TransportBar(tracktion::engine::Edit& e);
+    TransportBar(tracktion::engine::Edit& e, ZoomState& zs);
     ~TransportBar() override;
 
     void resized() override;
     void changeListenerCallback(juce::ChangeBroadcaster*) override;
     void timerCallback() override;
+    void gridSizeChanged(float newGridSize) override;
 
     void updateTimeDisplay();
     void updateTransportState();
@@ -30,6 +33,7 @@ public:
 private:
     tracktion::engine::Edit& edit;
     tracktion::engine::TransportControl& transport;
+    ZoomState& zoomState;
     
     // Transport controls
     juce::ShapeButton playButton{"Play", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
@@ -43,7 +47,7 @@ private:
     juce::TextButton zoomOutButton{"-"};
     
     // Snap control
-    juce::TextButton snapButton{"SNAP"};
+    juce::TextButton snapButton{"SNAP TO GRID"};
     SnapCallback onSnapStateChanged;
     
     // Grid controls
