@@ -2,56 +2,50 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "CustomLookAndFeel.h"
+
 class LibraryBar : public juce::Component
 {
 public:
     LibraryBar()
     {
+        // Style the show library button
         showLibraryButton.setButtonText("Show Library");
+        showLibraryButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF505050));      // Medium gray
+        showLibraryButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
         addAndMakeVisible(showLibraryButton);
         
-        // Style the track label to look like a screen display
-        currentTrackLabel.setColour(juce::Label::textColourId, juce::Colours::lime);
-        currentTrackLabel.setColour(juce::Label::backgroundColourId, juce::Colours::darkgrey.darker(0.8f));
+        // Style the track label with modern dark theme
+        currentTrackLabel.setColour(juce::Label::textColourId, juce::Colours::white);
+        currentTrackLabel.setColour(juce::Label::backgroundColourId, juce::Colour(0xFF1E1E1E));      // Surface color
         currentTrackLabel.setJustificationType(juce::Justification::centredLeft);
-        currentTrackLabel.setFont(CustomLookAndFeel::getMonospaceFont());
+        currentTrackLabel.setFont(CustomLookAndFeel::getMonospaceFont().withHeight(14.0f));
         currentTrackLabel.setText("No Track Loaded", juce::dontSendNotification);
-        currentTrackLabel.setBorderSize(juce::BorderSize<int>(2));
+        currentTrackLabel.setBorderSize(juce::BorderSize<int>(1));
         addAndMakeVisible(currentTrackLabel);
     }
 
     void resized() override
     {
         auto bounds = getLocalBounds();
-        DBG("LibraryBar bounds: " + juce::String(bounds.getWidth()) + "x" + juce::String(bounds.getHeight()));
-        
-        // Set minimum height for the component
-        auto buttonHeight = 30;
         auto reducedBounds = bounds.reduced(5);
         
-        // Layout using manual positioning first to ensure components have size
+        // Layout using manual positioning
         auto labelBounds = reducedBounds.withTrimmedRight(110); // Space for button
         currentTrackLabel.setBounds(labelBounds);
         
         auto buttonBounds = reducedBounds.removeFromRight(100);
         showLibraryButton.setBounds(buttonBounds);
-        
-        DBG("Label bounds: " + juce::String(labelBounds.getWidth()) + "x" + juce::String(labelBounds.getHeight()));
-        DBG("Button bounds: " + juce::String(buttonBounds.getWidth()) + "x" + juce::String(buttonBounds.getHeight()));
     }
 
     void paint(juce::Graphics& g) override
     {
-        g.fillAll(juce::Colours::black);
+        // Fill background with dark theme color
+        g.fillAll(juce::Colour(0xFF121212));   // Dark background
         
-        // Draw a subtle border around the track label to enhance the screen effect
-        auto labelBounds = currentTrackLabel.getBounds().expanded(2);
-        g.setColour(juce::Colours::grey.darker(0.5f));
-        g.drawRect(labelBounds, 2);
-        
-        // Add a subtle inner shadow effect
-        g.setColour(juce::Colours::black.withAlpha(0.3f));
-        g.drawRect(labelBounds.reduced(2), 1);
+        // Draw subtle border around the track label
+        auto labelBounds = currentTrackLabel.getBounds();
+        g.setColour(juce::Colour(0xFF2A2A2A));     // Track background - slightly lighter
+        g.drawRect(labelBounds, 1);
     }
 
     void setCurrentTrackName(const juce::String& name)

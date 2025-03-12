@@ -20,8 +20,6 @@ TransportBar::TransportBar(tracktion::engine::Edit& e, ZoomState& zs)
     edit.getTransport().addChangeListener(this);
     
     // Get colors from the look and feel
-    const auto primary = juce::Colour(0xFF505050);      // Medium gray
-    const auto primaryVariant = juce::Colour(0xFF404040); // Darker gray
     const auto secondary = juce::Colour(0xFF707070);    // Light gray accent
     const auto surface = juce::Colour(0xFF1E1E1E);      // Surface color
     const auto textPrimary = juce::Colours::white;      // White text
@@ -55,7 +53,7 @@ TransportBar::TransportBar(tracktion::engine::Edit& e, ZoomState& zs)
     gridSizeComboBox.setSelectedId(itemId, juce::dontSendNotification);
     gridSizeComboBox.setColour(juce::ComboBox::backgroundColourId, surface);
     gridSizeComboBox.setColour(juce::ComboBox::textColourId, textPrimary);
-    gridSizeComboBox.setColour(juce::ComboBox::outlineColourId, primary);
+    gridSizeComboBox.setColour(juce::ComboBox::outlineColourId, primaryVariant);
     
     gridSizeComboBox.onChange = [this]() {
         float newGridSize = 1.0f; // Default
@@ -75,7 +73,7 @@ TransportBar::TransportBar(tracktion::engine::Edit& e, ZoomState& zs)
     // Setup snap button with modern styling
     snapButton.setClickingTogglesState(true);
     snapButton.setToggleState(true, juce::dontSendNotification);
-    snapButton.setColour(juce::TextButton::buttonColourId, primary);
+    snapButton.setColour(juce::TextButton::buttonColourId, primaryVariant);
     snapButton.setColour(juce::TextButton::buttonOnColourId, primaryVariant);
     snapButton.setColour(juce::TextButton::textColourOffId, textPrimary);
     snapButton.setColour(juce::TextButton::textColourOnId, textPrimary);
@@ -131,7 +129,7 @@ TransportBar::TransportBar(tracktion::engine::Edit& e, ZoomState& zs)
     automationReadButton.setShape(getAutomationPath(), false, true, false);
     automationReadButton.setColours(
         textPrimary.withAlpha(0.7f),     // normal
-        primary,                          // over
+        primaryVariant,                          // over
         primaryVariant                    // down
     );
     automationReadButton.setOutline(secondary, 1.0f);
@@ -139,9 +137,9 @@ TransportBar::TransportBar(tracktion::engine::Edit& e, ZoomState& zs)
     // Setup automation write button with record circle
     automationWriteButton.setShape(getRecordPath(), false, true, false);
     automationWriteButton.setColours(
-        juce::Colours::red.withAlpha(0.7f),  // normal
-        juce::Colours::red,                   // over
-        juce::Colours::red.darker(0.2f)       // down
+        primaryVariant.withAlpha(0.7f),              // normal (grey when not armed)
+        primaryVariant,                              // over
+        primaryVariant.darker(0.2f)                  // down
     );
     automationWriteButton.setOutline(secondary, 1.0f);
     
@@ -154,15 +152,17 @@ TransportBar::TransportBar(tracktion::engine::Edit& e, ZoomState& zs)
     
     automationWriteButton.onClick = [this] {
         edit.getAutomationRecordManager().setWritingAutomation(automationWriteButton.getToggleState());
+        // Update colors when armed state changes
+        updateAutomationWriteButtonState();
     };
 
     // Setup zoom buttons with modern styling
-    zoomInButton.setColour(juce::TextButton::buttonColourId, primary);
+    zoomInButton.setColour(juce::TextButton::buttonColourId, primaryVariant);
     zoomInButton.setColour(juce::TextButton::buttonOnColourId, primaryVariant);
     zoomInButton.setColour(juce::TextButton::textColourOffId, textPrimary);
     zoomInButton.setColour(juce::TextButton::textColourOnId, textPrimary);
     
-    zoomOutButton.setColour(juce::TextButton::buttonColourId, primary);
+    zoomOutButton.setColour(juce::TextButton::buttonColourId, primaryVariant);
     zoomOutButton.setColour(juce::TextButton::buttonOnColourId, primaryVariant);
     zoomOutButton.setColour(juce::TextButton::textColourOffId, textPrimary);
     zoomOutButton.setColour(juce::TextButton::textColourOnId, textPrimary);
@@ -269,6 +269,7 @@ void TransportBar::changeListenerCallback(juce::ChangeBroadcaster* source)
 void TransportBar::timerCallback()
 {
     updateTimeDisplay();
+    updateAutomationWriteButtonState();
 }
 
 void TransportBar::updateTimeDisplay()
@@ -315,4 +316,35 @@ void TransportBar::gridSizeChanged(float newGridSize)
     else itemId = 5;
     
     gridSizeComboBox.setSelectedId(itemId, juce::dontSendNotification);
+}
+
+void TransportBar::updateAutomationWriteButtonState()
+{
+    bool isArmed = edit.getAutomationRecordManager().isWritingAutomation();
+    bool isPlaying = transport.isPlaying();
+    
+    if (isArmed) {
+        if (isPlaying) {
+            // Flash between bright red and darker red when armed and playing
+            automationWriteButton.setColours(
+                juce::Colours::red,
+                juce::Colours::red,
+                juce::Colours::red.darker(0.2f)
+            );
+        } else {
+            // Solid red when armed but not playing
+            automationWriteButton.setColours(
+                juce::Colours::red.withAlpha(0.7f),
+                juce::Colours::red,
+                juce::Colours::red.darker(0.2f)
+            );
+        }
+    } else {
+        // Grey when not armed
+        automationWriteButton.setColours(
+            primaryVariant.withAlpha(0.7f),
+            primaryVariant,
+            primaryVariant.darker(0.2f)
+        );
+    }
 } 

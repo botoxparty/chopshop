@@ -35,6 +35,10 @@ private:
     tracktion::engine::TransportControl& transport;
     ZoomState& zoomState;
     
+    // Colors
+    const juce::Colour primary{0xFF505050};  // Medium gray
+    const juce::Colour primaryVariant{0xFF404040};  // Darker gray
+    
     // Transport controls
     juce::ShapeButton playButton{"Play", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
     juce::ShapeButton stopButton{"Stop", juce::Colours::white, juce::Colours::lightgrey, juce::Colours::grey};
@@ -55,6 +59,8 @@ private:
     
     // Timeline and position display
     juce::Label timeDisplay;
+
+    void updateAutomationWriteButtonState();
 
     // Icon path functions
     static juce::Path getPlayPath()
