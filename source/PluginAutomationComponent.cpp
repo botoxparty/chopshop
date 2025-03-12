@@ -43,18 +43,13 @@ void PluginAutomationComponent::paint(juce::Graphics& g)
     {
         auto headerBounds = getLocalBounds().removeFromTop(headerHeight);
         
-        // Draw metallic header background gradient
-        juce::ColourGradient headerGradient(
-            juce::Colours::grey.brighter(0.2f),
-            headerBounds.getTopLeft().toFloat(),
-            juce::Colours::grey.darker(0.2f),
-            headerBounds.getBottomLeft().toFloat(),
-            false);
-        g.setGradientFill(headerGradient);
+        // Draw flat header background
+        const auto headerColor = juce::Colour(0xFF404040); // Darker gray
+        g.setColour(headerColor);
         g.fillRect(headerBounds);
         
         // Add subtle highlight at top
-        g.setColour(juce::Colours::white.withAlpha(0.1f));
+        g.setColour(juce::Colours::white.withAlpha(0.05f));
         g.fillRect(headerBounds.removeFromTop(1));
         
         // Add shadow at bottom
@@ -67,7 +62,7 @@ void PluginAutomationComponent::paint(juce::Graphics& g)
         textBounds.removeFromLeft(25); // Space for collapse button
         
         // Draw text shadow
-        g.setColour(juce::Colours::black.withAlpha(0.5f));
+        g.setColour(juce::Colours::black.withAlpha(0.3f));
         g.drawText(plugin->getName(), textBounds.translated(1, 1), juce::Justification::centredLeft, true);
         
         // Draw main text
@@ -86,38 +81,28 @@ void PluginAutomationComponent::paint(juce::Graphics& g)
             auto& laneInfo = automationLanes[i];
             float currentLaneHeight = laneInfo.isCollapsed ? collapsedLaneHeight : laneHeight;
             
-            // Draw lane background with metallic effect
+            // Draw lane background
             auto laneBounds = bounds.removeFromTop(currentLaneHeight);
             
-            // Metallic background gradient
-            juce::ColourGradient laneGradient(
-                getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.1f),
-                laneBounds.getTopLeft().toFloat(),
-                getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).darker(0.1f),
-                laneBounds.getBottomLeft().toFloat(),
-                false);
-            g.setGradientFill(laneGradient);
+            // Flat background
+            const auto laneColor = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId).brighter(0.05f);
+            g.setColour(laneColor);
             g.fillRect(laneBounds);
             
-            // Draw header section with different gradient
+            // Draw header section
             auto headerBounds = laneBounds.removeFromTop(25);
-            juce::ColourGradient headerGradient(
-                juce::Colours::grey.darker(0.2f),
-                headerBounds.getTopLeft().toFloat(),
-                juce::Colours::grey.darker(0.4f),
-                headerBounds.getBottomLeft().toFloat(),
-                false);
-            g.setGradientFill(headerGradient);
+            const auto headerColor = juce::Colour(0xFF303030); // Slightly darker than background
+            g.setColour(headerColor);
             g.fillRect(headerBounds);
             
             // Add subtle highlight at top of header
-            g.setColour(juce::Colours::white.withAlpha(0.05f));
+            g.setColour(juce::Colours::white.withAlpha(0.03f));
             g.fillRect(headerBounds.removeFromTop(1));
             
             // Add separator line at bottom of lane
             if (i < automationLanes.size() - 1)
             {
-                g.setColour(juce::Colours::black.withAlpha(0.3f));
+                g.setColour(juce::Colours::black.withAlpha(0.2f));
                 g.fillRect(laneBounds.getX(), laneBounds.getBottom() - 1, laneBounds.getWidth(), 1);
                 g.setColour(juce::Colours::white.withAlpha(0.02f));
                 g.fillRect(laneBounds.getX(), laneBounds.getBottom(), laneBounds.getWidth(), 1);

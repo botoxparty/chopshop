@@ -12,6 +12,7 @@ TransportBar::TransportBar(tracktion::engine::Edit& e)
     addAndMakeVisible(zoomOutButton);
     addAndMakeVisible(automationWriteButton);
     addAndMakeVisible(automationReadButton);
+    addAndMakeVisible(snapButton);
     addAndMakeVisible(gridSizeComboBox);
 
     // Listen to transport changes
@@ -34,6 +35,15 @@ TransportBar::TransportBar(tracktion::engine::Edit& e)
     gridSizeComboBox.addItem("1/2", 4);   // 0.5
     gridSizeComboBox.addItem("1/1", 5);     // 1.0
     gridSizeComboBox.setSelectedId(4);    // Default to 1/4
+
+    // Setup snap button
+    snapButton.setClickingTogglesState(true);
+    snapButton.setToggleState(true, juce::dontSendNotification);
+    snapButton.onClick = [this]() {
+        bool snapEnabled = snapButton.getToggleState();
+        if (onSnapStateChanged)
+            onSnapStateChanged(snapEnabled);
+    };
 
     // Setup button callbacks
     playButton.onClick = [this] {
@@ -141,7 +151,7 @@ void TransportBar::resized()
     
     // Calculate remaining width for buttons
     const int remainingWidth = bounds.getWidth() - timeDisplayWidth - gridControlWidth;
-    const int buttonWidth = (remainingWidth - (controlSpacing * 6)) / 7; // 8 controls, 7 spaces
+    const int buttonWidth = (remainingWidth - (controlSpacing * 7)) / 8; // 9 controls, 8 spaces
     
     // Add buttons to flex layout with spacing
     buttonFlex.items.add(juce::FlexItem(buttonWidth, bounds.getHeight(), playButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
@@ -149,7 +159,8 @@ void TransportBar::resized()
     buttonFlex.items.add(juce::FlexItem(buttonWidth, bounds.getHeight(), automationWriteButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
     buttonFlex.items.add(juce::FlexItem(buttonWidth, bounds.getHeight(), automationReadButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
     buttonFlex.items.add(juce::FlexItem(buttonWidth, bounds.getHeight(), zoomInButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
-    buttonFlex.items.add(juce::FlexItem(buttonWidth, bounds.getHeight(), zoomOutButton));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, bounds.getHeight(), zoomOutButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
+    buttonFlex.items.add(juce::FlexItem(buttonWidth, bounds.getHeight(), snapButton).withMargin(juce::FlexItem::Margin(0, controlSpacing, 0, 0)));
     
     // Create area for buttons
     auto buttonArea = bounds.removeFromLeft(remainingWidth);
@@ -165,6 +176,7 @@ void TransportBar::changeListenerCallback(juce::ChangeBroadcaster* source)
     if (source == &(edit.getTransport()))
     {
         updateTransportState();
+        snapButton.setToggleState(transport.snapToTimecode, juce::dontSendNotification);
         repaint();
     }
 }

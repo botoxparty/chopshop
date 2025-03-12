@@ -37,6 +37,11 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e)
     
     addAndMakeVisible(*crossfaderAutomationLane);
 
+    // Set up snap callback
+    transportBar.setSnapCallback([this](bool snapEnabled) {
+        setSnapEnabled(snapEnabled);
+    });
+
     // Find and create plugin automation components
     if (auto reverbPlugin = EngineHelpers::getPluginFromRack(edit, tracktion::engine::ReverbPlugin::xmlTypeName))
     {
@@ -201,5 +206,13 @@ void TransportComponent::deleteSelectedChopRegion()
     if (crossfaderAutomationLane != nullptr)
     {
         crossfaderAutomationLane->deleteSelectedRegion();
+    }
+}
+
+void TransportComponent::setSnapEnabled(bool shouldSnap)
+{
+    if (crossfaderAutomationLane != nullptr)
+    {
+        crossfaderAutomationLane->setSnapToGrid(shouldSnap);
     }
 }

@@ -88,6 +88,7 @@ public:
     
     void updateThumbnail();
     void deleteSelectedChopRegion();
+    void setSnapEnabled(bool shouldSnap);
 
     void updatePlayheadPosition();
     void setZoomLevel(double newLevel);

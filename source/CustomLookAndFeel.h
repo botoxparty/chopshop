@@ -16,27 +16,28 @@ public:
         // Override the default typeface for all fonts
         setDefaultSansSerifTypeface (getCustomFont().getTypefacePtr());
 
-        // Modern color palette with purples
-        const auto primary = juce::Colour(0xFF4A148C);      // Deep purple
-        const auto secondary = juce::Colour(0xFF9C27B0);    // Bright purple
-        const auto accent = juce::Colour(0xFFE1BEE7);       // Light purple
-        const auto background = juce::Colour(0xFF1A1A1A);   // Dark grey
-        const auto surface = juce::Colour(0xFF2D2D2D);      // Lighter grey
-        const auto textPrimary = juce::Colour(0xFFECF0F1);  // Off-white
-        const auto textSecondary = juce::Colour(0xFFBDC3C7); // Light grey
+        // Modern flat color palette with more subtle colors
+        const auto primary = juce::Colour(0xFF505050);      // Medium gray
+        const auto primaryVariant = juce::Colour(0xFF404040); // Darker gray
+        const auto secondary = juce::Colour(0xFF707070);    // Light gray accent
+        const auto background = juce::Colour(0xFF121212);   // Dark background
+        const auto surface = juce::Colour(0xFF1E1E1E);      // Surface color
+        const auto trackBg = juce::Colour(0xFF2A2A2A);     // Track background - slightly lighter than surface
+        const auto textPrimary = juce::Colours::white;      // White text
+        const auto textSecondary = juce::Colours::white.withAlpha(0.6f); // Secondary text
 
         setColour(juce::ResizableWindow::backgroundColourId, background);
-        setColour(juce::TextButton::buttonColourId, surface);
-        setColour(juce::TextButton::buttonOnColourId, primary);
+        setColour(juce::TextButton::buttonColourId, primary);
+        setColour(juce::TextButton::buttonOnColourId, primaryVariant);
         setColour(juce::TextButton::textColourOffId, textPrimary);
-        setColour(juce::TextButton::textColourOnId, accent);
-        setColour(juce::Slider::thumbColourId, accent);
-        setColour(juce::Slider::trackColourId, secondary.withAlpha(0.6f));
+        setColour(juce::TextButton::textColourOnId, textPrimary);
+        setColour(juce::Slider::thumbColourId, secondary);
+        setColour(juce::Slider::trackColourId, trackBg);
         setColour(juce::Label::textColourId, textPrimary);
         setColour(juce::PopupMenu::backgroundColourId, surface);
         setColour(juce::PopupMenu::textColourId, textPrimary);
         setColour(juce::PopupMenu::highlightedBackgroundColourId, primary);
-        setColour(juce::PopupMenu::highlightedTextColourId, accent);
+        setColour(juce::PopupMenu::highlightedTextColourId, textPrimary);
         setColour(juce::ComboBox::backgroundColourId, surface);
         setColour(juce::ComboBox::textColourId, textPrimary);
         setColour(juce::ComboBox::outlineColourId, primary);
@@ -44,195 +45,153 @@ public:
 
     void drawButtonBackground (juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) override
     {
-        auto bounds = button.getLocalBounds().toFloat().reduced (0.5f, 0.5f);
+        auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
         const float cornerRadius = 4.0f;
 
-        // Base color
-        auto baseColour = backgroundColour.withMultipliedSaturation(shouldDrawButtonAsHighlighted ? 1.3f : 1.0f)
-                                        .withMultipliedBrightness(shouldDrawButtonAsHighlighted ? 1.1f : 1.0f);
+        // Use flat colors with state-based modifications
+        auto baseColour = backgroundColour;
         
         if (shouldDrawButtonAsDown)
             baseColour = baseColour.darker(0.2f);
+        else if (shouldDrawButtonAsHighlighted)
+            baseColour = baseColour.brighter(0.1f);
 
-        // Main gradient
-        juce::ColourGradient gradient(
-            baseColour.brighter(0.1f),
-            bounds.getTopLeft(),
-            baseColour.darker(0.1f),
-            bounds.getBottomRight(),
-            false);
-
-        g.setGradientFill(gradient);
+        // Main fill
+        g.setColour(baseColour);
         g.fillRoundedRectangle(bounds, cornerRadius);
 
-        // Subtle inner shadow when pressed
-        if (shouldDrawButtonAsDown)
-        {
+        // Subtle bottom shadow when not pressed
+        if (!shouldDrawButtonAsDown) {
             g.setColour(juce::Colours::black.withAlpha(0.2f));
-            g.drawRoundedRectangle(bounds.reduced(1.0f), cornerRadius, 1.0f);
-        }
-        else
-        {
-            // Subtle highlight at the top
-            g.setColour(juce::Colours::white.withAlpha(0.05f));
-            g.drawRoundedRectangle(bounds, cornerRadius, 1.0f);
+            g.drawHorizontalLine(bounds.getBottom() + 1, bounds.getX(), bounds.getRight());
         }
     }
 
-    void drawLinearSlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPos, [[maybe_unused]] float minSliderPos, [[maybe_unused]] float maxSliderPos, [[maybe_unused]] const juce::Slider::SliderStyle style, juce::Slider& slider) override
+    void drawLinearSlider (juce::Graphics& g, int x, int y, int width, int height, float sliderPos, float minSliderPos, float maxSliderPos, const juce::Slider::SliderStyle style, juce::Slider& slider) override
     {
         if (slider.getName() == "Crossfader")
         {
-            // Calculate groove dimensions and position
+            // Calculate groove dimensions
             auto grooveWidth = width * 0.8f;
-            auto grooveHeight = 4.0f; // Reduced from 8.0f for a slimmer look
+            auto grooveHeight = 3.0f;  // Slightly thinner
             auto grooveBounds = juce::Rectangle<float> (
                 x + (width - grooveWidth) * 0.5f,
                 y + (height - grooveHeight) * 0.5f,
                 grooveWidth,
                 grooveHeight);
 
-            // Draw groove with glow effect
-            const auto matrixGreen = juce::Colour (0xFF00FF41);
-
-            // Base groove - back to black
-            g.setColour (juce::Colours::black);
-            g.fillRoundedRectangle (grooveBounds, 2.0f);
-
-            // Groove glow layers
-            for (int i = 0; i < 3; ++i)
-            {
-                g.setColour (matrixGreen.withAlpha (0.1f - i * 0.03f));
-                g.drawRoundedRectangle (grooveBounds.expanded (i * 1.0f), 2.0f, 1.0f);
-            }
+            // Draw groove with subtle gradient
+            juce::ColourGradient grooveGradient(
+                findColour(juce::Slider::trackColourId).brighter(0.1f),
+                grooveBounds.getTopLeft(),
+                findColour(juce::Slider::trackColourId).darker(0.1f),
+                grooveBounds.getBottomLeft(),
+                false);
+            g.setGradientFill(grooveGradient);
+            g.fillRoundedRectangle(grooveBounds, 1.5f);
 
             // Center marker
             float centerX = x + width * 0.5f;
-            g.setColour (matrixGreen.withAlpha (0.3f));
-            g.drawVerticalLine (static_cast<int> (centerX),
-                grooveBounds.getY() - 2,
-                grooveBounds.getBottom() + 2);
+            g.setColour(findColour(juce::Slider::thumbColourId).withAlpha(0.3f));
+            g.drawVerticalLine(static_cast<int>(centerX), grooveBounds.getY(), grooveBounds.getBottom());
 
             // Draw fader handle
-            float handleWidth = 30.0f;
-            float handleHeight = height * 0.8f;
+            float handleWidth = 24.0f;  // Slightly narrower
+            float handleHeight = height * 0.7f;  // Slightly shorter
 
-            // Calculate handle position with limits to prevent clipping
             float minX = x + handleWidth * 0.5f;
             float maxX = x + width - handleWidth * 0.5f;
-            float limitedSliderPos = juce::jlimit (minX, maxX, sliderPos);
+            float limitedSliderPos = juce::jlimit(minX, maxX, sliderPos);
 
-            auto thumbBounds = juce::Rectangle<float> (limitedSliderPos - handleWidth * 0.5f,
+            auto thumbBounds = juce::Rectangle<float>(
+                limitedSliderPos - handleWidth * 0.5f,
                 y + (height - handleHeight) * 0.5f,
                 handleWidth,
                 handleHeight);
 
-            // Handle shadow
-            g.setColour (juce::Colours::black.withAlpha (0.5f));
-            g.fillRoundedRectangle (thumbBounds.translated (2, 2), 4.0f);
+            // Simple shadow
+            g.setColour(juce::Colours::black.withAlpha(0.2f));
+            g.fillRoundedRectangle(thumbBounds.translated(0, 1), 3.0f);
 
-            // Handle base
-            g.setGradientFill (juce::ColourGradient (
-                juce::Colour (0xFF3D3D3D), // Light metallic
+            // Handle with subtle gradient
+            juce::ColourGradient handleGradient(
+                findColour(juce::Slider::thumbColourId).brighter(0.1f),
                 thumbBounds.getTopLeft(),
-                juce::Colour (0xFF2A2A2A), // Dark metallic
-                thumbBounds.getBottomRight(),
-                false));
-            g.fillRoundedRectangle (thumbBounds, 4.0f);
+                findColour(juce::Slider::thumbColourId).darker(0.1f),
+                thumbBounds.getBottomLeft(),
+                false);
+            g.setGradientFill(handleGradient);
+            g.fillRoundedRectangle(thumbBounds, 3.0f);
 
             // Handle detail lines
-            g.setColour (juce::Colours::black.withAlpha (0.3f));
+            g.setColour(juce::Colours::black.withAlpha(0.2f));
             float lineSpacing = 4.0f;
-            int numLines = 5;
+            int numLines = 3;
             float startY = thumbBounds.getCentreY() - (numLines - 1) * lineSpacing * 0.5f;
 
             for (int i = 0; i < numLines; ++i)
             {
                 float lineY = startY + i * lineSpacing;
-                g.drawHorizontalLine (static_cast<int> (lineY),
+                g.drawHorizontalLine(static_cast<int>(lineY),
                     thumbBounds.getX() + 5.0f,
                     thumbBounds.getRight() - 5.0f);
             }
         }
         else
         {
-            // Default slider drawing for other sliders
-            const auto matrixGreen = juce::Colour (0xFF00FF41);
-            auto bounds = juce::Rectangle<int> (x, y, width, height).toFloat();
-            auto thumbWidth = 12.0f;
+            // Default slider drawing
+            auto bounds = juce::Rectangle<int>(x, y, width, height).toFloat();
+            
+            // Make thumb more rectangular
+            const float thumbWidth = 16.0f;
+            const float thumbHeight = 10.0f;
 
-            auto trackBounds = bounds.withHeight (4.0f).withY (height * 0.5f - 2.0f);
-
-            for (int i = 0; i < 3; ++i)
+            // Track - make it more visible
+            const float trackHeight = 4.0f;
+            auto trackBounds = bounds.withHeight(trackHeight).withY(height * 0.5f - trackHeight * 0.5f);
+            
+            // Draw track background with subtle gradient
+            juce::ColourGradient trackGradient(
+                findColour(juce::Slider::trackColourId).brighter(0.1f),
+                trackBounds.getTopLeft(),
+                findColour(juce::Slider::trackColourId).darker(0.1f),
+                trackBounds.getBottomLeft(),
+                false);
+            g.setGradientFill(trackGradient);
+            g.fillRoundedRectangle(trackBounds, 2.0f);
+            
+            // Draw filled portion of track
+            if (style == juce::Slider::LinearHorizontal)
             {
-                g.setColour (matrixGreen.withAlpha (0.1f - i * 0.03f));
-                g.fillRoundedRectangle (trackBounds.expanded (i * 1.0f), 2.0f);
+                auto filledTrack = trackBounds.withWidth(sliderPos - x);
+                g.setColour(findColour(juce::Slider::thumbColourId));
+                g.fillRoundedRectangle(filledTrack, 2.0f);
             }
 
-            g.setColour (findColour (juce::Slider::trackColourId));
-            g.fillRoundedRectangle (trackBounds, 2.0f);
-
-            auto thumbRect = juce::Rectangle<float> (sliderPos - thumbWidth * 0.5f,
-                height * 0.5f - thumbWidth * 0.5f,
-                thumbWidth,
-                thumbWidth);
-
-            for (int i = 0; i < 4; ++i)
-            {
-                auto glowBounds = thumbRect.expanded (i * 1.5f);
-                g.setColour (matrixGreen.withAlpha (0.2f - i * 0.04f));
-                g.fillEllipse (glowBounds);
-            }
-
-            g.setColour (matrixGreen);
-            g.fillEllipse (thumbRect);
-        }
-    }
-
-    void drawLinearSliderBackground (juce::Graphics& g, int x, int y, int width, int height, float /*sliderPos*/, float /*minSliderPos*/, float /*maxSliderPos*/, const juce::Slider::SliderStyle /*style*/, juce::Slider& slider) override
-    {
-        if (slider.getName() == "Crossfader")
-        {
-            auto bounds = juce::Rectangle<int> (x, y, width, height).toFloat();
-
-            // Draw only the center line
-            const auto displayColor = juce::Colour (0xFF00FF41); // Winamp green
-            g.setColour (displayColor.withAlpha (0.3f));
-            float centerX = bounds.getCentreX();
-            g.drawVerticalLine (static_cast<int> (centerX), bounds.getY() + 4, bounds.getBottom() - 4);
-        }
-    }
-
-    void drawLinearSliderThumb (juce::Graphics& g, [[maybe_unused]] int x, int y, [[maybe_unused]] int width, int height, float sliderPos, [[maybe_unused]] float minSliderPos, [[maybe_unused]] float maxSliderPos, [[maybe_unused]] const juce::Slider::SliderStyle style, [[maybe_unused]] juce::Slider& slider) override
-    {
-        if (slider.getName() == "Crossfader")
-        {
-            auto thumbWidth = 20.0f;
-            auto thumbHeight = height * 0.8f;
-
-            juce::Rectangle<float> thumbRect (sliderPos - thumbWidth * 0.5f,
-                y + (height - thumbHeight) * 0.5f,
+            // Thumb
+            auto thumbRect = juce::Rectangle<float>(
+                sliderPos - thumbWidth * 0.5f,
+                height * 0.5f - thumbHeight * 0.5f,
                 thumbWidth,
                 thumbHeight);
 
-            // Draw thumb shadow
-            g.setColour (juce::Colours::black.withAlpha (0.3f));
-            g.fillRoundedRectangle (thumbRect.translated (1, 1), 3.0f);
+            // Simple shadow
+            g.setColour(juce::Colours::black.withAlpha(0.2f));
+            g.fillRoundedRectangle(thumbRect.translated(0, 1), 2.0f);
 
-            // Draw thumb body
-            g.setColour (juce::Colours::lightgrey);
-            g.fillRoundedRectangle (thumbRect, 3.0f);
-
-            // Draw thumb grip lines
-            g.setColour (juce::Colours::darkgrey);
-            float lineSpacing = 3.0f;
-            float lineWidth = 1.0f;
-            float startX = thumbRect.getCentreX() - lineWidth;
-            for (int i = -2; i <= 2; ++i)
-            {
-                float lineY = thumbRect.getCentreY() + i * lineSpacing;
-                g.fillRect (startX, lineY, lineWidth * 2.0f, 1.0f);
-            }
+            // Thumb with subtle gradient
+            juce::ColourGradient thumbGradient(
+                findColour(juce::Slider::thumbColourId).brighter(0.1f),
+                thumbRect.getTopLeft(),
+                findColour(juce::Slider::thumbColourId).darker(0.1f),
+                thumbRect.getBottomLeft(),
+                false);
+            g.setGradientFill(thumbGradient);
+            g.fillRoundedRectangle(thumbRect, 2.0f);
+            
+            // Thumb border
+            g.setColour(findColour(juce::Slider::thumbColourId).darker(0.2f));
+            g.drawRoundedRectangle(thumbRect, 2.0f, 1.0f);
         }
     }
 
@@ -245,26 +204,16 @@ public:
         auto angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
 
         // Colors
-        const auto accent = findColour(juce::Slider::thumbColourId);
-        const auto track = findColour(juce::Slider::trackColourId);
+        const auto thumbColor = findColour(juce::Slider::thumbColourId);
+        const auto trackColor = findColour(juce::Slider::trackColourId);
 
-        // Draw main background
+        // Draw background
         auto dialBounds = juce::Rectangle<float>(centreX - radius, centreY - radius, radius * 2, radius * 2);
-        
-        // Background gradient
-        juce::ColourGradient bgGradient(
-            juce::Colours::black.brighter(0.1f),
-            dialBounds.getTopLeft(),
-            juce::Colours::black.darker(0.1f),
-            dialBounds.getBottomRight(),
-            false);
-        
-        g.setGradientFill(bgGradient);
+        g.setColour(trackColor);
         g.fillEllipse(dialBounds);
 
         // Draw track
-        g.setColour(track.withAlpha(0.3f));
-        auto toAngle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
+        g.setColour(thumbColor.withAlpha(0.3f));
         auto lineW = juce::jmin(4.0f, radius * 0.1f);
         auto arcRadius = radius - lineW * 1.5f;
 
@@ -274,12 +223,12 @@ public:
         g.strokePath(backgroundArc, juce::PathStrokeType(lineW));
 
         // Draw value arc
-        if (rotaryStartAngle < toAngle)
+        if (rotaryStartAngle < angle)
         {
-            g.setColour(accent);
+            g.setColour(thumbColor);
             juce::Path valueArc;
             valueArc.addCentredArc(centreX, centreY, arcRadius, arcRadius,
-                                 0.0f, rotaryStartAngle, toAngle, true);
+                                 0.0f, rotaryStartAngle, angle, true);
             g.strokePath(valueArc, juce::PathStrokeType(lineW));
         }
 
@@ -290,41 +239,39 @@ public:
         p.addRectangle(-pointerThickness * 0.5f, -radius + lineW * 2,
                       pointerThickness, pointerLength);
         p.applyTransform(juce::AffineTransform::rotation(angle).translated(centreX, centreY));
-        g.setColour(accent);
+        g.setColour(thumbColor);
         g.fillPath(p);
 
-        // Draw central dot
+        // Draw center dot
         auto dotRadius = radius * 0.1f;
-        g.setColour(accent);
+        g.setColour(thumbColor);
         g.fillEllipse(centreX - dotRadius, centreY - dotRadius, dotRadius * 2, dotRadius * 2);
     }
 
-    void drawComboBox (juce::Graphics& g, int width, int height, [[maybe_unused]] bool isButtonDown, int buttonX, int buttonY, int buttonW, int buttonH, [[maybe_unused]] juce::ComboBox& box) override
+    void drawComboBox (juce::Graphics& g, int width, int height, bool isButtonDown, int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox& box) override
     {
-        const auto matrixGreen = juce::Colour (0xFF00FF41);
-        const auto cornerSize = 3.0f;
+        const float cornerSize = 4.0f;
 
         // Draw main background
-        g.setColour (juce::Colours::black);
-        g.fillRoundedRectangle (0, 0, width, height, cornerSize);
+        g.setColour(findColour(juce::ComboBox::backgroundColourId));
+        g.fillRoundedRectangle(0, 0, width, height, cornerSize);
 
-        // Draw border with glow effect
-        for (int i = 0; i < 3; ++i)
-        {
-            g.setColour (matrixGreen.withAlpha (0.1f - i * 0.03f));
-            g.drawRoundedRectangle (0.5f + i, 0.5f + i, width - 1 - 2 * i, height - 1 - 2 * i, cornerSize, 1.0f);
-        }
+        // Draw border
+        g.setColour(findColour(juce::ComboBox::outlineColourId));
+        g.drawRoundedRectangle(0.5f, 0.5f, width - 1.0f, height - 1.0f, cornerSize, 1.0f);
 
         // Draw arrow
-        juce::Path path;
         const float arrowSize = 10.0f;
         const float x = buttonX + buttonW * 0.5f;
         const float y = buttonY + buttonH * 0.5f;
 
-        path.addTriangle (x - arrowSize * 0.5f, y - arrowSize * 0.25f, x + arrowSize * 0.5f, y - arrowSize * 0.25f, x, y + arrowSize * 0.25f);
+        juce::Path path;
+        path.addTriangle(x - arrowSize * 0.5f, y - arrowSize * 0.25f,
+                        x + arrowSize * 0.5f, y - arrowSize * 0.25f,
+                        x, y + arrowSize * 0.25f);
 
-        g.setColour (matrixGreen);
-        g.fillPath (path);
+        g.setColour(findColour(juce::ComboBox::textColourId));
+        g.fillPath(path);
     }
 
     void drawPopupMenuItem (juce::Graphics& g, const juce::Rectangle<int>& area, [[maybe_unused]] bool isSeparator, bool isActive, bool isHighlighted, [[maybe_unused]] bool isTicked, [[maybe_unused]] bool hasSubMenu, const juce::String& text, [[maybe_unused]] const juce::String& shortcutKeyText, [[maybe_unused]] const juce::Drawable* icon, [[maybe_unused]] const juce::Colour* textColour) override

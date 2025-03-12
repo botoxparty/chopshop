@@ -12,6 +12,9 @@ class TransportBar : public juce::Component,
                     public juce::ChangeListener
 {
 public:
+    // Function pointer type for snap callback
+    using SnapCallback = std::function<void(bool)>;
+    
     TransportBar(tracktion::engine::Edit& e);
     ~TransportBar() override;
 
@@ -21,6 +24,8 @@ public:
 
     void updateTimeDisplay();
     void updateTransportState();
+    
+    void setSnapCallback(SnapCallback callback) { onSnapStateChanged = callback; }
 
 private:
     tracktion::engine::Edit& edit;
@@ -36,6 +41,10 @@ private:
     // Zoom controls
     juce::TextButton zoomInButton{"+"};
     juce::TextButton zoomOutButton{"-"};
+    
+    // Snap control
+    juce::TextButton snapButton{"SNAP"};
+    SnapCallback onSnapStateChanged;
     
     // Grid controls
     juce::ComboBox gridSizeComboBox;
