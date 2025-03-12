@@ -26,6 +26,7 @@ public:
     void resized() override;
 
     void setPlugin(tracktion::engine::Plugin* plugin);
+    void setAllowedParameterIDs(const std::vector<juce::String>& paramIDs) { allowedParameterIDs = paramIDs; updateAutomationLanes(); }
     
     // Add method to get preferred height
     float getPreferredHeight() const;
@@ -47,6 +48,7 @@ private:
     bool isGroupCollapsed = true;
     std::unique_ptr<juce::DrawableButton> groupCollapseButton;
     ZoomState& zoomState;
+    std::vector<juce::String> allowedParameterIDs;
     
     struct AutomationLaneInfo {
         std::unique_ptr<AutomationLane> lane;

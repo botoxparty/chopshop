@@ -52,24 +52,31 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e, ZoomState& zs
     if (auto reverbPlugin = EngineHelpers::getPluginFromRack(edit, tracktion::engine::ReverbPlugin::xmlTypeName))
     {
         reverbAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, reverbPlugin.get(), zoomState);
+        reverbAutomationComponent->setAllowedParameterIDs({"wet level", "room size"}); // Only show wet level and room size
         pluginAutomationContainer.addPluginComponent(reverbAutomationComponent.get());
     }
 
     if (auto delayPlugin = EngineHelpers::getPluginFromRack(edit, AutoDelayPlugin::xmlTypeName))
     {
         delayAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, delayPlugin.get(), zoomState);
+        // Allow all parameters for delay plugin
+        delayAutomationComponent->setAllowedParameterIDs({"delay time", "feedback", "mix"});
         pluginAutomationContainer.addPluginComponent(delayAutomationComponent.get());
     }
 
     if (auto phaserPlugin = EngineHelpers::getPluginFromRack(edit, AutoPhaserPlugin::xmlTypeName))
     {
         phaserAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, phaserPlugin.get(), zoomState);
+        // Allow all parameters for phaser plugin
+        phaserAutomationComponent->setAllowedParameterIDs({"depth", "rate", "feedback"});
         pluginAutomationContainer.addPluginComponent(phaserAutomationComponent.get());
     }
 
     if (auto flangerPlugin = EngineHelpers::getPluginFromRack(edit, FlangerPlugin::xmlTypeName))
     {
         flangerAutomationComponent = std::make_unique<PluginAutomationComponent>(edit, flangerPlugin.get(), zoomState);
+        // Allow all parameters for flanger plugin
+        flangerAutomationComponent->setAllowedParameterIDs({"depth", "speed", "width", "mix"});
         pluginAutomationContainer.addPluginComponent(flangerAutomationComponent.get());
     }
 

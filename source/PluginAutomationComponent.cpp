@@ -196,11 +196,19 @@ void PluginAutomationComponent::updateAutomationLanes()
         // Get all automatable parameters from the plugin
         auto params = plugin->getAutomatableParameters();
         
-        // Create a lane for each parameter
+        // Create a lane for each parameter that is allowed
         for (auto* param : params)
         {
             if (param != nullptr)
-                createAutomationLaneForParameter(param);
+            {
+                // If no allowed parameters are specified, show all
+                // Otherwise, only show parameters that are in the allowed list
+                if (allowedParameterIDs.empty() || 
+                    std::find(allowedParameterIDs.begin(), allowedParameterIDs.end(), param->paramID) != allowedParameterIDs.end())
+                {
+                    createAutomationLaneForParameter(param);
+                }
+            }
         }
     }
     
