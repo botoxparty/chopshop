@@ -1,7 +1,7 @@
 #include "ZoomState.h"
 
 ZoomState::ZoomState()
-    : zoomLevel(1.0)
+    : zoomLevel(maxZoom)
     , scrollPosition(0.0)
     , gridSize(defaultGridSize)
 {

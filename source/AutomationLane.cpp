@@ -33,47 +33,59 @@ void AutomationLane::paint(juce::Graphics& g)
     }
     
     // Draw automation points and lines
-    if (automationPoints.size() > 0 && parameter != nullptr)
+    if (parameter != nullptr)
     {
         g.setColour(juce::Colours::orange);
         
-        // Draw horizontal line from start to first point
-        auto firstPoint = timeToXY(automationPoints[0].first, automationPoints[0].second);
-        g.drawLine(bounds.getX(), firstPoint.y, firstPoint.x, firstPoint.y, 2.0f);
-
-        // If there's only one point, draw a horizontal line to the end
-        if (automationPoints.size() == 1)
+        if (automationPoints.empty())
         {
-            g.drawLine(firstPoint.x, firstPoint.y, bounds.getRight(), firstPoint.y, 2.0f);
+            // If there are no points, draw a horizontal line at the current value
+            float currentValue = parameter->getCurrentValue();
+            auto range = parameter->getValueRange();
+            float normalizedValue = (currentValue - range.getStart()) / (range.getEnd() - range.getStart());
+            float yPos = bounds.getBottom() - (normalizedValue * bounds.getHeight());
+            g.drawHorizontalLine(static_cast<int>(yPos), bounds.getX(), bounds.getRight());
         }
-        
-        for (size_t i = 0; i < automationPoints.size(); ++i)
+        else
         {
-            auto point = timeToXY(automationPoints[i].first, automationPoints[i].second);
-            
-            // Make points more visible
-            const float pointSize = 8.0f;
-            g.fillEllipse(point.x - pointSize/2, point.y - pointSize/2, pointSize, pointSize);
-            
-            // Highlight dragged point
-            if (static_cast<int>(i) == draggedPointIndex)
+            // Draw horizontal line from start to first point
+            auto firstPoint = timeToXY(automationPoints[0].first, automationPoints[0].second);
+            g.drawLine(bounds.getX(), firstPoint.y, firstPoint.x, firstPoint.y, 2.0f);
+
+            // If there's only one point, draw a horizontal line to the end
+            if (automationPoints.size() == 1)
             {
-                g.setColour(juce::Colours::yellow);
-                g.drawEllipse(point.x - pointSize/2 - 2, point.y - pointSize/2 - 2, 
-                            pointSize + 4, pointSize + 4, 2.0f);
-                g.setColour(juce::Colours::orange);
+                g.drawLine(firstPoint.x, firstPoint.y, bounds.getRight(), firstPoint.y, 2.0f);
             }
             
-            // Draw line to next point
-            if (i < automationPoints.size() - 1)
+            for (size_t i = 0; i < automationPoints.size(); ++i)
             {
-                auto nextPoint = timeToXY(automationPoints[i + 1].first, automationPoints[i + 1].second);
-                g.drawLine(point.x, point.y, nextPoint.x, nextPoint.y, 2.0f);
-            }
-            // Draw horizontal line from last point to end
-            else if (i == automationPoints.size() - 1)
-            {
-                g.drawLine(point.x, point.y, bounds.getRight(), point.y, 2.0f);
+                auto point = timeToXY(automationPoints[i].first, automationPoints[i].second);
+                
+                // Make points more visible
+                const float pointSize = 8.0f;
+                g.fillEllipse(point.x - pointSize/2, point.y - pointSize/2, pointSize, pointSize);
+                
+                // Highlight dragged point
+                if (static_cast<int>(i) == draggedPointIndex)
+                {
+                    g.setColour(juce::Colours::yellow);
+                    g.drawEllipse(point.x - pointSize/2 - 2, point.y - pointSize/2 - 2, 
+                                pointSize + 4, pointSize + 4, 2.0f);
+                    g.setColour(juce::Colours::orange);
+                }
+                
+                // Draw line to next point
+                if (i < automationPoints.size() - 1)
+                {
+                    auto nextPoint = timeToXY(automationPoints[i + 1].first, automationPoints[i + 1].second);
+                    g.drawLine(point.x, point.y, nextPoint.x, nextPoint.y, 2.0f);
+                }
+                // Draw horizontal line from last point to end
+                else if (i == automationPoints.size() - 1)
+                {
+                    g.drawLine(point.x, point.y, bounds.getRight(), point.y, 2.0f);
+                }
             }
         }
     }
