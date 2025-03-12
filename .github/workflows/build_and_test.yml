@@ -116,6 +116,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          token: ${{ secrets.GH_PAT }}
 
       - name: Build and Install SDL3 (Windows)
         if: ${{ matrix.name == 'Windows' }}
