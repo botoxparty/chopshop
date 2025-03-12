@@ -30,27 +30,13 @@ ChopComponent::ChopComponent (tracktion::engine::Edit& editIn)
     // Configure chop button
     chopButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
     chopButton.setColour (juce::TextButton::buttonColourId, juce::Colours::darkred);
+    chopButton.setButtonText("CHOP");
     chopButton.addMouseListener (this, false);
-
-    // Configure crossfader
-    crossfaderSlider.setSliderStyle (juce::Slider::LinearHorizontal);
-    crossfaderSlider.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
-    crossfaderSlider.setRange (0.0, 1.0, 0.01);
-    crossfaderSlider.setValue (0.0, juce::dontSendNotification);
-    crossfaderSlider.setPopupMenuEnabled (false);
-
-    // Get the crossfader parameter
-    if (auto crossfaderParam = plugin->getAutomatableParameterByID("crossfader"))
-    {
-        // Bind the crossfader parameter
-        bindSliderToParameter(crossfaderSlider, *crossfaderParam);
-    }
 
     // Add components to the content component instead of the base
     contentComponent.addAndMakeVisible (durationLabel);
     contentComponent.addAndMakeVisible (chopDurationComboBox);
     contentComponent.addAndMakeVisible (chopButton);
-    contentComponent.addAndMakeVisible (crossfaderSlider);
 
     // Make sure this component can receive keyboard focus
     setWantsKeyboardFocus (true);
@@ -89,34 +75,23 @@ void ChopComponent::resized()
     // First let the base component handle its layout
     BaseEffectComponent::resized();
 
-    // Now layout the content within the content component
     auto bounds = contentComponent.getLocalBounds();
 
-    // Add left and right padding
-    bounds.removeFromLeft (10);
-    bounds.removeFromRight (10);
+    // Layout row heights - make controls more compact
+    const int controlHeight = 24; // Reduced from 30 to 24
+    const int buttonHeight = 40;
+    const int spacing = 10;
 
-    // Create a grid layout
-    juce::Grid grid;
-    grid.rowGap = juce::Grid::Px (4);
-    grid.columnGap = juce::Grid::Px (4);
+    // First row: Label and ComboBox
+    auto topRow = bounds.removeFromTop(controlHeight);
+    durationLabel.setBounds(topRow.removeFromLeft(topRow.getWidth() / 3));
+    chopDurationComboBox.setBounds(topRow);
 
-    using Track = juce::Grid::TrackInfo;
-    using Fr = juce::Grid::Fr;
+    // Add spacing between rows
+    bounds.removeFromTop(spacing);
 
-    // Add an extra row for spacing
-    grid.templateRows = { Track (Fr (1)), Track (Fr (1)), Track (Fr (1)), Track (Fr (1)) };
-    grid.templateColumns = { Track (Fr (1)), Track (Fr (2)) };
-
-    grid.items = {
-        juce::GridItem (durationLabel).withColumn ({ 1 }).withAlignSelf (juce::GridItem::AlignSelf::center),
-        juce::GridItem (chopDurationComboBox).withColumn ({ 2 }).withHeight (30).withAlignSelf (juce::GridItem::AlignSelf::center),
-        juce::GridItem().withColumn ({ 1, 3 }), // Empty row for spacing
-        juce::GridItem (chopButton).withColumn ({ 1, 3 }).withHeight (30),
-        // juce::GridItem (crossfaderSlider).withColumn ({ 1, 3 })
-    };
-
-    grid.performLayout (bounds);
+    // Second row: Button
+    chopButton.setBounds(bounds.removeFromTop(buttonHeight));
 }
 
 double ChopComponent::getChopDurationInMs (double currentTempo) const
@@ -159,8 +134,9 @@ void ChopComponent::mouseUp (const juce::MouseEvent& event)
 void ChopComponent::handleChopButtonPressed()
 {
     chopStartTime = juce::Time::getMillisecondCounterHiRes();
-    float currentPosition = getCrossfaderValue();
-    setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+        float currentPosition = getCrossfaderValue();
+    if (plugin != nullptr)
+        plugin->getAutomatableParameterByID("crossfader")->setParameter (currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
 }
 
 void ChopComponent::handleChopButtonReleased()
@@ -174,7 +150,8 @@ void ChopComponent::handleChopButtonReleased()
     if (elapsedTime >= minimumTime)
     {
         float currentPosition = getCrossfaderValue();
-        setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+        if (plugin != nullptr)
+            plugin->getAutomatableParameterByID("crossfader")->setParameter (currentPosition <= 0.5f ? 1.0f : 0.0f, juce::sendNotification);
     }
     else
     {
@@ -186,8 +163,6 @@ void ChopComponent::handleChopButtonReleased()
 void ChopComponent::timerCallback()
 {
     stopTimer();
-    float currentPosition = getCrossfaderValue();
-    setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
     chopReleaseDelay = 0;
 }
 

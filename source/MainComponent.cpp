@@ -253,8 +253,8 @@ void MainComponent::resized()
     effectsBox.items.add(juce::FlexItem(effectsColumn3).withFlex(1.0f));
 
     // Add rows to main box
-    mainBox.items.add(juce::FlexItem(topRow).withFlex(0.3f));
-    mainBox.items.add(juce::FlexItem(effectsBox).withFlex(0.7f));
+    mainBox.items.add(juce::FlexItem(topRow).withFlex(0.35f));
+    mainBox.items.add(juce::FlexItem(effectsBox).withFlex(0.65f));
 
     // Perform the layout
     mainBox.performLayout(bounds);
