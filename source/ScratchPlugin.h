@@ -34,7 +34,12 @@ private:
     juce::SmoothedValue<float> scratchSmoother;
     juce::AudioBuffer<float> delayBuffer;
     int delayBufferPos = 0;
+    int delayBufferLength = 0;
     static constexpr int maxDelayLength = 48000; // 1 second at 48kHz
-
+    
+    float calculatePlaybackRate(float scratchValue);
+    void updateDelayBuffer(const float* inputData, int numSamples, int channel);
+    float getInterpolatedSample(float delayInSamples, int channel);
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScratchPlugin)
 }; 

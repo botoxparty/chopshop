@@ -23,6 +23,7 @@ ScratchPlugin::ScratchPlugin(tracktion::engine::PluginCreationInfo info) : track
 
     // Initialize smoothed value
     scratchSmoother.reset(sampleRate, 0.05); // 50ms smoothing
+    scratchSmoother.setCurrentAndTargetValue(0.0f);
 }
 
 ScratchPlugin::~ScratchPlugin()
@@ -36,10 +37,11 @@ ScratchPlugin::~ScratchPlugin()
 void ScratchPlugin::initialise(const tracktion::engine::PluginInitialisationInfo& info)
 {
     sampleRate = info.sampleRate;
-    scratchSmoother.reset(sampleRate, 0.05);
-    delayBuffer.setSize(2, maxDelayLength);
+    delayBufferLength = (int)(sampleRate * 2.0); // 2 seconds buffer
+    delayBuffer.setSize(2, delayBufferLength);
     delayBuffer.clear();
     delayBufferPos = 0;
+    scratchSmoother.reset(sampleRate, 0.05);
 }
 
 void ScratchPlugin::deinitialise()
@@ -54,60 +56,81 @@ void ScratchPlugin::reset()
     scratchSmoother.reset(sampleRate, 0.05);
 }
 
-void ScratchPlugin::applyToBuffer(const tracktion::engine::PluginRenderContext& fc)
+float ScratchPlugin::calculatePlaybackRate(float scratchValue)
 {
-    if (fc.destBuffer == nullptr)
-        return;
-
-    const float scratchTarget = scratchParam->getCurrentValue();
-    const float mix = mixParam->getCurrentValue();
-    
-    // Process each channel
-    for (int channel = 0; channel < fc.destBuffer->getNumChannels(); ++channel)
-    {
-        float* const channelData = fc.destBuffer->getWritePointer(channel, fc.bufferStartSample);
-        float* const delayData = delayBuffer.getWritePointer(channel);
-        
-        for (int i = 0; i < fc.bufferNumSamples; ++i)
-        {
-            // Update scratch value with smoothing
-            scratchSmoother.setTargetValue(scratchTarget);
-            const float currentScratch = scratchSmoother.getNextValue();
-            
-            // Calculate read position with scratch effect
-            float readPos = delayBufferPos - i;
-            readPos += currentScratch * 1000.0f; // Adjust scratch intensity
-            
-            // Wrap around delay buffer
-            while (readPos < 0)
-                readPos += maxDelayLength;
-            while (readPos >= maxDelayLength)
-                readPos -= maxDelayLength;
-            
-            // Linear interpolation for smooth playback
-            const int pos1 = static_cast<int>(readPos);
-            const int pos2 = (pos1 + 1) % maxDelayLength;
-            const float frac = readPos - pos1;
-            
-            const float value1 = delayData[pos1];
-            const float value2 = delayData[pos2];
-            const float interpolatedValue = value1 + frac * (value2 - value1);
-            
-            // Mix dry/wet
-            const float in = channelData[i];
-            delayData[(delayBufferPos + i) % maxDelayLength] = in;
-            channelData[i] = in * (1.0f - mix) + interpolatedValue * mix;
-        }
-    }
-    
-    // Update delay buffer position
-    delayBufferPos = (delayBufferPos + fc.bufferNumSamples) % maxDelayLength;
+    // Convert scratch value (-4 to 4) to playback rate
+    return juce::jlimit(-4.0f, 4.0f, scratchValue);
 }
 
-void ScratchPlugin::restorePluginStateFromValueTree(const juce::ValueTree& v)
+void ScratchPlugin::updateDelayBuffer(const float* inputData, int numSamples, int channel)
 {
-    Plugin::restorePluginStateFromValueTree(v);
+    auto* delayData = delayBuffer.getWritePointer(channel);
     
-    for (auto p : getAutomatableParameters())
-        p->updateFromAttachedValue();
-} 
+    for (int i = 0; i < numSamples; ++i)
+    {
+        delayData[delayBufferPos] = inputData[i];
+        delayBufferPos = (delayBufferPos + 1) % delayBufferLength;
+    }
+}
+
+float ScratchPlugin::getInterpolatedSample(float delayInSamples, int channel)
+{
+    const float* delayData = delayBuffer.getReadPointer(channel);
+    
+    int pos = delayBufferPos - (int)delayInSamples;
+    if (pos < 0) pos += delayBufferLength;
+    
+    const int pos1 = pos;
+    const int pos2 = (pos1 + 1) % delayBufferLength;
+    
+    const float frac = delayInSamples - (int)delayInSamples;
+    
+    return delayData[pos1] + frac * (delayData[pos2] - delayData[pos1]);
+}
+
+void ScratchPlugin::applyToBuffer(const tracktion::engine::PluginRenderContext& context)
+{
+    if (context.destBuffer == nullptr) return;
+    
+    auto& destBuffer = *context.destBuffer;
+    auto numChannels = destBuffer.getNumChannels();
+    auto numSamples = destBuffer.getNumSamples();
+    
+    // Update scratch value smoothing
+    scratchSmoother.setTargetValue(scratchValue.get());
+    
+    // Process each channel
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        auto* channelData = destBuffer.getWritePointer(channel);
+        
+        // Store input in delay buffer
+        updateDelayBuffer(channelData, numSamples, channel);
+        
+        // Process samples
+        for (int sample = 0; sample < numSamples; ++sample)
+        {
+            float currentScratch = scratchSmoother.getNextValue();
+            float playbackRate = calculatePlaybackRate(currentScratch);
+            
+            // Calculate delay time based on playback rate
+            float delayTime = delayBufferLength * 0.5f; // Center point
+            float scratchOffset = delayTime * (1.0f - playbackRate);
+            
+            // Get scratched sample using interpolation
+            float scratchedSample = getInterpolatedSample(scratchOffset, channel);
+            
+            // Mix dry and wet signals
+            float mix = mixValue.get();
+            channelData[sample] = scratchedSample * mix + channelData[sample] * (1.0f - mix);
+        }
+    }
+}
+
+void ScratchPlugin::restorePluginStateFromValueTree(const juce::ValueTree& valueTree)
+{
+    if (valueTree.hasProperty("scratch"))
+        scratchValue = (float)valueTree.getProperty("scratch");
+    if (valueTree.hasProperty("mix"))
+        mixValue = (float)valueTree.getProperty("mix");
+}
