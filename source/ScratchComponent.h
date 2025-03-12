@@ -7,7 +7,7 @@
 #include "BaseEffectComponent.h"
 #include "Utilities.h"
 #include "RampedValue.h"
-#include "ScratchPlugin.h"
+#include "Plugins/ScratchPlugin.h"
 class ScratchComponent : public BaseEffectComponent
 {
 public:

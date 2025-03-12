@@ -3,10 +3,14 @@
 CrossfaderAutomationLane::CrossfaderAutomationLane(tracktion::engine::Edit& e, ZoomState& zs)
     : AutomationLane(e, zs)
 {
+    // Register as a zoom state listener
+    zoomState.addListener(this);
 }
 
 CrossfaderAutomationLane::~CrossfaderAutomationLane()
 {
+    // Remove zoom state listener
+    zoomState.removeListener(this);
     clearChopRegions();
 }
 
@@ -288,11 +292,8 @@ void CrossfaderAutomationLane::updateChopRegionsFromCurve()
     }
 }
 
-void CrossfaderAutomationLane::curveHasChanged(tracktion::engine::AutomatableParameter& param)
+void CrossfaderAutomationLane::curveHasChanged(tracktion::engine::AutomatableParameter&)
 {
-    // AutomationLane::curveHasChanged(param);
-    // Update our regions from the curve
-    // updateChopRegionsFromCurve();
     updateChopRegionsFromCurve();
     repaint();
 }
@@ -333,4 +334,42 @@ void CrossfaderAutomationLane::deleteSelectedRegion()
 void CrossfaderAutomationLane::gridSizeChanged(float)
 {
     repaint();
+}
+
+void CrossfaderAutomationLane::mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel)
+{
+    auto bounds = getLocalBounds();
+
+    if (bounds.contains(event.getPosition()))
+    {
+        // Handle horizontal scrolling with shift key or horizontal wheel
+        if (event.mods.isShiftDown() || wheel.deltaX != 0.0f)
+        {
+            auto delta = wheel.deltaX != 0.0f ? wheel.deltaX : wheel.deltaY;
+            auto newScrollPos = zoomState.getScrollPosition() - (delta * 0.1);
+            zoomState.setScrollPosition(newScrollPos);
+        }
+        // Handle zooming
+        else if (wheel.deltaY != 0.0f)
+        {
+            // Calculate zoom factor based on wheel direction
+            auto zoomFactor = wheel.deltaY > 0 ? 0.9 : 1.1; // Inverted for more natural feel
+
+            // Calculate the mouse position as a proportion of the visible width
+            auto mouseXProportion = (event.position.x - bounds.getX()) / (float)bounds.getWidth();
+
+            // Calculate the absolute time position under the mouse
+            auto timeUnderMouse = (zoomState.getScrollPosition() + (mouseXProportion / zoomState.getZoomLevel()));
+
+            // Calculate new zoom level
+            auto newZoomLevel = zoomState.getZoomLevel() * zoomFactor;
+
+            // Calculate new scroll position that keeps the time under mouse at the same screen position
+            auto newScrollPos = timeUnderMouse - (mouseXProportion / newZoomLevel);
+
+            // Apply the changes
+            zoomState.setZoomLevel(newZoomLevel);
+            zoomState.setScrollPosition(newScrollPos);
+        }
+    }
 } 

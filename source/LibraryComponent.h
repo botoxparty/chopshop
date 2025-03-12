@@ -20,6 +20,7 @@
 #include "Plugins/AutoDelayPlugin.h"
 #include "Plugins/FlangerPlugin.h"
 #include "Plugins/AutoPhaserPlugin.h"
+#include "Plugins/ScratchPlugin.h"
 #include "Utilities.h"
 
 // We'll use ProjectItem instead of PlaylistEntry

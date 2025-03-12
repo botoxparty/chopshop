@@ -3,6 +3,7 @@
 #include "AutomationLane.h"
 #include <vector>
 #include <optional>
+#include "ZoomState.h"
 
 class CrossfaderAutomationLane : public AutomationLane
 {
@@ -25,6 +26,7 @@ public:
     void mouseDrag(const juce::MouseEvent& event) override;
     void mouseUp(const juce::MouseEvent& event) override;
     void updatePoints() override;
+    void mouseWheelMove(const juce::MouseEvent& event, const juce::MouseWheelDetails& wheel) override;
 
     // AutomatableParameter::Listener overrides
     void curveHasChanged(tracktion::engine::AutomatableParameter&) override;
@@ -42,8 +44,10 @@ public:
 
     void deleteSelectedRegion();
 
-    // ZoomStateListener override
-    void gridSizeChanged(float newGridSize) override;
+    // ZoomStateListener implementation
+    void zoomLevelChanged(double newZoomLevel) override { repaint(); }
+    void scrollPositionChanged(double newScrollPosition) override { repaint(); }
+    void gridSizeChanged(float) override;
 
 private:
     std::vector<ChopRegion> chopRegions;

@@ -35,8 +35,8 @@ namespace ProjectInfo
 #include "Plugins/FlangerPlugin.h"
 #include "Plugins/AutoDelayPlugin.h"
 #include "Plugins/AutoPhaserPlugin.h"
+#include "Plugins/ScratchPlugin.h"
 #include "ScratchComponent.h"
-#include "ScratchPlugin.h"
 #include "TransportComponent.h"
 
 

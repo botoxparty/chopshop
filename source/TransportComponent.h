@@ -127,8 +127,6 @@ private:
     // Zoom and scroll state
     double zoomLevel = 1.0;
     double scrollPosition = 0.0; // 0.0 to 1.0
-    static constexpr double minZoom = 1.0; // Changed from 0.1 to 1.0 (100%)
-    static constexpr double maxZoom = 20.0;
 
     // Current clip reference
     tracktion::engine::WaveAudioClip* currentClip = nullptr;
@@ -142,7 +140,7 @@ private:
     
     // Constants for layout
     static constexpr int controlBarHeight = 30;
-    static constexpr int crossfaderHeight = 60;
+    static constexpr int crossfaderHeight = 30;
     static constexpr int thumbnailHeight = 100;
     static constexpr int minPluginHeight = 100;  // Minimum height when collapsed
 

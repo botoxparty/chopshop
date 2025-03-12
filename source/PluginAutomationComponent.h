@@ -87,7 +87,7 @@ private:
     const float laneHeight = 60.0f;
     const float collapsedLaneHeight = 25.0f;
     const float labelWidth = 150.0f;
-    const float headerHeight = 30.0f;
+    const float headerHeight = 20.0f;
     
     HeightListener* heightListener = nullptr;
     

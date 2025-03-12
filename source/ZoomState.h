@@ -44,9 +44,9 @@ private:
     float gridSize;
     juce::Array<ZoomStateListener*> listeners;
     
-    static constexpr double minZoom = 0.1;
+    static constexpr double minZoom = 1.0;
     static constexpr double maxZoom = 10.0;
-    static constexpr float defaultGridSize = 0.25f;
+    static constexpr float defaultGridSize = 1.0f;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZoomState)
 }; 

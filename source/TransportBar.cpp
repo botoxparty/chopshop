@@ -58,7 +58,7 @@ TransportBar::TransportBar(tracktion::engine::Edit& e, ZoomState& zs)
     gridSizeComboBox.setColour(juce::ComboBox::outlineColourId, primary);
     
     gridSizeComboBox.onChange = [this]() {
-        float newGridSize = 0.25f; // Default
+        float newGridSize = 1.0f; // Default
         switch (gridSizeComboBox.getSelectedId()) {
             case 1: newGridSize = 0.0625f; break; // 1/16
             case 2: newGridSize = 0.125f; break;  // 1/8

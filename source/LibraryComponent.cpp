@@ -269,6 +269,10 @@ void LibraryComponent::createPluginRack(std::unique_ptr<tracktion::engine::Edit>
         phaserPlugin->remapOnTempoChange.setValue(true, nullptr);
         plugins.add (phaserPlugin);
 
+        auto scratchPlugin = EngineHelpers::createPlugin(*edit, ScratchPlugin::xmlTypeName);
+        scratchPlugin->remapOnTempoChange.setValue(true, nullptr);
+        plugins.add (scratchPlugin);
+
         // Create the rack type with proper channel connections
         if (auto rack = tracktion::engine::RackType::createTypeToWrapPlugins (plugins, *edit))
         {

@@ -1,5 +1,5 @@
 #include "ScratchComponent.h"
-#include "ScratchPlugin.h"
+#include "Plugins/ScratchPlugin.h"
 
 ScratchComponent::ScratchComponent(tracktion::engine::Edit& e) : BaseEffectComponent(e)
 {
