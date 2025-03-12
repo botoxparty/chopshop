@@ -125,8 +125,10 @@ void CrossfaderAutomationLane::mouseDown(const juce::MouseEvent& event)
         
     auto& curve = parameter->getCurve();
     
-    // Calculate end time for the new 1-second region
-    double endTime = time + 1.0;
+    // Convert 1 beat to seconds using the tempo sequence
+    auto startBeat = edit.tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(time));
+    auto endBeat = tracktion::BeatPosition::fromBeats(startBeat.inBeats() + 1.0); // Add 1 beat
+    auto endTime = edit.tempoSequence.toTime(endBeat).inSeconds();
     
     // Add the new region points
     if (time > 0.001) // Add gap before if not at start
@@ -137,7 +139,6 @@ void CrossfaderAutomationLane::mouseDown(const juce::MouseEvent& event)
     curve.addPoint(tracktion::TimePosition::fromSeconds(time), 1.0f, 0.0f);
     curve.addPoint(tracktion::TimePosition::fromSeconds(endTime), 1.0f, 0.0f);
     curve.addPoint(tracktion::TimePosition::fromSeconds(endTime + 0.001), 0.0f, 0.0f);
-    
     
     isDragging = true;
     updateChopRegionsFromCurve();
@@ -370,6 +371,27 @@ void CrossfaderAutomationLane::mouseWheelMove(const juce::MouseEvent& event, con
             // Apply the changes
             zoomState.setZoomLevel(newZoomLevel);
             zoomState.setScrollPosition(newScrollPos);
+        }
+    }
+}
+
+void CrossfaderAutomationLane::mouseDoubleClick(const juce::MouseEvent& event)
+{
+    if (parameter == nullptr)
+        return;
+        
+    auto [time, value] = XYToTime(event.position.x, event.position.y);
+    
+    // Check if we double-clicked on a region
+    for (size_t i = 0; i < chopRegions.size(); ++i)
+    {
+        const auto& region = chopRegions[i];
+        if (time >= region.startTime && time <= region.endTime && region.isASide)
+        {
+            removeChopRegion(i);
+            selectedRegionIndex = std::nullopt;
+            repaint();
+            return;
         }
     }
 } 

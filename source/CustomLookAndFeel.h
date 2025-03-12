@@ -354,4 +354,37 @@ public:
         g.setColour (juce::Colours::black.withAlpha (0.2f));
         g.drawHorizontalLine (h - 1, 0.0f, (float) w);
     }
+
+    void drawAlertBox (juce::Graphics& g, juce::AlertWindow& alert, const juce::Rectangle<int>& textArea, juce::TextLayout& textLayout) override
+    {
+        const float cornerSize = 4.0f;
+        const auto background = juce::Colour(0xFF121212);   // Dark background
+        const auto surface = juce::Colour(0xFF1E1E1E);      // Surface color
+        const auto matrixGreen = juce::Colour(0xFF00FF41);  // Accent color
+        
+        auto bounds = alert.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
+        
+        // Draw main background
+        g.setColour(background);
+        g.fillRoundedRectangle(bounds, cornerSize);
+        
+        // Draw subtle border
+        g.setColour(surface.brighter(0.1f));
+        g.drawRoundedRectangle(bounds, cornerSize, 1.0f);
+        
+        // Draw header area with gradient
+        auto headerBounds = bounds.withHeight(30.0f);
+        juce::ColourGradient headerGradient(
+            surface.brighter(0.1f),
+            headerBounds.getTopLeft(),
+            surface,
+            headerBounds.getBottomLeft(),
+            false);
+        g.setGradientFill(headerGradient);
+        g.fillRoundedRectangle(headerBounds, cornerSize);
+        
+        // Draw message text (includes title)
+        g.setColour(juce::Colours::white);
+        textLayout.draw(g, juce::Rectangle<float>(textArea.toFloat()));
+    }
 };
