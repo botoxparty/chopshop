@@ -112,12 +112,11 @@ namespace CommandIDs
 }
 
 class MainComponent : public juce::AudioAppComponent,
-                      public juce::Timer,
-                      public GamepadManager::Listener,
-                      public juce::ChangeListener,
-                      public tracktion::engine::OscilloscopePlugin::Listener,
-                      public juce::ApplicationCommandTarget,
-                      public juce::MenuBarModel
+                     public juce::MenuBarModel,
+                     public juce::ApplicationCommandTarget,
+                     public GamepadManager::Listener,
+                     public tracktion::engine::OscilloscopePlugin::Listener,
+                     private juce::Timer
 {
 public:
     //==============================================================================
@@ -144,6 +143,8 @@ public:
     void gamepadButtonPressed(int buttonId) override;
     void gamepadButtonReleased(int buttonId) override;
     void gamepadAxisMoved(int axisId, float newValue) override;
+    void gamepadConnected() override;
+    void gamepadDisconnected() override;
     // Toggles playback state and updates UI
     void play();
     void stop();
@@ -172,10 +173,6 @@ public:
             commandManager->commandStatusChanged();
     }
 
-    void changeListenerCallback(juce::ChangeBroadcaster*) override
-    {
-        // This will be called when the transport state changes
-    }
 
     void oscilloscopePluginInitialised() override
     {

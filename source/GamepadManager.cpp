@@ -109,6 +109,11 @@ void GamepadManager::eventLoop()
                             
                             SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_ACCEL, true);
                             SDL_SetGamepadSensorEnabled(gamepad, SDL_SENSOR_GYRO, true);
+
+                            // Notify listeners of connection
+                            dispatchToUI([this]() {
+                                listeners.call([](Listener& l) { l.gamepadConnected(); });
+                            });
                         }
                     }
                     break;
@@ -119,6 +124,11 @@ void GamepadManager::eventLoop()
                         SDL_CloseGamepad(gamepad);
                         gamepad = nullptr;
                         DBG("Active gamepad was disconnected");
+
+                        // Notify listeners of disconnection
+                        dispatchToUI([this]() {
+                            listeners.call([](Listener& l) { l.gamepadDisconnected(); });
+                        });
                     }
                     break;
                     
@@ -127,23 +137,37 @@ void GamepadManager::eventLoop()
                     {
                         float x = event.gtouchpad.x;
                         float y = event.gtouchpad.y;
-                        listeners.call([&](Listener& l) { 
-                            l.gamepadTouchpadMoved(x, y, true);
+                        dispatchToUI([this, x, y]() {
+                            listeners.call([&](Listener& l) { 
+                                l.gamepadTouchpadMoved(x, y, true);
+                            });
                         });
                     }
                     break;
 
                 case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-                    listeners.call([&](Listener& l) { l.gamepadButtonPressed(event.gbutton.button); });
+                    dispatchToUI([this, buttonId = event.gbutton.button]() {
+                        listeners.call([&](Listener& l) { 
+                            l.gamepadButtonPressed(buttonId); 
+                        });
+                    });
                     break;
 
                 case SDL_EVENT_GAMEPAD_BUTTON_UP:
-                    listeners.call([&](Listener& l) { l.gamepadButtonReleased(event.gbutton.button); });
+                    dispatchToUI([this, buttonId = event.gbutton.button]() {
+                        listeners.call([&](Listener& l) { 
+                            l.gamepadButtonReleased(buttonId);
+                        });
+                    });
                     break;
 
                 case SDL_EVENT_GAMEPAD_AXIS_MOTION:
                     float value = event.gaxis.value / 32767.0f;
-                    listeners.call([&](Listener& l) { l.gamepadAxisMoved(event.gaxis.axis, value); });
+                    dispatchToUI([this, axisId = event.gaxis.axis, value]() {
+                        listeners.call([&](Listener& l) { 
+                            l.gamepadAxisMoved(axisId, value);
+                        });
+                    });
                     break;
             }
         }

@@ -18,6 +18,8 @@ public:
         virtual void gamepadButtonReleased(int buttonId) = 0;
         virtual void gamepadAxisMoved(int axisId, float value) = 0;
         virtual void gamepadTouchpadMoved(float x, float y, bool touched) = 0;
+        virtual void gamepadConnected() {}
+        virtual void gamepadDisconnected() {}
     };
 
     GamepadManager();
@@ -37,6 +39,13 @@ public:
     const char* getConnectedGamepadName() const 
     { 
         return gamepad ? SDL_GetGamepadName(gamepad) : ""; 
+    }
+
+protected:
+    // New method to safely dispatch UI updates
+    template<typename Callback>
+    void dispatchToUI(Callback&& callback) {
+        juce::MessageManager::callAsync(std::forward<Callback>(callback));
     }
 
 private:

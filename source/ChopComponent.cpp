@@ -117,7 +117,6 @@ void ChopComponent::handleChopButtonPressed()
     auto newClip = chopTrack->insertNewClip(tracktion::engine::TrackItem::Type::arranger, timeRange, nullptr);
     if (newClip != nullptr)
     {
-        newClip->setName("Chop " + juce::String(chopTrack->getClips().size()));
         DBG("Created new chop clip from " + juce::String(currentPositionSeconds) + " to " + juce::String(endTime));
     }
 }

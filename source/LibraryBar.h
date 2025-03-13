@@ -98,7 +98,7 @@ private:
     void updateControllerButtonState(bool connected)
     {
         controllerButton.setColour(juce::TextButton::buttonColourId, 
-            connected ? juce::Colour(0xFF2EA043) : juce::Colour(0xFFD73A49)); // Green when connected, red when disconnected
+            connected ? juce::Colours::green : juce::Colours::red); // Using standard JUCE colors for better visibility
         controllerButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
     }
 

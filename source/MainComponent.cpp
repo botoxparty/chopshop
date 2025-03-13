@@ -58,14 +58,16 @@ MainComponent::MainComponent()
     gamepadManager = GamepadManager::getInstance();
     gamepadManager->addListener(this);
 
-
     // Initialize controller mapping component (not edit-dependent)
     controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
     addAndMakeVisible(*controllerMappingComponent);
 
-
     // Initialize library component first as it's not edit-dependent
     setupLibraryComponent();
+
+    // Update initial controller connection state
+    if (libraryBar)
+        libraryBar->setControllerConnectionState(gamepadManager->isGamepadConnected());
 
     
     resized();
@@ -500,9 +502,8 @@ void MainComponent::stopRecording()
     armTrack (0, false);
 }
 
-void MainComponent::gamepadButtonPressed (int buttonId)
+void MainComponent::gamepadButtonPressed(int buttonId)
 {
-    float currentPosition;
     switch (buttonId)
     {
         case SDL_GAMEPAD_BUTTON_SOUTH:
@@ -510,52 +511,40 @@ void MainComponent::gamepadButtonPressed (int buttonId)
                 chopComponent->handleChopButtonPressed();
             break;
         case SDL_GAMEPAD_BUTTON_DPAD_UP:
-        {
             if (reverbComponent)
-                reverbComponent->rampMixLevel (true);
+                reverbComponent->rampMixLevel(true);
             break;
-        }
         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-        {
             if (delayComponent)
-                delayComponent->rampMixLevel (true);
+                delayComponent->rampMixLevel(true);
             break;
-        }
         case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-        {
             if (flangerComponent)
-                flangerComponent->rampMixLevel (true);
+                flangerComponent->rampMixLevel(true);
             break;
-        }
     }
 }
 
-void MainComponent::gamepadButtonReleased (int buttonId)
+void MainComponent::gamepadButtonReleased(int buttonId)
 {
     switch (buttonId)
     {
-        case SDL_GAMEPAD_BUTTON_SOUTH: // Cross
+        case SDL_GAMEPAD_BUTTON_SOUTH:
             if (chopComponent)
                 chopComponent->handleChopButtonReleased();
             break;
         case SDL_GAMEPAD_BUTTON_DPAD_UP:
-        {
             if (reverbComponent)
-                reverbComponent->rampMixLevel (false);
+                reverbComponent->rampMixLevel(false);
             break;
-        }
         case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
-        {
             if (delayComponent)
-                delayComponent->rampMixLevel (false);
+                delayComponent->rampMixLevel(false);
             break;
-        }
         case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
-        {
             if (flangerComponent)
-                flangerComponent->rampMixLevel (false);
+                flangerComponent->rampMixLevel(false);
             break;
-        }
     }
 }
 
@@ -961,4 +950,16 @@ void MainComponent::gamepadTouchpadMoved(float x, float y, bool touched)
 {
     // Implement touchpad handling here if needed
     // For now, we can leave it empty if you're not using the touchpad
+}
+
+void MainComponent::gamepadConnected()
+{
+    if (libraryBar)
+        libraryBar->setControllerConnectionState(true);
+}
+
+void MainComponent::gamepadDisconnected()
+{
+    if (libraryBar)
+        libraryBar->setControllerConnectionState(false);
 }
