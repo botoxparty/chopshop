@@ -4,7 +4,46 @@
 #include <juce_dsp/juce_dsp.h>
 #include <tracktion_engine/tracktion_engine.h>
 
+//==============================================================================
+struct ScratchBufferBase
+{
+    ScratchBufferBase() {}
+    
+    void ensureMaxBufferSize(int size)
+    {
+        if (++size > bufferSamples)
+        {
+            bufferSamples = size;
+            buffers[0].ensureSize((size_t)bufferSamples * sizeof(float) + 32, true);
+            buffers[1].ensureSize((size_t)bufferSamples * sizeof(float) + 32, true);
+            
+            if (bufferPos >= bufferSamples)
+                bufferPos = 0;
+        }
+    }
+    
+    void clearBuffer()
+    {
+        buffers[0].fillWith(0);
+        buffers[1].fillWith(0);
+    }
+    
+    void releaseBuffer()
+    {
+        bufferSamples = 0;
+        bufferPos = 0;
+        buffers[0].setSize(0);
+        buffers[1].setSize(0);
+    }
+    
+    int bufferPos = 0, bufferSamples = 0;
+    juce::MemoryBlock buffers[2];
+    
+private:
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScratchBufferBase)
+};
 
+//==============================================================================
 class ScratchPlugin : public tracktion::engine::Plugin
 {
 public:
@@ -17,29 +56,24 @@ public:
     juce::String getName() const override { return TRANS("Scratch"); }
     juce::String getPluginType() override { return xmlTypeName; }
     juce::String getSelectableDescription() override { return TRANS("Scratch Plugin"); }
-
-    void initialise(const tracktion::engine::PluginInitialisationInfo& info) override;
+    
+    int getNumOutputChannelsGivenInputs(int numInputChannels) override { return juce::jmin(numInputChannels, 2); }
+    void initialise(const tracktion::engine::PluginInitialisationInfo&) override;
     void deinitialise() override;
     void reset() override;
-    void applyToBuffer(const tracktion::engine::PluginRenderContext& context) override;
-    void restorePluginStateFromValueTree(const juce::ValueTree& valueTree) override;
+    void applyToBuffer(const tracktion::engine::PluginRenderContext&) override;
+    void restorePluginStateFromValueTree(const juce::ValueTree&) override;
 
     juce::CachedValue<float> scratchValue, mixValue;
-    tracktion::engine::AutomatableParameter::Ptr scratchParam;
-    tracktion::engine::AutomatableParameter::Ptr mixParam;
+    tracktion::engine::AutomatableParameter::Ptr scratchParam, mixParam;
 
 private:
-    double sampleRate = 44100.0;
-    float lastScratchValue = 0.0f;
-    juce::SmoothedValue<float> scratchSmoother;
-    juce::AudioBuffer<float> delayBuffer;
-    int delayBufferPos = 0;
-    int delayBufferLength = 0;
-    static constexpr int maxDelayLength = 48000; // 1 second at 48kHz
+    float interpolateHermite4pt3oX(float x, float y0, float y1, float y2, float y3);
+    float getSampleAtPosition(float* buf, int bufferLength, float position);
     
-    float calculatePlaybackRate(float scratchValue);
-    void updateDelayBuffer(const float* inputData, int numSamples, int channel);
-    float getInterpolatedSample(float delayInSamples, int channel);
+    ScratchBufferBase scratchBuffer;
+    double sampleRate = 44100.0;
+    juce::SmoothedValue<float> smoothedScratchPos;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScratchPlugin)
 }; 

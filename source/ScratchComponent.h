@@ -21,8 +21,6 @@ public:
     std::function<double()> getCurrentTempoAdjustment;
     std::function<double()> getEffectiveTempo;
     
-    void setScratchValue(double value);
-    
     double getScratchValue() const
     {
         return scratchSlider->getValue();
@@ -48,12 +46,29 @@ private:
             setRange(-1.0, 1.0);
             setValue(0.0);
             
-            // Spring back to center when mouse is released
-            onDragEnd = [this]()
+            // Store the spring behavior to combine with parameter binding later
+            springBehavior = [this]()
             {
+                DBG("Spring back to center");
                 setValue(0.0, juce::sendNotification);
             };
+            
+            // Initial setup of onDragEnd
+            onDragEnd = springBehavior;
         }
+        
+        // Method to combine spring behavior with parameter binding
+        void addParameterBinding(std::function<void()> parameterBinding)
+        {
+            onDragEnd = [this, parameterBinding]()
+            {
+                springBehavior();
+                parameterBinding();
+            };
+        }
+        
+    private:
+        std::function<void()> springBehavior;
     };
     
     std::unique_ptr<SpringSlider> scratchSlider;

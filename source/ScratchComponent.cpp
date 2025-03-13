@@ -28,7 +28,26 @@ ScratchComponent::ScratchComponent(tracktion::engine::Edit& e) : BaseEffectCompo
     // Bind sliders to parameters
     if (auto* scratchPlugin = dynamic_cast<ScratchPlugin*>(plugin.get()))
     {
-        bindSliderToParameter(*scratchSlider, *scratchPlugin->scratchParam);
+        // Special binding for scratch slider to preserve spring behavior
+        scratchSlider->setRange(scratchPlugin->scratchParam->getValueRange().getStart(), 
+                               scratchPlugin->scratchParam->getValueRange().getEnd(), 
+                               0.01);
+        scratchSlider->setValue(scratchPlugin->scratchParam->getCurrentValue(), juce::dontSendNotification);
+        
+        scratchSlider->onValueChange = [scratchPlugin, this](){ 
+            scratchPlugin->scratchParam->setParameter(static_cast<float>(scratchSlider->getValue()), 
+                                                    juce::sendNotification); 
+        };
+        
+        scratchSlider->onDragStart = [scratchPlugin](){ 
+            scratchPlugin->scratchParam->parameterChangeGestureBegin(); 
+        };
+        
+        scratchSlider->addParameterBinding([scratchPlugin](){ 
+            scratchPlugin->scratchParam->parameterChangeGestureEnd(); 
+        });
+
+        // Normal binding for mix slider
         bindSliderToParameter(*mixSlider, *scratchPlugin->mixParam);
     }
 }
@@ -54,18 +73,6 @@ void ScratchComponent::paint(juce::Graphics& g)
     
     g.drawText("Scratch", bounds.removeFromTop(sliderHeight), juce::Justification::centredLeft);
     g.drawText("Mix", bounds, juce::Justification::centredLeft);
-}
-
-void ScratchComponent::setScratchValue(double value)
-{
-    if (auto* scratchPlugin = dynamic_cast<ScratchPlugin*>(plugin.get()))
-    {
-        if (auto param = scratchPlugin->scratchParam)
-        {
-            param->setParameter(value, juce::sendNotification);
-            scratchSlider->setValue(value, juce::sendNotification);
-        }
-    }
 }
 
 ScratchComponent::~ScratchComponent()

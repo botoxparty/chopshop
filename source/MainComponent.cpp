@@ -748,7 +748,7 @@ void MainComponent::setupScratchComponent()
         return screwComponent ? screwComponent->getTempo() : 120.0;
     };
 
-    // addAndMakeVisible (*scratchComponent);
+    addAndMakeVisible (*scratchComponent);
 }
 
 void MainComponent::setupAudioGraph()
