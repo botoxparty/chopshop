@@ -240,7 +240,7 @@ jobs:
           security find-identity -v -p codesigning
           echo "Keychain list:"
           security list-keychains
-          
+
       - name: Configure
         run: |
           # For macOS, ensure we're only building for arm64 to match SDL3
@@ -299,32 +299,32 @@ jobs:
           echo "STANDALONE_PATH=$ARTIFACTS_PATH/${{ env.PRODUCT_NAME }}" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
 
-      - name: Codesign (macOS)
-        if: ${{ matrix.name == 'macOS' }}
-        timeout-minutes: 5
-        run: |
-          # Print app bundle info before signing
-          echo "App bundle details before signing:"
-          ls -la "${{ env.STANDALONE_PATH }}.app"
-          du -sh "${{ env.STANDALONE_PATH }}.app"
+      # - name: Codesign (macOS)
+      #   if: ${{ matrix.name == 'macOS' }}
+      #   timeout-minutes: 5
+      #   run: |
+      #     # Print app bundle info before signing
+      #     echo "App bundle details before signing:"
+      #     ls -la "${{ env.STANDALONE_PATH }}.app"
+      #     du -sh "${{ env.STANDALONE_PATH }}.app"
           
-          # First try signing with less options to see if it works
-          echo "Starting basic codesign..."
-          codesign --verbose --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" "${{ env.STANDALONE_PATH }}.app"
+      #     # First try signing with less options to see if it works
+      #     echo "Starting basic codesign..."
+      #     codesign --verbose --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" "${{ env.STANDALONE_PATH }}.app"
           
-          # If that succeeds, try the full signing command
-          if [ $? -eq 0 ]; then
-            echo "Basic signing succeeded, now trying full signing..."
-            codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}.app" --deep --strict --options=runtime --timestamp
-          else
-            echo "Basic signing failed, skipping full signing"
-            # Continue workflow even if signing fails
-            exit 0
-          fi
+      #     # If that succeeds, try the full signing command
+      #     if [ $? -eq 0 ]; then
+      #       echo "Basic signing succeeded, now trying full signing..."
+      #       codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}.app" --deep --strict --options=runtime --timestamp
+      #     else
+      #       echo "Basic signing failed, skipping full signing"
+      #       # Continue workflow even if signing fails
+      #       exit 0
+      #     fi
           
-          # Verify the signature
-          echo "Verifying signature..."
-          codesign -vvv --deep --strict "${{ env.STANDALONE_PATH }}.app"
+      #     # Verify the signature
+      #     echo "Verifying signature..."
+      #     codesign -vvv --deep --strict "${{ env.STANDALONE_PATH }}.app"
 
       - name: Add Custom Icons (macOS)
         if: ${{ matrix.name == 'macOS' }}
