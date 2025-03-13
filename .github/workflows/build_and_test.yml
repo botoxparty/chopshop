@@ -233,6 +233,14 @@ jobs:
           dev-id-installer-cert: ${{ secrets.DEV_ID_INSTALLER_CERT }}
           dev-id-installer-password: ${{ secrets.DEV_ID_INSTALLER_PASSWORD }}
 
+      - name: Debug Certificates (macOS)
+        if: ${{ matrix.name == 'macOS' }}
+        run: |
+          echo "Available codesigning identities:"
+          security find-identity -v -p codesigning
+          echo "Keychain list:"
+          security list-keychains
+          
       - name: Configure
         run: |
           # For macOS, ensure we're only building for arm64 to match SDL3
