@@ -14,6 +14,33 @@ CrossfaderAutomationLane::~CrossfaderAutomationLane()
     clearChopRegions();
 }
 
+void CrossfaderAutomationLane::setParameter(tracktion::engine::AutomatableParameter* param)
+{
+    if (param == nullptr)
+    {
+        // Clear existing parameter and regions
+        if (parameter != nullptr)
+            parameter->removeListener(this);
+        parameter = nullptr;
+        regionManager.reset();
+        return;
+    }
+
+    AutomationLane::setParameter(param);
+    regionManager = std::make_unique<RegionManager>(param);
+    updatePoints();  // Call updatePoints after everything is initialized
+}
+
+void CrossfaderAutomationLane::onParameterChanged(tracktion::engine::AutomatableParameter* param)
+{
+    if (param == nullptr)
+    {
+        regionManager.reset();
+        return;
+    }
+    regionManager = std::make_unique<RegionManager>(param);
+}
+
 void CrossfaderAutomationLane::paint(juce::Graphics& g)
 {
     auto bounds = getLocalBounds().toFloat();
@@ -44,11 +71,22 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
         gridTimeBeats += zoomState.getGridSize();
     }
     
-    // Draw only A-side chop regions that are within the visible range
-    for (size_t i = 0; i < chopRegions.size(); ++i)
-    {
-        const auto& region = chopRegions[i];
-        if (!region.isASide) continue; // Skip non-A-side regions
+    // Only proceed if we have a valid RegionManager
+    if (!regionManager)
+        return;
+        
+    // Draw regions from the RegionManager
+    const auto& regions = regionManager->getRegions();
+    for (size_t i = 0; i < regions.size(); ++i) {
+        const auto& region = regions[i];
+        
+        DBG("DRAW REGION, START TIME: " + juce::String(region.startTime) + ", END TIME: " + juce::String(region.endTime));
+
+        DBG("IS A SIDE: " + juce::String(region.isASide ? "true" : "false"));
+        // Only draw A-side regions
+        if (!region.isASide)
+            continue;
+            
         
         // Skip regions that are completely outside the visible range
         if (region.endTime < visibleTimeStart || region.startTime > visibleTimeEnd)
@@ -68,7 +106,7 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
         auto startPoint = timeToXY(startTimeSeconds, 1.0);
         auto endPoint = timeToXY(endTimeSeconds, 1.0);
         
-        // Calculate rectangle bounds for A-side
+        // Calculate rectangle bounds for the region
         juce::Rectangle<float> regionBounds(
             startPoint.x,
             bounds.getY(),
@@ -92,19 +130,26 @@ void CrossfaderAutomationLane::paint(juce::Graphics& g)
 
 void CrossfaderAutomationLane::mouseDown(const juce::MouseEvent& event)
 {
-    if (parameter == nullptr)
-    {
-        DBG("mouseDown: parameter is null");
-        return;
-    }
-        
+    if (parameter == nullptr) return;
+    
     auto [time, value] = XYToTime(event.position.x, event.position.y);
+    if (snapEnabled)
+        time = snapTimeToGrid(time);
     
     // Check if we clicked on a region
+       // Check for existing region
+    if (auto* region = regionManager->getRegionAtTime(time)) {
+        // ... handle region selection ...
+        DBG("region found");
+        return;
+    }
+
+    DBG("CROSSFADER AUTOMATION LANE, MOUSE DOWN");
+
     selectedRegionIndex = std::nullopt;
-    for (size_t i = 0; i < chopRegions.size(); ++i)
+    for (size_t i = 0; i < regionManager->getRegions().size(); ++i)
     {
-        const auto& region = chopRegions[i];
+        const auto& region = regionManager->getRegions()[i];
         if (time >= region.startTime && time <= region.endTime)
         {
             if(!region.isASide) {
@@ -122,26 +167,21 @@ void CrossfaderAutomationLane::mouseDown(const juce::MouseEvent& event)
         auto originalTime = time;
         time = snapTimeToGrid(time);
     }
+
+    DBG("CROSSFADER AUTOMATION LANE, MOUSE DOWN, TIME: " + juce::String(time));
         
     auto& curve = parameter->getCurve();
     
     // Convert 1 beat to seconds using the tempo sequence
+    // Add new region
     auto startBeat = edit.tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(time));
-    auto endBeat = tracktion::BeatPosition::fromBeats(startBeat.inBeats() + 1.0); // Add 1 beat
+    auto endBeat = tracktion::BeatPosition::fromBeats(startBeat.inBeats() + 1.0);
     auto endTime = edit.tempoSequence.toTime(endBeat).inSeconds();
     
-    // Add the new region points
-    if (time > 0.001) // Add gap before if not at start
-    {
-        curve.addPoint(tracktion::TimePosition::fromSeconds(time - 0.001), 0.0f, 0.0f);
-    }
-    
-    curve.addPoint(tracktion::TimePosition::fromSeconds(time), 1.0f, 0.0f);
-    curve.addPoint(tracktion::TimePosition::fromSeconds(endTime), 1.0f, 0.0f);
-    curve.addPoint(tracktion::TimePosition::fromSeconds(endTime + 0.001), 0.0f, 0.0f);
-    
+    regionManager->addRegion(Region(time, endTime, true));
+
     isDragging = true;
-    updateChopRegionsFromCurve();
+    // updateChopRegionsFromCurve();
     repaint();
 }
 
@@ -164,14 +204,13 @@ void CrossfaderAutomationLane::mouseDrag(const juce::MouseEvent& event)
         curve.movePoint(numPoints - 1, tracktion::TimePosition::fromSeconds(time + 0.001), 0.0f, false);
     }
     
-    updateChopRegionsFromCurve();
+    // updateChopRegionsFromCurve();
     repaint();
 }
 
 void CrossfaderAutomationLane::mouseUp(const juce::MouseEvent&)
 {
     isDragging = false;
-    activeRegion = nullptr;
 }
 
 void CrossfaderAutomationLane::setSnapToGrid(bool shouldSnap)
@@ -190,52 +229,6 @@ double CrossfaderAutomationLane::snapTimeToGrid(double time) const
     return tempoSequence.toTime(tracktion::BeatPosition::fromBeats(snappedBeats)).inSeconds();
 }
 
-void CrossfaderAutomationLane::addChopRegion(const ChopRegion& region)
-{
-    if (parameter == nullptr)
-        return;
-
-    // Add points directly to automation curve
-    auto& curve = parameter->getCurve();
-    
-    if (region.startTime > 0)
-        curve.addPoint(tracktion::TimePosition::fromSeconds(region.startTime - 0.001), 
-                      region.isASide ? 0.0f : 1.0f, 0.0f);
-                      
-    curve.addPoint(tracktion::TimePosition::fromSeconds(region.startTime), 
-                  region.isASide ? 1.0f : 0.0f, 0.0f);
-    curve.addPoint(tracktion::TimePosition::fromSeconds(region.endTime), 
-                  region.isASide ? 1.0f : 0.0f, 0.0f);
-    
-    if (region.endTime < getSourceLength())
-        curve.addPoint(tracktion::TimePosition::fromSeconds(region.endTime + 0.001),
-                      region.isASide ? 0.0f : 1.0f, 0.0f);
-
-    // Regions will be updated from curve
-    updateChopRegionsFromCurve();
-    repaint();
-}
-
-void CrossfaderAutomationLane::removeChopRegion(size_t index)
-{
-    if (index >= chopRegions.size() || parameter == nullptr)
-        return;
-
-    const auto& regionToRemove = chopRegions[index];
-    auto& curve = parameter->getCurve();
-
-    // Find and remove points within the region's time range
-    for (int i = curve.getNumPoints() - 1; i >= 0; --i)
-    {
-        auto point = curve.getPoint(i);
-        auto time = point.time.inSeconds();
-        if (time >= regionToRemove.startTime - 0.002 && time <= regionToRemove.endTime + 0.002)
-        {
-            curve.removePoint(i);
-        }
-    }
-}
-
 void CrossfaderAutomationLane::clearChopRegions()
 {
     if (parameter == nullptr)
@@ -243,59 +236,12 @@ void CrossfaderAutomationLane::clearChopRegions()
         
     // Clear automation curve
     parameter->getCurve().clear();
-    chopRegions.clear();
+    regionManager->clearRegions();
     repaint();
-}
-
-CrossfaderAutomationLane::ChopRegion* CrossfaderAutomationLane::getRegionAtTime(double time)
-{
-    for (auto& region : chopRegions)
-    {
-        if (time >= region.startTime && time <= region.endTime)
-            return &region;
-    }
-    return nullptr;
-}
-
-void CrossfaderAutomationLane::updateChopRegionsFromCurve()
-{
-    if (parameter == nullptr)
-        return;
-
-    auto& curve = parameter->getCurve();
-    chopRegions.clear();
-
-    // Convert curve points to regions
-    bool isInRegion = false;
-    double regionStart = 0.0;
-    bool currentSide = false;
-
-    for (int i = 0; i < curve.getNumPoints(); ++i)
-    {
-        auto point = curve.getPoint(i);
-        double time = point.time.inSeconds();
-        bool isASide = point.value > 0.5f;
-
-        if (!isInRegion && i < curve.getNumPoints() - 1)
-        {
-            isInRegion = true;
-            regionStart = time;
-            currentSide = isASide;
-        }
-        else if (isInRegion && (isASide != currentSide || i == curve.getNumPoints() - 1))
-        {
-            // End current region
-            chopRegions.emplace_back(regionStart, time, currentSide);
-            // Start new region
-            regionStart = time;
-            currentSide = isASide;
-        }
-    }
 }
 
 void CrossfaderAutomationLane::curveHasChanged(tracktion::engine::AutomatableParameter&)
 {
-    updateChopRegionsFromCurve();
     repaint();
 }
 
@@ -313,12 +259,6 @@ void CrossfaderAutomationLane::parameterChanged(tracktion::engine::AutomatablePa
 
 void CrossfaderAutomationLane::updatePoints()
 {
-    // Call base class implementation to handle basic automation point updates
-    // AutomationLane::updatePoints();
-    DBG("updatePoints");
-    
-    // Update our visual representation based on the current automation data
-    updateChopRegionsFromCurve();
     repaint();
 }
 
@@ -326,7 +266,7 @@ void CrossfaderAutomationLane::deleteSelectedRegion()
 {
     if (selectedRegionIndex)
     {
-        removeChopRegion(*selectedRegionIndex);
+        regionManager->removeRegion(*selectedRegionIndex);
         selectedRegionIndex = std::nullopt;
         repaint();
     }
@@ -383,12 +323,12 @@ void CrossfaderAutomationLane::mouseDoubleClick(const juce::MouseEvent& event)
     auto [time, value] = XYToTime(event.position.x, event.position.y);
     
     // Check if we double-clicked on a region
-    for (size_t i = 0; i < chopRegions.size(); ++i)
+    for (size_t i = 0; i < regionManager->getRegions().size(); ++i)
     {
-        const auto& region = chopRegions[i];
+        const auto& region = regionManager->getRegions()[i];
         if (time >= region.startTime && time <= region.endTime && region.isASide)
         {
-            removeChopRegion(i);
+            regionManager->removeRegion(i);
             selectedRegionIndex = std::nullopt;
             repaint();
             return;

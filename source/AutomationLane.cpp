@@ -194,6 +194,7 @@ void AutomationLane::setParameter(tracktion::engine::AutomatableParameter* param
     if (parameter != nullptr)
         parameter->addListener(this);
         
+    onParameterChanged(param);
     updatePoints();
     repaint();
 }

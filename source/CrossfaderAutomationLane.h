@@ -4,20 +4,10 @@
 #include <vector>
 #include <optional>
 #include "ZoomState.h"
-
+#include "RegionManager.h"
 class CrossfaderAutomationLane : public AutomationLane
 {
 public:
-    struct ChopRegion {
-        double startTime;
-        double endTime;
-        bool isASide;
-        float mixAmount;  // 0.0 = full B, 1.0 = full A
-
-        ChopRegion(double start, double end, bool a, float mix = 1.0f)
-            : startTime(start), endTime(end), isASide(a), mixAmount(mix) {}
-    };
-
     CrossfaderAutomationLane(tracktion::engine::Edit&, ZoomState&);
     ~CrossfaderAutomationLane() override;
 
@@ -39,8 +29,6 @@ public:
     double snapTimeToGrid(double time) const;
     
     // Chop region management
-    void addChopRegion(const ChopRegion& region);
-    void removeChopRegion(size_t index);
     void clearChopRegions();
 
     void deleteSelectedRegion();
@@ -49,22 +37,17 @@ public:
     void zoomLevelChanged(double newZoomLevel) override { repaint(); }
     void scrollPositionChanged(double newScrollPosition) override { repaint(); }
     void gridSizeChanged(float) override;
-
+    void setParameter(tracktion::engine::AutomatableParameter* param) override;
+    using Region = RegionManager::Region;
+protected:
+    void onParameterChanged(tracktion::engine::AutomatableParameter* param) override;
 private:
-    std::vector<ChopRegion> chopRegions;
+    std::unique_ptr<RegionManager> regionManager;
     bool snapEnabled = true;
-    
-    // For drag operations
     bool isDragging = false;
-    ChopRegion* activeRegion = nullptr;
-    
-    // Helper methods
-    ChopRegion* getRegionAtTime(double time);
+    std::optional<size_t> selectedRegionIndex;
     void updateAutomationPoints();
     void convertRegionsToAutomation();
-    void updateChopRegionsFromCurve();
-
-    std::optional<size_t> selectedRegionIndex;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CrossfaderAutomationLane)
 }; 

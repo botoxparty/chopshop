@@ -27,7 +27,7 @@ public:
     void mouseUp(const juce::MouseEvent&) override;
     void mouseDoubleClick(const juce::MouseEvent&) override;
 
-    void setParameter(tracktion::engine::AutomatableParameter*);
+    virtual void setParameter(tracktion::engine::AutomatableParameter*);
     virtual void updatePoints();
     
     double getSourceLength() const 
@@ -70,4 +70,6 @@ protected:
     std::pair<double, double> XYToTime(float x, float y) const;
     void addPoint(double timeInSeconds, double value);
     void updateValueAtTime(double timeInSeconds, double value);
+
+    virtual void onParameterChanged(tracktion::engine::AutomatableParameter*) {}
 }; 
