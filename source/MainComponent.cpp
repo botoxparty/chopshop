@@ -58,13 +58,16 @@ MainComponent::MainComponent()
     gamepadManager = GamepadManager::getInstance();
     gamepadManager->addListener(this);
 
-    // Initialize library component first as it's not edit-dependent
-    setupLibraryComponent();
 
     // Initialize controller mapping component (not edit-dependent)
     controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
     addAndMakeVisible(*controllerMappingComponent);
 
+
+    // Initialize library component first as it's not edit-dependent
+    setupLibraryComponent();
+
+    
     resized();
 
     if (juce::RuntimePermissions::isRequired(juce::RuntimePermissions::recordAudio)
@@ -303,6 +306,11 @@ void MainComponent::setupLibraryComponent()
         }
     };
 
+    // Set up the controller button callback
+    libraryBar->getControllerButton().onClick = [this]() {
+        showControllerMappingWindow();
+    };
+
     // Update to use Edit selection instead of File selection
     libraryComponent->onEditSelected = [this](std::unique_ptr<tracktion::engine::Edit> newEdit) {
         handleEditSelection(std::move(newEdit));
@@ -312,6 +320,15 @@ void MainComponent::setupLibraryComponent()
     if (libraryComponent) {
         libraryComponent->setVisible(true);
     }
+}
+
+void MainComponent::showControllerMappingWindow()
+{
+    if (controllerMappingWindow == nullptr)
+        controllerMappingWindow = std::make_unique<ControllerMappingWindow>();
+
+    controllerMappingWindow->setVisible(true);
+    controllerMappingWindow->toFront(true);
 }
 
 void MainComponent::handleEditSelection (std::unique_ptr<tracktion::engine::Edit> newEdit)
@@ -920,11 +937,7 @@ void MainComponent::menuItemSelected (int menuItemID, int topLevelMenuIndex)
                 juce::JUCEApplication::getInstance()->systemRequestedQuit();
                 break;
             case 3: // Game Controller Settings
-                if (controllerMappingComponent)
-                {
-                    controllerMappingComponent->toFront(true);
-                    controllerMappingComponent->setVisible(true);
-                }
+                showControllerMappingWindow();
                 break;
             default:
                 break;

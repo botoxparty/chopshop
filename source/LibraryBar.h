@@ -84,6 +84,7 @@ public:
     }
 
     juce::TextButton& getShowLibraryButton() { return showLibraryButton; }
+    juce::TextButton& getControllerButton() { return controllerButton; }
 
 private:
     tracktion::engine::Engine& engine;

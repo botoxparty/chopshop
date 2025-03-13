@@ -7,6 +7,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <tracktion_engine/tracktion_engine.h>
 #include <moonbase_JUCEClient/moonbase_JUCEClient.h>
+#include <juce_audio_utils/juce_audio_utils.h>
 
 namespace ProjectInfo
 {
@@ -38,6 +39,7 @@ namespace ProjectInfo
 #include "Plugins/ScratchPlugin.h"
 #include "ScratchComponent.h"
 #include "TransportComponent.h"
+#include "ControllerMappingComponent.h"
 
 
 
@@ -259,6 +261,7 @@ private:
     void setupScratchComponent();
 
     void gamepadTouchpadMoved(float x, float y, bool touched) override;
+    void showControllerMappingWindow();
 
     std::unique_ptr<juce::ApplicationCommandManager> commandManager;
 
@@ -275,6 +278,8 @@ private:
     MOONBASE_DECLARE_AND_INIT_ACTIVATION_UI_SAME_PARENT;
     
     juce::TextButton showActivationUiButton{"Show Activation UI"};
+
+    std::unique_ptr<ControllerMappingWindow> controllerMappingWindow;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

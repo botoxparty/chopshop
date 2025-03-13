@@ -3,60 +3,6 @@
 
 ControllerMappingComponent::ControllerMappingComponent()
 {
-    addAndMakeVisible(mappingButton);
-    mappingButton.setClickingTogglesState(false);
-    
-    // Create gamepad path
-    juce::Path gamepadPath;
-    
-    // Main body - make it slightly larger and more rounded
-    gamepadPath.addRoundedRectangle(2, 2, 36, 26, 4);
-    
-    // Grips
-    gamepadPath.addRoundedRectangle(0, 8, 4, 14, 1);    // Left grip
-    gamepadPath.addRoundedRectangle(36, 8, 4, 14, 1);   // Right grip
-    
-    // D-pad
-    gamepadPath.addRectangle(8, 13, 10, 4);     // Horizontal
-    gamepadPath.addRectangle(11, 10, 4, 10);    // Vertical
-    
-    // Face buttons - arranged in diamond pattern
-    const float buttonSize = 4.0f;
-    // Top button
-    gamepadPath.addEllipse(24, 8, buttonSize, buttonSize);
-    // Right button
-    gamepadPath.addEllipse(28, 12, buttonSize, buttonSize);
-    // Bottom button
-    gamepadPath.addEllipse(24, 16, buttonSize, buttonSize);
-    // Left button
-    gamepadPath.addEllipse(20, 12, buttonSize, buttonSize);
-    
-    mappingButton.setShape(gamepadPath, false, true, false);
-    mappingButton.setOutline(juce::Colours::white, 1.0f);
-    
-    mappingButton.onClick = [this]()
-    {
-        if (mappingDialog == nullptr)
-        {
-            // Create a new instance of ControllerMappingComponent for the dialog
-            auto content = std::make_unique<ControllerMappingComponent>();
-            content->setSize(400, 420);
-            content->removeChildComponent(&content->mappingButton); // Remove the button from the dialog version
-            
-            juce::DialogWindow::LaunchOptions options;
-            options.content.setOwned(content.release());
-            options.dialogTitle = "Controller Mapping";
-            options.dialogBackgroundColour = getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId);
-            options.escapeKeyTriggersCloseButton = true;
-            options.useNativeTitleBar = true;
-            options.resizable = false;
-            
-            mappingDialog = options.launchAsync();
-            mappingDialog->centreWithSize(400, 420);
-            mappingDialog->addComponentListener(new ComponentListener(*this));
-        }
-    };
-
     // Initialize default mappings with updated functions
     mappings = {
         {SDL_GAMEPAD_BUTTON_SOUTH, "Chop", false},
@@ -82,10 +28,6 @@ ControllerMappingComponent::ControllerMappingComponent()
         {{260, 210}, 15, "Square", SDL_GAMEPAD_BUTTON_WEST},
         {{300, 170}, 15, "Triangle", SDL_GAMEPAD_BUTTON_NORTH}
     };
-    
-    // Don't check connection status in constructor
-    // Instead, we'll do it in the first timer callback
-    updateButtonAppearance();
 
     // Start timer to check connection status immediately and then periodically
     startTimer(100); // First check after 100ms, then will switch to regular interval
@@ -94,9 +36,11 @@ ControllerMappingComponent::ControllerMappingComponent()
 ControllerMappingComponent::~ControllerMappingComponent()
 {
     stopTimer();
-    
-    if (mappingDialog != nullptr)
-        mappingDialog->exitModalState(0);
+}
+
+void ControllerMappingComponent::resized()
+{
+    // No longer need to position the mapping button
 }
 
 void ControllerMappingComponent::paint(juce::Graphics& g)
@@ -222,32 +166,6 @@ juce::Colour ControllerMappingComponent::getButtonColor(int buttonId)
     }
 }
 
-void ControllerMappingComponent::resized()
-{
-    auto bounds = getLocalBounds();
-    auto statusBounds = bounds.removeFromTop(50);
-    
-    // Center the button in the status bounds and make it a reasonable size
-    const int buttonSize = 30;
-    mappingButton.setBounds(statusBounds.withSizeKeepingCentre(buttonSize, buttonSize));
-}
-
-// Add this helper class to handle the window closing
-class ComponentListener : public juce::ComponentListener
-{
-public:
-    ComponentListener(ControllerMappingComponent& owner) : owner_(owner) {}
-    
-    void componentBeingDeleted(juce::Component&) override
-    {
-        owner_.mappingDialog = nullptr;
-        delete this; // Clean up the listener
-    }
-    
-private:
-    ControllerMappingComponent& owner_;
-};
-
 void ControllerMappingComponent::drawDpad(juce::Graphics& g, juce::Rectangle<float> bounds)
 {
     const float dpadSize = bounds.getHeight() * 0.6f;
@@ -319,39 +237,15 @@ void ControllerMappingComponent::timerCallback()
     bool wasConnected = isControllerConnected;
     checkControllerConnection();
     
-    // Update button appearance if connection status changed
+    // Just repaint if connection status changed
     if (wasConnected != isControllerConnected)
     {
-        updateButtonAppearance();
         repaint();
     }
     else
     {
         repaint(); // Still repaint for other updates
     }
-}
-
-void ControllerMappingComponent::updateButtonAppearance()
-{
-    const auto matrixGreen = juce::Colour(0xFF00FF41);
-    
-    if (isControllerConnected) {
-        mappingButton.setColours(
-            matrixGreen.withAlpha(0.7f),                // normal
-            matrixGreen,                                // over
-            matrixGreen.brighter(0.2f)                  // down
-        );
-        mappingButton.setOutline(matrixGreen, 2.0f);
-    } else {
-        mappingButton.setColours(
-            juce::Colours::red.withAlpha(0.7f),         // normal
-            juce::Colours::red,                         // over
-            juce::Colours::red.brighter(0.2f)           // down
-        );
-        mappingButton.setOutline(juce::Colours::red, 1.0f);
-    }
-    
-    mappingButton.repaint();
 }
 
 void ControllerMappingComponent::drawMappingsList(juce::Graphics& g, juce::Rectangle<float> bounds)

@@ -8,6 +8,9 @@
 
 #include "GamepadManager.h"
 
+// Forward declare the window class
+class ControllerMappingWindow;
+
 class ControllerMappingComponent : public juce::Component,
                                   private juce::Timer
 {
@@ -31,28 +34,8 @@ public:
     void drawMappingsList(juce::Graphics& g, juce::Rectangle<float> bounds);
 
 private:
-    friend class ComponentListener;
-    
-    class ComponentListener : public juce::ComponentListener
-    {
-    public:
-        ComponentListener(ControllerMappingComponent& owner) : owner_(owner) {}
-        
-        void componentBeingDeleted([[maybe_unused]] juce::Component& component) override
-        {
-            owner_.mappingDialog = nullptr;
-            delete this;
-        }
-        
-    private:
-        ControllerMappingComponent& owner_;
-    };
-
     void drawButton(juce::Graphics& g, juce::Point<float> center, float radius, 
                    const juce::String& label, bool isHighlighted);
-    
-    juce::ShapeButton mappingButton {"mappingButton", juce::Colours::white, juce::Colours::white.darker(0.1f), juce::Colours::white.darker(0.2f)};
-    juce::DialogWindow* mappingDialog = nullptr;
     
     std::vector<ControllerMapping> mappings;
     
@@ -86,9 +69,33 @@ private:
     
     void checkControllerConnection();
     
-    void updateButtonAppearance();
-    
-    std::unique_ptr<juce::Drawable> createControllerIcon(bool connected);
-    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ControllerMappingComponent)
+};
+
+// Add new window class
+class ControllerMappingWindow : public juce::DocumentWindow
+{
+public:
+    ControllerMappingWindow() 
+        : DocumentWindow("Controller Mapping", 
+                        juce::Desktop::getInstance().getDefaultLookAndFeel()
+                            .findColour(juce::ResizableWindow::backgroundColourId),
+                        DocumentWindow::closeButton)
+    {
+        mappingComponent = std::make_unique<ControllerMappingComponent>();
+        setContentOwned(mappingComponent.get(), true);
+        setUsingNativeTitleBar(true);
+        setResizable(false, false);
+        centreWithSize(400, 420);
+    }
+
+    void closeButtonPressed() override
+    {
+        setVisible(false);
+    }
+
+private:
+    std::unique_ptr<ControllerMappingComponent> mappingComponent;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ControllerMappingWindow)
 }; 
