@@ -102,6 +102,15 @@ private:
 };
 
 //==============================================================================
+namespace CommandIDs
+{
+    static const int DeleteSelectedRegion = 0x2001;
+    static const int SaveProject = 0x2002;
+    static const int Undo = 0x2003;
+    static const int Redo = 0x2004;
+    static const int chopEffect = 0x2005;
+}
+
 class MainComponent : public juce::AudioAppComponent,
                       public juce::Timer,
                       public GamepadManager::Listener,
@@ -185,15 +194,6 @@ public:
             }
         });
     }
-
-    // Command IDs
-    enum CommandIDs
-    {
-        DeleteSelectedRegion = 1001,
-        SaveProject = 1002,
-        Undo = 1003,
-        Redo = 1004
-    };
 
     // Command handler
     juce::ApplicationCommandTarget* getNextCommandTarget() override { return nullptr; }

@@ -120,8 +120,8 @@ public:
             setContentOwned (new MainComponent(), true);
 
             #if JUCE_DEBUG
-                inspector = std::make_unique<melatonin::Inspector>(*this);
-                inspector->setVisible(true);
+                // inspector = std::make_unique<melatonin::Inspector>(*this);
+                // inspector->setVisible(true);
             #endif
 
             #if JUCE_IOS || JUCE_ANDROID

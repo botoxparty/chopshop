@@ -272,15 +272,6 @@ void MainComponent::setupChopComponent()
     chopComponent = std::make_unique<ChopComponent> (*edit);
     addAndMakeVisible (*chopComponent);
 
-    // Set the command manager for the ChopComponent
-    chopComponent->setCommandManager (commandManager.get());
-
-    // Register all commands with the command manager
-    commandManager->registerAllCommandsForTarget (this);
-
-    // Add key mappings to the top level component
-    addKeyListener (commandManager->getKeyMappings());
-
     // Set up the tempo callback
     chopComponent->getTempoCallback = [this]() {
         return screwComponent->getTempo();
@@ -806,6 +797,7 @@ void MainComponent::getAllCommands (juce::Array<juce::CommandID>& commands)
     commands.add (CommandIDs::SaveProject);
     commands.add (CommandIDs::Undo);
     commands.add (CommandIDs::Redo);
+    commands.add (CommandIDs::chopEffect);
 }
 
 void MainComponent::getCommandInfo (juce::CommandID commandID, juce::ApplicationCommandInfo& result)
@@ -832,6 +824,13 @@ void MainComponent::getCommandInfo (juce::CommandID commandID, juce::Application
             result.setInfo ("Redo", "Redo the last undone action", "Edit", 0);
             result.addDefaultKeypress ('z', juce::ModifierKeys::commandModifier | juce::ModifierKeys::shiftModifier);
             result.setActive (edit != nullptr && edit->getUndoManager().canRedo());
+            break;
+
+        case CommandIDs::chopEffect:
+            result.setInfo ("Chop", "Activates the chop effect", "Chop", 0);
+            result.addDefaultKeypress (juce::KeyPress::spaceKey, 0);
+            result.flags |= juce::ApplicationCommandInfo::wantsKeyUpDownCallbacks;
+            result.setActive (chopComponent != nullptr);
             break;
 
         default:
@@ -887,6 +886,17 @@ bool MainComponent::perform (const juce::ApplicationCommandTarget::InvocationInf
                 edit->getUndoManager().redo();
                 // Update UI state after redo
                 commandManager->commandStatusChanged();
+            }
+            break;
+
+        case CommandIDs::chopEffect:
+            DBG("Chop effect command received");
+            if (chopComponent != nullptr)
+            {
+                if (info.isKeyDown)
+                    chopComponent->handleChopButtonPressed();
+                else
+                    chopComponent->handleChopButtonReleased();
             }
             break;
 

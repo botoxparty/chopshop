@@ -46,29 +46,6 @@ ChopComponent::ChopComponent (tracktion::engine::Edit& editIn)
 ChopComponent::~ChopComponent()
 {
     stopTimer(); // Make sure to stop the timer
-    if (commandManager != nullptr)
-        commandManager->removeListener (this);
-}
-
-void ChopComponent::setCommandManager (juce::ApplicationCommandManager* manager)
-{
-    // Remove from previous manager if exists
-    if (commandManager != nullptr)
-        commandManager->removeListener (this);
-
-    commandManager = manager;
-
-    if (commandManager != nullptr)
-    {
-        // Register commands with the manager
-        commandManager->registerAllCommandsForTarget (this);
-
-        // Add as key listener
-        addKeyListener (commandManager->getKeyMappings());
-
-        // Register the space key for the chop command
-        commandManager->getKeyMappings()->addKeyPress (CommandIDs::chopEffect, juce::KeyPress (juce::KeyPress::spaceKey));
-    }
 }
 
 void ChopComponent::resized()
@@ -154,45 +131,4 @@ void ChopComponent::timerCallback()
 {
     stopTimer();
     chopReleaseDelay = 0;
-}
-
-// Implement ApplicationCommandTarget methods
-juce::ApplicationCommandTarget* ChopComponent::getNextCommandTarget()
-{
-    return findFirstTargetParentComponent();
-}
-
-void ChopComponent::getAllCommands (juce::Array<juce::CommandID>& commands)
-{
-    commands.add (CommandIDs::chopEffect); // Chop command
-}
-
-void ChopComponent::getCommandInfo (juce::CommandID commandID, juce::ApplicationCommandInfo& result)
-{
-    if (commandID == CommandIDs::chopEffect) // Chop command
-    {
-        result.setInfo ("Chop", "Activates the chop effect", "Chop", 0);
-        result.addDefaultKeypress (juce::KeyPress::spaceKey, 0);
-
-        // This is the key line - tell the command manager we want key up/down callbacks
-        result.flags |= juce::ApplicationCommandInfo::wantsKeyUpDownCallbacks;
-    }
-}
-
-bool ChopComponent::perform (const juce::ApplicationCommandTarget::InvocationInfo& info)
-{
-    if (info.commandID == CommandIDs::chopEffect) // Chop command
-    {
-        if (info.isKeyDown)
-        {
-            handleChopButtonPressed();
-        }
-        else
-        {
-            handleChopButtonReleased();
-        }
-        return true;
-    }
-
-    return false;
 }
