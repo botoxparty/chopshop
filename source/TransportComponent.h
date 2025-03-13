@@ -66,7 +66,7 @@ private:
         setSize(w, containerHeight);
     }
 
-    juce::Array<PluginAutomationComponent*> components;
+    juce::OwnedArray<PluginAutomationComponent> components;
 };
 
 class TransportComponent : public juce::Component,

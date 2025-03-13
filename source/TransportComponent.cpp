@@ -41,6 +41,12 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e, ZoomState& zs
         crossfaderAutomationLane->setParameter(crossfaderParam);
     }
     
+    // Set up curve change callback
+    crossfaderAutomationLane->setCurveChangeCallback([this]() {
+        DBG("Curve changed");
+        thumbnailComponent->repaint();
+    });
+    
     addAndMakeVisible(*crossfaderAutomationLane);
 
     // Set up snap callback
@@ -101,8 +107,14 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e, ZoomState& zs
 
 TransportComponent::~TransportComponent()
 {
-    // Remove automation listener
+    // Stop any ongoing operations
+    stopTimer();
+    
+    // Remove listeners first
     edit.getAutomationRecordManager().removeListener(this);
+    
+    // Clear any child components explicitly
+    removeAllChildren();
 }
 
 void TransportComponent::timerCallback()

@@ -5,9 +5,14 @@
 #include <optional>
 #include "ZoomState.h"
 #include "RegionManager.h"
+#include <functional>
+
 class CrossfaderAutomationLane : public AutomationLane
 {
 public:
+    // Function type for curve change callback
+    using CurveChangeCallback = std::function<void()>;
+    
     CrossfaderAutomationLane(tracktion::engine::Edit&, ZoomState&);
     ~CrossfaderAutomationLane() override;
 
@@ -38,6 +43,10 @@ public:
     void scrollPositionChanged(double newScrollPosition) override { repaint(); }
     void gridSizeChanged(float) override;
     void setParameter(tracktion::engine::AutomatableParameter* param) override;
+    
+    // Set callback for curve changes
+    void setCurveChangeCallback(CurveChangeCallback callback) { onCurveChanged = std::move(callback); }
+    
     using Region = RegionManager::Region;
 protected:
     void onParameterChanged(tracktion::engine::AutomatableParameter* param) override;
@@ -46,8 +55,11 @@ private:
     bool snapEnabled = true;
     bool isDragging = false;
     std::optional<size_t> selectedRegionIndex;
-    void updateAutomationPoints();
-    void convertRegionsToAutomation();
+    CurveChangeCallback onCurveChanged;
+
+    // Drag state tracking
+    double dragStartTime = 0.0;
+    double dragOffsetTime = 0.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CrossfaderAutomationLane)
 }; 

@@ -90,6 +90,7 @@ float ScratchPlugin::getInterpolatedSample(float delayInSamples, int channel)
 
 void ScratchPlugin::applyToBuffer(const tracktion::engine::PluginRenderContext& context)
 {
+    return;
     if (context.destBuffer == nullptr) return;
     
     auto& destBuffer = *context.destBuffer;
