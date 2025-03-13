@@ -6,6 +6,8 @@ ScratchComponent::ScratchComponent(tracktion::engine::Edit& e) : BaseEffectCompo
     // Create the scratch plugin
     plugin = EngineHelpers::getPluginFromRack(edit, ScratchPlugin::xmlTypeName);
     setMixParameterId("mix");
+    
+    titleLabel.setText("Scratch", juce::dontSendNotification);
 
     // Create and setup the scratch slider
     scratchSlider = std::make_unique<SpringSlider>();
@@ -15,15 +17,6 @@ ScratchComponent::ScratchComponent(tracktion::engine::Edit& e) : BaseEffectCompo
     scratchSlider->setValue(0.0);
     scratchSlider->setComponentID("scratch");
     addAndMakeVisible(scratchSlider.get());
-
-    // Create and setup the mix slider
-    mixSlider = std::make_unique<juce::Slider>();
-    mixSlider->setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
-    mixSlider->setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-    mixSlider->setRange(0.0, 1.0);
-    mixSlider->setValue(1.0);
-    mixSlider->setComponentID("mix");
-    addAndMakeVisible(mixSlider.get());
 
     // Bind sliders to parameters
     if (auto* scratchPlugin = dynamic_cast<ScratchPlugin*>(plugin.get()))
@@ -46,9 +39,6 @@ ScratchComponent::ScratchComponent(tracktion::engine::Edit& e) : BaseEffectCompo
         scratchSlider->addParameterBinding([scratchPlugin](){ 
             scratchPlugin->scratchParam->parameterChangeGestureEnd(); 
         });
-
-        // Normal binding for mix slider
-        bindSliderToParameter(*mixSlider, *scratchPlugin->mixParam);
     }
 }
 
@@ -58,7 +48,6 @@ void ScratchComponent::resized()
     auto sliderHeight = bounds.getHeight() / 2;
     
     scratchSlider->setBounds(bounds.removeFromTop(sliderHeight));
-    mixSlider->setBounds(bounds);
 }
 
 void ScratchComponent::paint(juce::Graphics& g)
@@ -72,7 +61,6 @@ void ScratchComponent::paint(juce::Graphics& g)
     auto sliderHeight = bounds.getHeight() / 2;
     
     g.drawText("Scratch", bounds.removeFromTop(sliderHeight), juce::Justification::centredLeft);
-    g.drawText("Mix", bounds, juce::Justification::centredLeft);
 }
 
 ScratchComponent::~ScratchComponent()

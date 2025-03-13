@@ -70,10 +70,12 @@ public:
 private:
     float interpolateHermite4pt3oX(float x, float y0, float y1, float y2, float y3);
     float getSampleAtPosition(float* buf, int bufferLength, float position);
+    float processNonLinearScratch(float input) const;
     
     ScratchBufferBase scratchBuffer;
     double sampleRate = 44100.0;
     juce::SmoothedValue<float> smoothedScratchPos;
+    juce::SmoothedValue<float> smoothedAcceleration;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScratchPlugin)
 }; 

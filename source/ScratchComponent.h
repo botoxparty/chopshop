@@ -72,7 +72,6 @@ private:
     };
     
     std::unique_ptr<SpringSlider> scratchSlider;
-    std::unique_ptr<juce::Slider> mixSlider;
     
     // Audio processing components
     juce::IIRFilter resonantFilter;
