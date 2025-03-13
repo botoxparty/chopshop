@@ -208,10 +208,6 @@ private:
     std::unique_ptr<tracktion::engine::Edit> edit;
     std::unique_ptr<CustomLookAndFeel> customLookAndFeel;
     
-    // Settings icon path data
-    static const uint8 settingsIconPathData[486];
-    
-    std::unique_ptr<juce::DrawableButton> audioSettingsButton;
     std::unique_ptr<juce::MenuBarComponent> menuBar;
 
     double baseTempo = 120.0;

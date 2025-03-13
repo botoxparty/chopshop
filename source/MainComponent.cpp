@@ -5,9 +5,6 @@
 
 #define JUCE_USE_DIRECTWRITE 0 // Fix drawing of Monospace fonts in Code Editor!
 
-// Initialize settings icon path data
-const uint8 MainComponent::settingsIconPathData[486] = { 110, 109, 202, 111, 210, 64, 243, 226, 61, 64, 108, 0, 0, 224, 64, 0, 0, 0, 0, 108, 0, 0, 48, 65, 0, 0, 0, 0, 108, 27, 200, 54, 65, 243, 226, 61, 64, 98, 91, 248, 63, 65, 174, 170, 76, 64, 95, 130, 72, 65, 231, 138, 96, 64, 46, 46, 80, 65, 180, 163, 120, 64, 108, 42, 181, 124, 65, 20, 38, 49, 64, 108, 149, 90, 142, 65, 246, 108, 199, 64, 108, 68, 249, 118, 65, 2, 85, 1, 65, 98, 112, 166, 119, 65, 201, 31, 6, 65, 0, 0, 120, 65, 111, 5, 11, 65, 0, 0, 120, 65, 0, 0, 16, 65, 98, 0, 0, 120, 65, 145, 250, 20, 65, 108, 166, 119, 65, 55, 224, 25, 65, 72, 249, 118, 65, 254, 170, 30, 65, 108, 151, 90, 142, 65, 133, 73, 60, 65, 108, 46, 181, 124, 65, 123, 182, 115, 65, 108, 50, 46, 80, 65, 18, 215, 97, 65, 98, 99, 130, 72, 65, 70, 221, 103, 65, 96, 248, 63, 65, 83, 213, 108, 65, 32, 200, 54, 65, 66, 135, 112, 65, 108, 0, 0, 48, 65, 0, 0, 144, 65, 108, 0, 0, 224, 64, 0, 0, 144, 65, 108, 202, 111, 210, 64, 67, 135, 112, 65, 98, 74, 15, 192, 64, 84, 213, 108, 65, 65, 251, 174, 64, 70, 221, 103, 65, 164, 163, 159, 64, 19, 215, 97, 65, 108, 92, 43, 13, 64, 20, 38, 49, 64, 108, 164, 163, 159, 64, 180, 163, 120, 64, 98, 65, 251, 174, 64, 231, 138, 96, 64, 74, 15, 192, 64, 175, 170, 76, 64, 202, 111, 210, 64, 243, 226, 61, 64, 99, 109, 0, 0, 16, 65, 0, 0, 64, 65, 98, 121, 130, 42, 65, 0, 0, 64, 65, 0, 0, 64, 65, 121, 130, 42, 65, 0, 0, 64, 65, 0, 0, 16, 65, 98, 0, 0, 64, 65, 13, 251, 234, 64, 121, 130, 42, 65, 0, 0, 192, 64, 0, 0, 16, 65, 0, 0, 192, 64, 98, 13, 251, 234, 64, 0, 0, 192, 64, 0, 0, 192, 64, 13, 251, 234, 64, 0, 0, 192, 64, 0, 0, 16, 65, 98, 0, 0, 192, 64, 121, 130, 42, 65, 13, 251, 234, 64, 0, 0, 64, 65, 0, 0, 16, 65, 0, 0, 64, 65, 99, 101, 0, 0 };
-
 //==============================================================================
 MainComponent::MainComponent()
 {
@@ -58,32 +55,15 @@ MainComponent::MainComponent()
     engine.getPluginManager().createBuiltInType<ScratchPlugin>();
     engine.getPluginManager().createBuiltInType<ChopPlugin>();
 
-    // Initialize audio settings button with icon
-    audioSettingsButton = std::make_unique<juce::DrawableButton> ("Audio Settings", juce::DrawableButton::ImageOnButtonBackground);
-    juce::Path settingsIconPath;
-    settingsIconPath.loadPathFromData (settingsIconPathData, sizeof (settingsIconPathData));
-
-    auto drawable = std::make_unique<juce::DrawablePath>();
-    drawable->setPath (settingsIconPath);
-    drawable->setFill (getLookAndFeel().findColour (juce::DrawableButton::textColourId));
-
-    audioSettingsButton->setImages (drawable.get());
-    addAndMakeVisible (*audioSettingsButton);
-
-    // Add the button callback
-    audioSettingsButton->onClick = [this] {
-        EngineHelpers::showAudioDeviceSettings (engine);
-    };
-
     gamepadManager = GamepadManager::getInstance();
-    gamepadManager->addListener (this);
+    gamepadManager->addListener(this);
 
     // Initialize library component first as it's not edit-dependent
     setupLibraryComponent();
 
     // Initialize controller mapping component (not edit-dependent)
     controllerMappingComponent = std::make_unique<ControllerMappingComponent>();
-    addAndMakeVisible (*controllerMappingComponent);
+    addAndMakeVisible(*controllerMappingComponent);
 
     resized();
 
@@ -169,23 +149,6 @@ void MainComponent::resized()
     {
         auto libraryHeight = 40;
         auto libraryBounds = bounds.removeFromTop(libraryHeight);
-
-        // Position settings button and controller mapping button on the right
-        if (audioSettingsButton != nullptr && controllerMappingComponent != nullptr)
-        {
-            auto buttonSize = 30;
-            auto buttonSpacing = 5;
-
-            // Position controller mapping button first (rightmost)
-            auto controllerBounds = libraryBounds.removeFromRight(buttonSize + buttonSpacing).withSizeKeepingCentre(buttonSize, buttonSize);
-            controllerMappingComponent->setBounds(controllerBounds);
-
-            // Then position settings button to its left
-            auto settingsBounds = libraryBounds.removeFromRight(buttonSize + buttonSpacing).withSizeKeepingCentre(buttonSize, buttonSize);
-            audioSettingsButton->setBounds(settingsBounds);
-        }
-
-        // Position library bar in remaining space
         libraryBar->setBounds(libraryBounds);
     }
 
@@ -328,7 +291,7 @@ void MainComponent::setupLibraryComponent()
     addAndMakeVisible(*libraryComponent);
 
     // Create the library bar
-    libraryBar = std::make_unique<LibraryBar>();
+    libraryBar = std::make_unique<LibraryBar>(engine);
     addAndMakeVisible(libraryBar.get());
 
     // Set up the show library button callback to toggle visibility
