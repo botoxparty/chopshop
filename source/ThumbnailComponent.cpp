@@ -295,6 +295,25 @@ void ThumbnailComponent::updatePlayheadPosition()
             position.set(transport.getPosition());
             auto currentTempo = position.getTempo();
 
+            // If playing, adjust scroll position to keep playhead centered
+            if (transport.isPlaying())
+            {
+                // Calculate the normalized position that would put the playhead in the center
+                auto normalizedCenter = currentPosition / sourceLength;
+                
+                // Calculate how much visible time we can see based on zoom level
+                auto visibleTimeWidth = sourceLength / zoomState.getZoomLevel();
+                
+                // Calculate the scroll position that would center the playhead
+                auto newScrollPos = normalizedCenter - (0.5 / zoomState.getZoomLevel());
+                
+                // Clamp the scroll position to valid range
+                newScrollPos = juce::jlimit(0.0, 1.0 - (1.0 / zoomState.getZoomLevel()), newScrollPos);
+                
+                // Update scroll position
+                zoomState.setScrollPosition(newScrollPos);
+            }
+
             // Calculate visible time range in source time domain first
             auto visibleTimeStart = sourceLength * zoomState.getScrollPosition();
             auto visibleTimeEnd = visibleTimeStart + (sourceLength / zoomState.getZoomLevel());
