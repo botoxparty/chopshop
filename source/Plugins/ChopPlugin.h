@@ -4,16 +4,8 @@
 
 #include "Utilities.h"
 
-namespace ChopPluginIDs
-{
-    struct IDs
-    {
-        static const juce::Identifier crossfader;
-    };
-}
-
 class ChopPlugin : public tracktion::engine::Plugin,
-                   public tracktion::engine::AutomatableParameter::Listener
+                  private juce::Timer
 {
 public:
     static const char* getPluginName() { return NEEDS_TRANS("Chop"); }
@@ -24,7 +16,6 @@ public:
         DBG("Creating ChopPlugin...");
         auto v = juce::ValueTree(tracktion::engine::IDs::PLUGIN);
         v.setProperty(tracktion::engine::IDs::type, xmlTypeName, nullptr);
-        v.setProperty(ChopPluginIDs::IDs::crossfader, 0.0f, nullptr);
         
         auto plugin = new ChopPlugin(tracktion::engine::PluginCreationInfo(ed, v, true));
         DBG("ChopPlugin created, initializing...");
@@ -36,45 +27,20 @@ public:
     ChopPlugin(tracktion::engine::PluginCreationInfo info) : Plugin(info)
     {
         DBG("ChopPlugin constructor start");
-        auto um = getUndoManager();
         if(remapOnTempoChange == false)
         {
             DBG("Remapping on tempo change on Plugin is disabled.");
         }
-
-        try {
-            crossfaderParam = addParam("crossfader", TRANS("Crossfader"), { 0.0f, 1.0f },
-                [](float value) { return juce::String((int)(100.0f * value)) + "%"; },
-                [](const juce::String& s) { return s.getFloatValue() / 100.0f; });
-
-            if (crossfaderParam == nullptr) {
-                DBG("Failed to create crossfader parameter!");
-                return;
-            }
-
-            crossfaderValue.referTo(state, ChopPluginIDs::IDs::crossfader, um, 0.0f);
-            crossfaderParam->attachToCurrentValue(crossfaderValue);
-
-            // Enable remapping on tempo change
-            if(crossfaderParam->automatableEditElement.remapOnTempoChange == false)
-            {
-                DBG("Remapping on tempo change on Parameter is disabled.");
-            }
-
-            // Add value listener to crossfader parameter
-            crossfaderParam->addListener(this);
-            
-            DBG("ChopPlugin constructor complete");
-        }
-        catch (const std::exception& e) {
-            DBG("Exception in ChopPlugin constructor: " + juce::String(e.what()));
-        }
+        
+        // Start the timer to check clip states
+        startTimerHz(30); // Check 30 times per second
+        
+        DBG("ChopPlugin constructor complete");
     }
 
     ~ChopPlugin() override
     {
-        if (crossfaderParam != nullptr)
-            crossfaderParam->removeListener(this);
+        stopTimer();
         notifyListenersOfDeletion();
     }
 
@@ -87,11 +53,7 @@ public:
     { 
         sampleRate = info.sampleRate;
         blockSize = info.blockSizeSamples;
-        
-        // Defer track volume update until after initialization
-        juce::MessageManager::callAsync([this]() {
-            updateTrackVolumes();
-        });
+        updateTrackVolumes();
     }
     
     void deinitialise() override {}
@@ -102,7 +64,10 @@ public:
         // Instead it controls the volume of two tracks via their VolumeAndPanPlugins
     }
     
-    void reset() override {}
+    void reset() override 
+    {
+        updateTrackVolumes();
+    }
 
     bool takesAudioInput() override                  { return false; }
     bool takesMidiInput() override                   { return false; }
@@ -113,41 +78,59 @@ public:
     void restorePluginStateFromValueTree(const juce::ValueTree& v) override
     {
         Plugin::restorePluginStateFromValueTree(v);
-        
-        if (crossfaderParam != nullptr) {
-            crossfaderParam->updateFromAttachedValue();
-            updateTrackVolumes();
-        }
-    }
-
-    tracktion::engine::AutomatableParameter::Ptr crossfaderParam;
-    juce::CachedValue<float> crossfaderValue;
-
-    void setCrossfader(float value) 
-    { 
-        crossfaderParam->setParameter(juce::jlimit(0.0f, 1.0f, value), juce::sendNotification); 
         updateTrackVolumes();
     }
     
-    float getCrossfader() { return crossfaderParam->getCurrentValue(); }
-    
     // Get the current volume levels for UI feedback
-    float getTrack1Volume() const 
-    { 
-        const float position = crossfaderParam->getCurrentValue();
-        return std::sqrt(1.0f - position);
+    float getTrack1Volume() const { return track1Volume; }
+    float getTrack2Volume() const { return track2Volume; }
+
+    void setTrackVolumes(float track1Vol, float track2Vol)
+    {
+        track1Volume = juce::jlimit(0.0f, 1.0f, track1Vol);
+        track2Volume = juce::jlimit(0.0f, 1.0f, track2Vol);
+        updateTrackVolumes();
     }
-    
-    float getTrack2Volume() const 
-    { 
-        const float position = crossfaderParam->getCurrentValue();
-        return std::sqrt(position);
+
+    void timerCallback() override
+    {
+        auto& transport = edit.getTransport();
+        bool isTransportPlaying = transport.isPlaying();
+
+        // Check if any clips are playing on the chop track
+        bool isChopTrackPlaying = false;
+        if (!isTransportPlaying) {
+            return;
+        }
+        if (auto chopTrack = EngineHelpers::getChopTrack(edit))
+        {
+            DBG("ChopPlugin::timerCallback - Chop track found");
+            DBG("ChopPlugin::timerCallback - Chop track clips: " + juce::String(chopTrack->getClips().size()));
+            for (auto clip : chopTrack->getClips())
+            {
+                auto currentPosition = transport.getPosition();
+                auto clipPosition = clip->getPosition();
+
+                DBG("ChopPlugin::timerCallback - Clip position: " + juce::String(clipPosition.getStart().inSeconds()) + " - " + juce::String(clipPosition.getEnd().inSeconds()));
+                DBG("ChopPlugin::timerCallback - Current position: " + juce::String(currentPosition.inSeconds()));
+
+                bool isClipPlaying = currentPosition >= clipPosition.getStart() 
+                                        && currentPosition < clipPosition.getEnd();
+                if (isClipPlaying)
+                {
+                    isChopTrackPlaying = true;
+                    break;
+                }
+            }
+        }
+        
+        // Set track volumes based on chop track state
+        setTrackVolumes(isChopTrackPlaying ? 0.0f : 1.0f,  // Track 1 volume
+                       isChopTrackPlaying ? 1.0f : 0.0f);  // Track 2 volume
     }
 
     void updateTrackVolumes()
     {
-        const float crossfaderPosition = crossfaderParam->getCurrentValue();
-        
         // Apply volumes to tracks
         if (auto track1 = EngineHelpers::getAudioTrack(edit, 0))
         {
@@ -157,8 +140,7 @@ public:
             {
                 if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(volPanPlugin.get()))
                 {
-                    const float volume = getTrack1Volume();
-                    volumeAndPan->volParam->setParameter(volume, juce::dontSendNotification);
+                    volumeAndPan->volParam->setParameter(track1Volume, juce::dontSendNotification);
                 }
                 else
                 {
@@ -179,8 +161,7 @@ public:
             {
                 if (auto volumeAndPan = dynamic_cast<tracktion::engine::VolumeAndPanPlugin*>(volPanPlugin.get()))
                 {
-                    const float volume = getTrack2Volume();
-                    volumeAndPan->volParam->setParameter(volume, juce::dontSendNotification);
+                    volumeAndPan->volParam->setParameter(track2Volume, juce::dontSendNotification);
                 }
                 else
                 {
@@ -194,19 +175,11 @@ public:
         }
     }
 
-    // Add value listener interface
-    void valueTreePropertyChanged(juce::ValueTree&, const juce::Identifier&) override
-    {
-        Plugin::valueTreePropertyChanged(state, ChopPluginIDs::IDs::crossfader);
-        updateTrackVolumes();
-    }
-
-    void currentValueChanged(tracktion::engine::AutomatableParameter&) override { updateTrackVolumes(); }
-    void curveHasChanged(tracktion::engine::AutomatableParameter&) override { }
-
 private:
-    double sampleRate = 44100.0;
+    double sampleRate = 48000.0;
     int blockSize = 512;
+    float track1Volume = 1.0f;
+    float track2Volume = 0.0f;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChopPlugin)
 }; 

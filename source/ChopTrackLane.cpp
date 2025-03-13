@@ -43,6 +43,9 @@ void ChopTrackLane::paint(juce::Graphics& g)
     auto visibleTimeStart = getSourceLength() * zoomState.getScrollPosition();
     auto visibleTimeEnd = visibleTimeStart + (getSourceLength() / zoomState.getZoomLevel());
     
+    DBG("Paint - Visible time range: " + juce::String(visibleTimeStart) + " to " + juce::String(visibleTimeEnd));
+    DBG("Paint - Zoom level: " + juce::String(zoomState.getZoomLevel()) + ", Scroll position: " + juce::String(zoomState.getScrollPosition()));
+    
     // Convert to beats for grid drawing
     auto visibleTimeStartBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeStart));
     auto visibleTimeEndBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(visibleTimeEnd));
@@ -64,6 +67,8 @@ void ChopTrackLane::paint(juce::Graphics& g)
         {
             auto startTime = clip->getPosition().getStart().inSeconds();
             auto endTime = clip->getPosition().getEnd().inSeconds();
+
+            DBG("ChopTrackLane::paint - Clip position: " + juce::String(startTime) + " - " + juce::String(endTime));
             
             // Skip clips that are completely outside the visible range
             if (endTime < visibleTimeStart || startTime > visibleTimeEnd)
@@ -107,9 +112,20 @@ void ChopTrackLane::mouseDown(const juce::MouseEvent& event)
     if (chopTrack == nullptr)
         return;
 
+    // Use XYToTime instead of raw calculation to properly account for zoom and scroll
     auto [time, value] = XYToTime(event.position.x, event.position.y);
+    
+    DBG("MouseDown - Initial time from XYToTime: " + juce::String(time));
+    DBG("MouseDown - Mouse X: " + juce::String(event.position.x));
+    DBG("MouseDown - Zoom level: " + juce::String(zoomState.getZoomLevel()) + 
+        ", Scroll position: " + juce::String(zoomState.getScrollPosition()));
+
     if (snapEnabled)
+    {
+        auto preSnapTime = time;
         time = snapTimeToGrid(time);
+        DBG("MouseDown - Time before snap: " + juce::String(preSnapTime) + ", after snap: " + juce::String(time));
+    }
     
     // Check if we clicked on a clip
     selectedClip = nullptr;
@@ -137,6 +153,11 @@ void ChopTrackLane::mouseDown(const juce::MouseEvent& event)
     auto startBeat = edit.tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(time));
     auto endBeat = tracktion::BeatPosition::fromBeats(startBeat.inBeats() + 1.0);
     auto endTime = edit.tempoSequence.toTime(endBeat).inSeconds();
+    
+    DBG("MouseDown - Adding clip - Start time: " + juce::String(time) + 
+        ", Start beat: " + juce::String(startBeat.inBeats()) + 
+        ", End beat: " + juce::String(endBeat.inBeats()) + 
+        ", End time: " + juce::String(endTime));
     
     addClip(time, endTime);
 
@@ -253,8 +274,19 @@ double ChopTrackLane::snapTimeToGrid(double time) const
         
     auto& tempoSequence = edit.tempoSequence;
     auto timeInBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(time));
+    
+    DBG("Snap - Time: " + juce::String(time) + 
+        ", In beats: " + juce::String(timeInBeats.inBeats()) + 
+        ", Grid size: " + juce::String(zoomState.getGridSize()));
+    
     auto snappedBeats = std::round(timeInBeats.inBeats() / zoomState.getGridSize()) * zoomState.getGridSize();
-    return tempoSequence.toTime(tracktion::BeatPosition::fromBeats(snappedBeats)).inSeconds();
+    
+    auto snappedTime = tempoSequence.toTime(tracktion::BeatPosition::fromBeats(snappedBeats)).inSeconds();
+    
+    DBG("Snap - Snapped beats: " + juce::String(snappedBeats) + 
+        ", Snapped time: " + juce::String(snappedTime));
+    
+    return snappedTime;
 }
 
 void ChopTrackLane::clearClips()
@@ -282,16 +314,25 @@ void ChopTrackLane::addClip(double startTime, double endTime)
     if (chopTrack == nullptr)
         return;
 
+    DBG("AddClip - Creating clip from " + juce::String(startTime) + " to " + juce::String(endTime));
+
     auto timeRange = tracktion::TimeRange::between(
         tracktion::TimePosition::fromSeconds(startTime),
         tracktion::TimePosition::fromSeconds(endTime)
     );
 
-    auto newClip = chopTrack->insertNewClip(tracktion::engine::TrackItem::Type::wave, timeRange, nullptr);
+    auto newClip = chopTrack->insertNewClip(tracktion::engine::TrackItem::Type::arranger, timeRange, nullptr);
     if (newClip != nullptr)
     {
         newClip->setName("Chop " + juce::String(chopTrack->getClips().size()));
         selectedClip = newClip;
+        DBG("AddClip - Clip created successfully with range: " + 
+            juce::String(newClip->getPosition().getStart().inSeconds()) + " to " + 
+            juce::String(newClip->getPosition().getEnd().inSeconds()));
+    }
+    else
+    {
+        DBG("AddClip - Failed to create clip!");
     }
     repaint();
 }
@@ -328,5 +369,10 @@ double ChopTrackLane::getSourceLength() const
 {
     // For now, return a fixed length of 60 seconds
     // This should be updated based on your actual track length
+        auto clip = EngineHelpers::getCurrentClip(edit);
+    if (clip != nullptr)
+        return clip->getPosition().getLength().inSeconds();
+
+    DBG("No clip found, returning default length");
     return 60.0;
 } 

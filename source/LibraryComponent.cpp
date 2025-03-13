@@ -349,12 +349,16 @@ void LibraryComponent::addToLibrary (const juce::File& file)
     // Get the insert point at the end of all tracks
     auto insertPoint = TrackInsertPoint::getEndOfTracks(*edit);
 
+    auto chopTrack = edit->insertNewAudioTrack(insertPoint, nullptr);
     // Insert a new track
-    if (auto newTrack = edit->insertNewAudioTrack(insertPoint, nullptr))
+    if (chopTrack != nullptr)
     {
         // Configure the track for MIDI
-        newTrack->setName("Chop Track");
-        newTrack->getOutput().setOutputToDefaultDevice(true);
+        chopTrack->setName("Chop Track");
+        chopTrack->getOutput().setOutputToDefaultDevice(true);
+    } else {
+        DBG ("Error: Failed to create chop track");
+        return;
     }
     // add chop plugin to master plugin list
     // Should use PluginCache::createNewPlugin to create the ones you add here
@@ -364,13 +368,7 @@ void LibraryComponent::addToLibrary (const juce::File& file)
     {
         chopPlugin->remapOnTempoChange.setValue(true, nullptr);
         
-        auto crossfaderParameter = chopPlugin->getAutomatableParameterByID("crossfader");
-        if (crossfaderParameter != nullptr)
-        {
-            crossfaderParameter->getCurve().addPoint(tracktion::TimePosition::fromSeconds(0.0), 0.0f, 0.0f);
-        }
-
-        edit->getMasterPluginList().insertPlugin(chopPlugin, -1, nullptr);
+        chopTrack->pluginList.insertPlugin(chopPlugin, -1, nullptr);
     } else {
         DBG ("Error: Failed to create chop plugin");
         return;

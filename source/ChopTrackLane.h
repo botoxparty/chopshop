@@ -29,6 +29,7 @@ public:
     void clearClips();
     void deleteSelectedClip();
     void addClip(double startTime, double endTime);
+    void launchClip(tracktion::engine::Clip* clip);
 
     // ZoomStateListener implementation
     void zoomLevelChanged(double newZoomLevel) override { repaint(); }
