@@ -29,8 +29,8 @@ ControllerMappingComponent::ControllerMappingComponent()
         {{300, 170}, 15, "Triangle", SDL_GAMEPAD_BUTTON_NORTH}
     };
 
-    // Start timer to check connection status immediately and then periodically
-    startTimer(100); // First check after 100ms, then will switch to regular interval
+    // Start timer to check connection status
+    startTimer(100);
 }
 
 ControllerMappingComponent::~ControllerMappingComponent()
@@ -50,35 +50,36 @@ void ControllerMappingComponent::paint(juce::Graphics& g)
     
     // Draw background
     auto bounds = getLocalBounds().toFloat().reduced(10);
-    g.setColour(juce::Colours::darkgrey.darker(0.2f));
+    g.setColour(juce::Colour(0xFF121212));   // Dark background
     g.fillRoundedRectangle(bounds, 8.0f);
     
     // Draw connection status panel at the top
     auto statusBounds = bounds.removeFromTop(50);
     
-    // Draw status background with metallic gradient matching app style
-    const auto matrixGreen = juce::Colour(0xFF00FF41);    // Classic Winamp green
-    const auto metalGrey = juce::Colour(0xFF2A2A2A);      // Dark metallic
-    const auto metalLight = juce::Colour(0xFF3D3D3D);     // Light metallic
-    
-    juce::ColourGradient gradient(
-        metalLight,
-        statusBounds.getX(), statusBounds.getY(),
-        metalGrey,
-        statusBounds.getX(), statusBounds.getBottom(),
-        false);
-    
-    g.setGradientFill(gradient);
+    // Draw status background
+    g.setColour(juce::Colour(0xFF1E1E1E));   // Surface color
     g.fillRoundedRectangle(statusBounds, 6.0f);
     
-    // Add metallic edge effects
-    g.setColour(juce::Colours::white.withAlpha(0.1f));
-    g.drawLine(statusBounds.getX(), statusBounds.getY(), statusBounds.getRight(), statusBounds.getY(), 1.0f);
-    g.drawLine(statusBounds.getX(), statusBounds.getY(), statusBounds.getX(), statusBounds.getBottom(), 1.0f);
+    // Draw subtle border
+    g.setColour(juce::Colour(0xFF505050).withAlpha(0.5f));     // Medium gray with transparency
+    g.drawRoundedRectangle(statusBounds, 6.0f, 1.0f);
+
+    // Draw connection status text
+    g.setColour(juce::Colours::white);
+    g.setFont(CustomLookAndFeel::getCustomFont().withHeight(16.0f));
     
-    g.setColour(juce::Colours::black.withAlpha(0.2f));
-    g.drawLine(statusBounds.getX(), statusBounds.getBottom(), statusBounds.getRight(), statusBounds.getBottom(), 1.0f);
-    g.drawLine(statusBounds.getRight(), statusBounds.getY(), statusBounds.getRight(), statusBounds.getBottom(), 1.0f);
+    juce::String statusText;
+    if (isControllerConnected)
+    {
+        statusText = "Controller Connected: " + connectedControllerName;
+    }
+    else
+    {
+        statusText = "No Controller Connected - Please Connect Your Game Controller";
+        g.setColour(juce::Colours::white.withAlpha(0.7f));  // Dimmer color for warning state
+    }
+    
+    g.drawText(statusText, statusBounds.reduced(10, 0), juce::Justification::centred, true);
     
     // Draw mappings list
     drawMappingsList(g, bounds);
@@ -210,8 +211,6 @@ void ControllerMappingComponent::drawTriggers(juce::Graphics& g, juce::Rectangle
 
 void ControllerMappingComponent::checkControllerConnection()
 {
-    // This assumes you have access to the GamepadManager
-    // You might need to pass it in or make it accessible
     if (auto* gamepadManager = GamepadManager::getInstance())
     {
         isControllerConnected = gamepadManager->isGamepadConnected();
@@ -224,64 +223,41 @@ void ControllerMappingComponent::checkControllerConnection()
     }
 }
 
-// Add timer callback
 void ControllerMappingComponent::timerCallback()
 {
-    // If this is the first timer callback, switch to regular interval
     if (getTimerInterval() != 500)
     {
         stopTimer();
-        startTimerHz(2); // Check twice per second
+        startTimerHz(2);
     }
     
     bool wasConnected = isControllerConnected;
     checkControllerConnection();
     
-    // Just repaint if connection status changed
     if (wasConnected != isControllerConnected)
     {
         repaint();
-    }
-    else
-    {
-        repaint(); // Still repaint for other updates
     }
 }
 
 void ControllerMappingComponent::drawMappingsList(juce::Graphics& g, juce::Rectangle<float> bounds)
 {
-    // Draw list background with metallic gradient
-    const auto metalGrey = juce::Colour(0xFF2A2A2A);      // Dark metallic
-    const auto metalLight = juce::Colour(0xFF3D3D3D);     // Light metallic
-    
-    juce::ColourGradient gradient(
-        metalLight,
-        bounds.getX(), bounds.getY(),
-        metalGrey,
-        bounds.getX(), bounds.getBottom(),
-        false);
-    
-    g.setGradientFill(gradient);
+    // Draw list background
+    g.setColour(juce::Colour(0xFF1E1E1E));   // Surface color
     g.fillRoundedRectangle(bounds, 8.0f);
     
-    // Add metallic edge effects
-    g.setColour(juce::Colours::white.withAlpha(0.1f));
-    g.drawLine(bounds.getX(), bounds.getY(), bounds.getRight(), bounds.getY(), 1.0f);
-    g.drawLine(bounds.getX(), bounds.getY(), bounds.getX(), bounds.getBottom(), 1.0f);
-    
-    g.setColour(juce::Colours::black.withAlpha(0.2f));
-    g.drawLine(bounds.getX(), bounds.getBottom(), bounds.getRight(), bounds.getBottom(), 1.0f);
-    g.drawLine(bounds.getRight(), bounds.getY(), bounds.getRight(), bounds.getBottom(), 1.0f);
+    // Draw subtle border
+    g.setColour(juce::Colour(0xFF505050).withAlpha(0.5f));     // Medium gray with transparency
+    g.drawRoundedRectangle(bounds, 8.0f, 1.0f);
     
     // Draw title
-    const auto matrixGreen = juce::Colour(0xFF00FF41);
-    g.setColour(matrixGreen);
-    // g.setFont(getCustomFont().withHeight(14.0f).boldened());
+    g.setColour(juce::Colours::white);
+    g.setFont(CustomLookAndFeel::getCustomFont().withHeight(14.0f));
     auto titleBounds = bounds.removeFromTop(25.0f);
     g.drawText("Controller Mappings", titleBounds, juce::Justification::centred, false);
     
     // Draw separator line
-    g.setColour(matrixGreen.withAlpha(0.3f));
+    g.setColour(juce::Colour(0xFF505050));   // Medium gray
     g.drawLine(bounds.getX() + 10.0f, titleBounds.getBottom(), bounds.getRight() - 10.0f, titleBounds.getBottom(), 1.0f);
     
     // Create list layout
@@ -289,43 +265,35 @@ void ControllerMappingComponent::drawMappingsList(juce::Graphics& g, juce::Recta
     int rowHeight = 20;
     int currentY = static_cast<int>(listArea.getY());
     
-    // g.setFont(getCustomFont().withHeight(12.0f));
+    g.setFont(CustomLookAndFeel::getCustomFont().withHeight(12.0f));
     
     // Helper lambda for drawing rows
     auto drawRow = [&](const juce::String& control, const juce::String& action) {
-        // Draw control name
-
         int width = static_cast<int>(listArea.getWidth());
         int x = static_cast<int>(listArea.getX());
-        g.setColour(matrixGreen);
+        
+        // Draw control name
+        g.setColour(juce::Colours::white);
         g.drawText(control, x, currentY, width, rowHeight, 
                   juce::Justification::left, false);
         
-        // Draw action name with a pill background
+        // Draw action name with a modern pill background
         auto actionBounds = juce::Rectangle<float>(
             listArea.getX() + listArea.getWidth() * 0.4f, currentY,
             listArea.getWidth() * 0.6f - 5.0f, rowHeight - 2.0f);
         
-        // Draw pill with glow effect
-        g.setColour(juce::Colours::black);
+        // Draw pill background
+        g.setColour(juce::Colour(0xFF505050));   // Medium gray
         g.fillRoundedRectangle(actionBounds, rowHeight / 2.0f);
         
-        for (int i = 0; i < 2; ++i) {
-            g.setColour(matrixGreen.withAlpha(0.1f - i * 0.03f));
-            g.drawRoundedRectangle(actionBounds.expanded(i), rowHeight / 2.0f, 1.0f);
-        }
-        
-        g.setColour(matrixGreen);
+        // Draw action text
+        g.setColour(juce::Colours::white);
         g.drawText(action, actionBounds, juce::Justification::centred, false);
         
         currentY += rowHeight;
     };
-    
-    // Draw headers
-    g.setColour(matrixGreen.brighter(0.2f));
-    // Draw mappings (just show a few to avoid cluttering)
-    g.setColour(matrixGreen);
 
+    // Draw mappings
     for (const auto& mapping : mappings)
     {
         juce::String controlName;

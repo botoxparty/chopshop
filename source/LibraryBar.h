@@ -7,7 +7,7 @@
 class LibraryBar : public juce::Component
 {
 public:
-    LibraryBar(tracktion::engine::Engine& e) : engine(e)
+    LibraryBar(tracktion::engine::Engine& e) : engine(e), isControllerConnected(false)
     {
         // Style the show library button
         showLibraryButton.setButtonText("LIBRARY");
@@ -17,8 +17,7 @@ public:
         
         // Style the game controller button
         controllerButton.setButtonText(juce::String::fromUTF8("🎮"));
-        controllerButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF505050));      // Medium gray
-        controllerButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+        updateControllerButtonState(false); // Initialize as disconnected
         addAndMakeVisible(controllerButton);
 
         // Style the audio settings button
@@ -86,12 +85,29 @@ public:
     juce::TextButton& getShowLibraryButton() { return showLibraryButton; }
     juce::TextButton& getControllerButton() { return controllerButton; }
 
+    void setControllerConnectionState(bool connected)
+    {
+        if (isControllerConnected != connected)
+        {
+            isControllerConnected = connected;
+            updateControllerButtonState(connected);
+        }
+    }
+
 private:
+    void updateControllerButtonState(bool connected)
+    {
+        controllerButton.setColour(juce::TextButton::buttonColourId, 
+            connected ? juce::Colour(0xFF2EA043) : juce::Colour(0xFFD73A49)); // Green when connected, red when disconnected
+        controllerButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    }
+
     tracktion::engine::Engine& engine;
     juce::TextButton showLibraryButton;
     juce::TextButton controllerButton;
     juce::TextButton audioSettingsButton;
     juce::Label currentTrackLabel;
+    bool isControllerConnected;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LibraryBar)
 }; 

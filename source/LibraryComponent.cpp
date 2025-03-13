@@ -67,41 +67,43 @@ LibraryComponent::LibraryComponent (te::Engine& engineToUse)
     }
 
     // Set up add file button
-    addFileButton.setColour (juce::TextButton::buttonColourId, black);
-    addFileButton.setColour (juce::TextButton::textColourOffId, matrixGreen);
-    addFileButton.setColour (juce::TextButton::textColourOnId, matrixGreen);
-    addAndMakeVisible (addFileButton);
+    addFileButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF505050));      // Medium gray
+    addFileButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    addFileButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+    addAndMakeVisible(addFileButton);
 
     // Set up remove file button
-    removeFileButton.setColour (juce::TextButton::buttonColourId, black);
-    removeFileButton.setColour (juce::TextButton::textColourOffId, matrixGreen);
-    removeFileButton.setColour (juce::TextButton::textColourOnId, matrixGreen);
-    addAndMakeVisible (removeFileButton);
+    removeFileButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF505050));   // Medium gray
+    removeFileButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    removeFileButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+    addAndMakeVisible(removeFileButton);
 
     // Set up edit BPM button
-    editBpmButton.setButtonText ("Edit BPM");
-    editBpmButton.setColour (juce::TextButton::buttonColourId, black);
-    editBpmButton.setColour (juce::TextButton::textColourOffId, matrixGreen);
-    editBpmButton.setColour (juce::TextButton::textColourOnId, matrixGreen);
+    editBpmButton.setButtonText("Edit BPM");
+    editBpmButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF505050));      // Medium gray
+    editBpmButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    editBpmButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
     editBpmButton.onClick = [this]() {
         auto selectedRow = playlistTable->getSelectedRow();
         if (selectedRow >= 0)
         {
-            showBpmEditorWindow (selectedRow);
+            showBpmEditorWindow(selectedRow);
         }
     };
-    addAndMakeVisible (editBpmButton);
+    addAndMakeVisible(editBpmButton);
 
-    // Set up playlist table
+    // Set up playlist table with modern styling
     playlistTable = std::make_unique<juce::TableListBox>();
-    playlistTable->setModel (this);
-    playlistTable->getHeader().addColumn ("Name", 1, 300);
-    playlistTable->getHeader().addColumn ("BPM", 2, 100);
-    playlistTable->getHeader().setStretchToFitActive (true);
-    playlistTable->setColour (juce::ListBox::backgroundColourId, black);
-    playlistTable->setColour (juce::ListBox::outlineColourId, matrixGreen.withAlpha (0.5f));
-    playlistTable->setColour (juce::ListBox::textColourId, matrixGreen);
-    addAndMakeVisible (playlistTable.get());
+    playlistTable->setModel(this);
+    playlistTable->getHeader().addColumn("Name", 1, 300);
+    playlistTable->getHeader().addColumn("BPM", 2, 100);
+    playlistTable->getHeader().setStretchToFitActive(true);
+    
+    // Modern dark theme colors
+    playlistTable->setColour(juce::ListBox::backgroundColourId, juce::Colour(0xFF1E1E1E));        // Surface color
+    playlistTable->setColour(juce::ListBox::outlineColourId, juce::Colour(0xFF505050));          // Medium gray
+    playlistTable->setColour(juce::ListBox::textColourId, juce::Colours::white);                  // White text
+    addAndMakeVisible(playlistTable.get());
 
     // Enable sorting
     playlistTable->getHeader().setSortColumnId (1, true); // Default sort by name
@@ -143,11 +145,14 @@ LibraryComponent::~LibraryComponent()
     // No need to explicitly save as the Project class handles this
 }
 
-void LibraryComponent::paint (juce::Graphics& g)
+void LibraryComponent::paint(juce::Graphics& g)
 {
-    g.fillAll (black);
-    g.setColour (matrixGreen.withAlpha (0.5f));
-    g.drawRect (getLocalBounds(), 1);
+    // Fill background with dark theme color
+    g.fillAll(juce::Colour(0xFF121212));   // Dark background
+    
+    // Draw subtle border
+    g.setColour(juce::Colour(0xFF505050).withAlpha(0.5f));     // Medium gray with transparency
+    g.drawRect(getLocalBounds(), 1);
 }
 
 void LibraryComponent::resized()
@@ -171,27 +176,31 @@ int LibraryComponent::getNumRows()
     return libraryProject ? libraryProject->getNumProjectItems() : 0;
 }
 
-void LibraryComponent::paintRowBackground (juce::Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
+void LibraryComponent::paintRowBackground(juce::Graphics& g, int rowNumber, int width, int height, bool rowIsSelected)
 {
     if (rowIsSelected)
-        g.fillAll (matrixGreen.withAlpha (0.3f));
+    {
+        // Use a more subtle selection color
+        g.fillAll(juce::Colour(0xFF505050).withAlpha(0.3f));     // Medium gray with transparency
+    }
 }
 
-void LibraryComponent::paintCell (juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
+void LibraryComponent::paintCell(juce::Graphics& g, int rowNumber, int columnId, int width, int height, bool rowIsSelected)
 {
     if (!libraryProject || rowNumber >= libraryProject->getNumProjectItems())
         return;
 
-    auto projectItem = libraryProject->getProjectItemAt (rowNumber);
+    auto projectItem = libraryProject->getProjectItemAt(rowNumber);
     if (projectItem == nullptr)
         return;
 
-    g.setColour (matrixGreen);
+    // Use white text color for better contrast
+    g.setColour(juce::Colours::white);
 
     if (columnId == 1) // Name column
-        g.drawText (projectItem->getName(), 2, 0, width - 4, height, juce::Justification::centredLeft);
+        g.drawText(projectItem->getName(), 2, 0, width - 4, height, juce::Justification::centredLeft);
     else if (columnId == 2) // BPM column
-        g.drawText (juce::String (projectItem->getNamedProperty ("bpm").getFloatValue(), 1), 2, 0, width - 4, height, juce::Justification::centred);
+        g.drawText(juce::String(projectItem->getNamedProperty("bpm").getFloatValue(), 1), 2, 0, width - 4, height, juce::Justification::centred);
 }
 
 void LibraryComponent::cellDoubleClicked (int rowNumber, int columnId, const juce::MouseEvent&)
@@ -599,19 +608,22 @@ void LibraryComponent::showBpmEditorWindow (int rowIndex)
         {
             setSize(200, 150);
 
+            // Modern styling for text editor
             editor.setBounds(50, 20, 100, 24);
             editor.setText(juce::String(currentBpm, 1));
             editor.setInputRestrictions(6, "0123456789.");
-            editor.setColour(juce::TextEditor::backgroundColourId, juce::Colours::black);
-            editor.setColour(juce::TextEditor::textColourId, juce::Colour(0xFF00FF41));
-            editor.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xFF00FF41).withAlpha(0.5f));
+            editor.setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xFF1E1E1E));     // Surface color
+            editor.setColour(juce::TextEditor::textColourId, juce::Colours::white);               // White text
+            editor.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xFF505050));       // Medium gray
+            editor.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colour(0xFF707070)); // Light gray accent
             addAndMakeVisible(editor);
 
+            // Modern styling for half button
             halfButton.setButtonText("1/2x");
             halfButton.setBounds(30, 60, 60, 24);
-            halfButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
-            halfButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF00FF41));
-            halfButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFF00FF41));
+            halfButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF505050));     // Medium gray
+            halfButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+            halfButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
             halfButton.onClick = [this]() {
                 double currentValue = editor.getText().getDoubleValue();
                 double newValue = currentValue * 0.5;
@@ -620,11 +632,12 @@ void LibraryComponent::showBpmEditorWindow (int rowIndex)
             };
             addAndMakeVisible(halfButton);
 
+            // Modern styling for double button
             doubleButton.setButtonText("2x");
             doubleButton.setBounds(110, 60, 60, 24);
-            doubleButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
-            doubleButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF00FF41));
-            doubleButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFF00FF41));
+            doubleButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF505050));    // Medium gray
+            doubleButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+            doubleButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
             doubleButton.onClick = [this]() {
                 double currentValue = editor.getText().getDoubleValue();
                 double newValue = currentValue * 2.0;
@@ -633,11 +646,12 @@ void LibraryComponent::showBpmEditorWindow (int rowIndex)
             };
             addAndMakeVisible(doubleButton);
 
+            // Modern styling for OK button
             okButton.setButtonText("OK");
             okButton.setBounds(50, 100, 100, 24);
-            okButton.setColour(juce::TextButton::buttonColourId, juce::Colours::black);
-            okButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF00FF41));
-            okButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFF00FF41));
+            okButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF505050));       // Medium gray
+            okButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+            okButton.setColour(juce::TextButton::textColourOnId, juce::Colours::white);
             okButton.onClick = [this]() {
                 float newBpm = editor.getText().getFloatValue();
 
@@ -680,7 +694,7 @@ void LibraryComponent::showBpmEditorWindow (int rowIndex)
             };
             addAndMakeVisible(okButton);
 
-            setColour(juce::ResizableWindow::backgroundColourId, juce::Colours::black);
+            setColour(juce::ResizableWindow::backgroundColourId, juce::Colour(0xFF121212));   // Dark background
         }
 
     private:

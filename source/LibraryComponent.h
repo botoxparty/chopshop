@@ -67,26 +67,19 @@ private:
     
     tracktion::engine::ProjectItem::Ptr getProjectItemForFile(const juce::File& file) const;
     
-    const juce::Colour matrixGreen { 0xFF00FF41 };  // Bright matrix green
-    const juce::Colour darkWire { 0xFF003B00 };     // Dark green for backgrounds
-    const juce::Colour black { 0xFF000000 };        // Pure black
-
+    std::unique_ptr<tracktion::engine::Edit> loadEditFromProjectItem(tracktion::engine::ProjectItem::Ptr projectItem);
+    
+    std::unique_ptr<juce::TableListBox> playlistTable;
+    std::shared_ptr<juce::FileChooser> fileChooser;
     juce::TextButton addFileButton{"Add File"};
     juce::TextButton removeFileButton{"Remove File"};
     juce::TextButton editBpmButton{"Edit BPM"};
     
-    std::unique_ptr<juce::TableListBox> playlistTable;
-    
     tracktion::engine::Engine& engine;
     tracktion::engine::Project::Ptr libraryProject;
     
-    std::shared_ptr<juce::FileChooser> fileChooser;
-    
-    int sortedColumnId = 0;  // 0 means unsorted
+    int sortedColumnId = 0;
     bool sortedForward = true;
-    
-    // Helper to load an Edit from a project item
-    std::unique_ptr<tracktion::engine::Edit> loadEditFromProjectItem(tracktion::engine::ProjectItem::Ptr projectItem);
-    
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LibraryComponent)
 };

@@ -299,6 +299,8 @@ void MainComponent::setupLibraryComponent()
 
     // Set up the show library button callback to toggle visibility
     libraryBar->getShowLibraryButton().onClick = [this]() {
+        if(edit == nullptr)
+            return;
         if (libraryComponent && libraryBar) {
             bool showLibrary = !libraryComponent->isVisible();
             libraryComponent->setVisible(showLibrary);
