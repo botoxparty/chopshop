@@ -302,7 +302,7 @@ jobs:
           
           # First try signing with less options to see if it works
           echo "Starting basic codesign..."
-          codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" "${{ env.STANDALONE_PATH }}.app"
+          codesign --verbose --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" "${{ env.STANDALONE_PATH }}.app"
           
           # If that succeeds, try the full signing command
           if [ $? -eq 0 ]; then
