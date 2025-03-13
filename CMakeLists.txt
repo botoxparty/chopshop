@@ -13,6 +13,10 @@ set(PATCH_VERSION "4")
 # Modern concise way to add dependencies to your project
 include (CPM)
 
+# Add debug symbols configuration for Release builds
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g")
+set(CMAKE_COMPILE_OPTIONS_IPO "${CMAKE_COMPILE_OPTIONS_IPO} -g")
+
 # Configures universal binaries and decides which version of macOS to support
 include(PamplejuceMacOS)
 

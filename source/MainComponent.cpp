@@ -918,8 +918,6 @@ juce::PopupMenu MainComponent::getMenuForIndex (int topLevelMenuIndex, const juc
     {
         menu.addCommandItem(commandManager.get(), CommandIDs::Undo);
         menu.addCommandItem(commandManager.get(), CommandIDs::Redo);
-        menu.addSeparator();
-        menu.addCommandItem(commandManager.get(), CommandIDs::DeleteSelectedRegion);
     }
 
     return menu;
