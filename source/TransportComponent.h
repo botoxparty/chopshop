@@ -12,7 +12,6 @@
 #include "Plugins/AutoDelayPlugin.h"
 #include "Plugins/AutoPhaserPlugin.h"
 #include "Plugins/FlangerPlugin.h"
-#include "CrossfaderAutomationLane.h"
 #include "PluginAutomationComponent.h"
 #include "TransportBar.h"
 #include "ThumbnailComponent.h"

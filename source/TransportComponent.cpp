@@ -36,17 +36,6 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e, ZoomState& zs
         }
     }
     
-    // if (crossfaderParam != nullptr)
-    // {
-    //     crossfaderAutomationLane->setParameter(crossfaderParam);
-    // }
-    
-    // Set up curve change callback
-    // chopTrackLane->setCurveChangeCallback([this]() {
-    //     DBG("Curve changed");
-    //     thumbnailComponent->repaint();
-    // });
-    
     addAndMakeVisible(*chopTrackLane);
 
     // Set up snap callback

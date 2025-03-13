@@ -120,14 +120,7 @@ void ChopTrackLane::mouseDown(const juce::MouseEvent& event)
     DBG("MouseDown - Zoom level: " + juce::String(zoomState.getZoomLevel()) + 
         ", Scroll position: " + juce::String(zoomState.getScrollPosition()));
 
-    if (snapEnabled)
-    {
-        auto preSnapTime = time;
-        time = snapTimeToGrid(time);
-        DBG("MouseDown - Time before snap: " + juce::String(preSnapTime) + ", after snap: " + juce::String(time));
-    }
-    
-    // Check if we clicked on a clip
+    // First check if we clicked on a clip - use raw time before snapping
     selectedClip = nullptr;
     for (auto clip : chopTrack->getClips())
     {
@@ -145,7 +138,7 @@ void ChopTrackLane::mouseDown(const juce::MouseEvent& event)
         }
     }
     
-    // If we didn't click on a clip, add a new 1-beat clip
+    // If we didn't click on a clip, then we can snap the time for new clip creation
     if (snapEnabled)
         time = snapTimeToGrid(time);
         
@@ -173,11 +166,45 @@ void ChopTrackLane::mouseDrag(const juce::MouseEvent& event)
         return;
         
     auto [time, value] = XYToTime(event.position.x, event.position.y);
-    if (snapEnabled)
-        time = snapTimeToGrid(time);
     
-    // Calculate new start time, accounting for drag offset
+    // Calculate the raw new position without snapping first
     double newStartTime = time - dragOffsetTime;
+    
+    // If snapping is enabled, snap based on the clip's position
+    if (snapEnabled)
+    {
+        // Get the original clip start position
+        auto originalStartTime = selectedClip->getPosition().getStart().inSeconds();
+        
+        // Calculate how much we're trying to move the clip
+        double moveAmount = newStartTime - originalStartTime;
+        
+        // Snap the move amount to the grid
+        auto& tempoSequence = edit.tempoSequence;
+        auto moveInBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(std::abs(moveAmount)));
+        double gridSize = zoomState.getGridSize();
+        
+        // Find the previous and next grid lines
+        double previousGridLine = std::floor(moveInBeats.inBeats() / gridSize) * gridSize;
+        double nextGridLine = previousGridLine + gridSize;
+        
+        // Calculate how far we are between these grid lines
+        double distanceFromPrevious = moveInBeats.inBeats() - previousGridLine;
+        double percentageToNext = distanceFromPrevious / gridSize;
+        
+        // Choose which grid line to snap to
+        double snappedBeats = (percentageToNext >= 0.9) ? nextGridLine : previousGridLine;
+        
+        // Convert back to time
+        auto snappedMoveTime = tempoSequence.toTime(tracktion::BeatPosition::fromBeats(snappedBeats)).inSeconds();
+        
+        // Apply the direction of movement
+        if (moveAmount < 0)
+            snappedMoveTime = -snappedMoveTime;
+            
+        // Calculate final position
+        newStartTime = originalStartTime + snappedMoveTime;
+    }
     
     // Ensure we don't drag before 0
     if (newStartTime < 0)
@@ -274,17 +301,28 @@ double ChopTrackLane::snapTimeToGrid(double time) const
         
     auto& tempoSequence = edit.tempoSequence;
     auto timeInBeats = tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(time));
+    double gridSize = zoomState.getGridSize();
     
     DBG("Snap - Time: " + juce::String(time) + 
         ", In beats: " + juce::String(timeInBeats.inBeats()) + 
-        ", Grid size: " + juce::String(zoomState.getGridSize()));
+        ", Grid size: " + juce::String(gridSize));
     
-    auto snappedBeats = std::round(timeInBeats.inBeats() / zoomState.getGridSize()) * zoomState.getGridSize();
+    // Find the previous and next grid lines relative to the click position
+    double previousGridLine = std::floor(timeInBeats.inBeats() / gridSize) * gridSize;
+    double nextGridLine = previousGridLine + gridSize;
+    
+    // Calculate how far we are between these grid lines
+    double distanceFromPrevious = timeInBeats.inBeats() - previousGridLine;
+    double percentageToNext = distanceFromPrevious / gridSize;
+    
+    // Choose which grid line to snap to
+    double snappedBeats = (percentageToNext >= 0.9) ? nextGridLine : previousGridLine;
     
     auto snappedTime = tempoSequence.toTime(tracktion::BeatPosition::fromBeats(snappedBeats)).inSeconds();
     
-    DBG("Snap - Snapped beats: " + juce::String(snappedBeats) + 
-        ", Snapped time: " + juce::String(snappedTime));
+    DBG("Snap - Distance to next: " + juce::String(percentageToNext * 100) + "%, Previous: " + 
+        juce::String(previousGridLine) + ", Next: " + juce::String(nextGridLine) + 
+        ", Snapped to: " + juce::String(snappedBeats));
     
     return snappedTime;
 }
