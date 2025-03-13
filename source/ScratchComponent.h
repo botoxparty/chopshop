@@ -35,6 +35,8 @@ public:
     // Plugin interface methods
     void prepareToPlay(double sampleRate, int samplesPerBlock);
     void releaseResources();
+
+    void setScratchSpeed(float speed);
     
 private:
     class ScratchPad : public juce::Component

@@ -5,10 +5,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 # include (PamplejuceVersion)
 
 # Add a version manually
-set(CURRENT_VERSION "0.0.2")
+set(CURRENT_VERSION "0.0.4")
 set(MAJOR_VERSION "0")
 set(MINOR_VERSION "0")
-set(PATCH_VERSION "2")
+set(PATCH_VERSION "4")
 
 # Modern concise way to add dependencies to your project
 include (CPM)

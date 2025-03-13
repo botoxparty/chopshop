@@ -54,3 +54,11 @@ ScratchComponent::~ScratchComponent()
 {
     // Clean up any resources if needed
 }
+
+void ScratchComponent::setScratchSpeed(float speed)
+{
+    if (auto* scratchPlugin = dynamic_cast<ScratchPlugin*>(plugin.get()))
+    {
+        scratchPlugin->scratchParam->setParameter(speed, juce::sendNotification);
+    }
+}

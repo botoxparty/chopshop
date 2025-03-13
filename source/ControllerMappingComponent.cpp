@@ -18,7 +18,8 @@ ControllerMappingComponent::ControllerMappingComponent()
         {SDL_GAMEPAD_AXIS_LEFTY, "Flanger Depth", true},
         {SDL_GAMEPAD_AXIS_RIGHTX, "Phaser Rate", true},
         {SDL_GAMEPAD_AXIS_RIGHTY, "Phaser Depth", true},
-        {SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, "Vinyl Brake", true}
+        {SDL_GAMEPAD_AXIS_RIGHT_TRIGGER, "Vinyl Brake", true},
+        {SDL_GAMEPAD_AXIS_LEFT_TRIGGER, "Scratch Speed", true}
     };
 
     // Initialize button positions with updated layout

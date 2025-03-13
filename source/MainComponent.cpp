@@ -569,19 +569,19 @@ void MainComponent::gamepadAxisMoved (int axisId, float value)
 
         case SDL_GAMEPAD_AXIS_LEFT_TRIGGER:
             // Use left trigger for scratch effect
-            // if (scratchComponent)
-            // {
-            //     // Apply scratch effect based on trigger value
-            //     // Trigger values are 0 to 1, we'll map to -1 to 1 for scratch speed
-            //     float scratchSpeed = (value > 0.1f) ? (value * 2.0f - 1.0f) : 0.0f;
-            //     scratchComponent->applyScratchEffect(scratchSpeed);
+            if (scratchComponent)
+            {
+                // Apply scratch effect based on trigger value
+                // Trigger values are 0 to 1, we'll map to -1 to 1 for scratch speed
+                float scratchSpeed = (value > 0.1f) ? (value * 2.0f - 1.0f) : 0.0f;
+                scratchComponent->setScratchSpeed(scratchSpeed);
 
-            //     // If trigger is released, start returning to original tempo
-            //     if (value < 0.1f)
-            //     {
-            //         scratchComponent->startReturnToOriginalTempo();
-            //     }
-            // }
+                // If trigger is released, start returning to original tempo
+                if (value < 0.1f)
+                {
+                    scratchComponent->setScratchSpeed(0.0f);
+                }
+            }
             break;
 
         case SDL_GAMEPAD_AXIS_LEFTX:

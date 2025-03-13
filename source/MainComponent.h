@@ -13,8 +13,8 @@ namespace ProjectInfo
 {
     const char* const  projectName    = "ChopShop";
     const char* const  companyName    = "Pounding Systems";
-    const char* const  versionString  = "1.0.0";
-    const int          versionNumber  = 0x10000;
+    const char* const  versionString  = "0.0.4";
+    const int          versionNumber  = 0x0004;
 }
 
 #define ANIMATE_COMPANY_LOGO 1
