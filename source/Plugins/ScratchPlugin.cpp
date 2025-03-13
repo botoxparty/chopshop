@@ -8,6 +8,7 @@ ScratchPlugin::ScratchPlugin(tracktion::engine::PluginCreationInfo info) : track
     
     // Initialize cached values
     scratchValue.referTo(state, "scratch", um, 0.0f);
+    depthValue.referTo(state, "depth", um, 0.5f);
     mixValue.referTo(state, "mix", um, 1.0f);
     
     // Create automatable parameters
@@ -15,6 +16,11 @@ ScratchPlugin::ScratchPlugin(tracktion::engine::PluginCreationInfo info) : track
                           [](float value) { return juce::String(value, 2); },
                           [](const juce::String& s) { return s.getFloatValue(); });
     scratchParam->attachToCurrentValue(scratchValue);
+    
+    depthParam = addParam("depth", TRANS("Depth"), { 0.0f, 1.0f },
+                         [](float value) { return juce::String(value * 100.0f, 0) + "%" ; },
+                         [](const juce::String& s) { return s.getFloatValue() / 100.0f; });
+    depthParam->attachToCurrentValue(depthValue);
     
     mixParam = addParam("mix", TRANS("Mix"), { 0.0f, 1.0f },
                        [](float value) { return juce::String(value * 100.0f, 0) + "%" ; },
@@ -25,9 +31,12 @@ ScratchPlugin::ScratchPlugin(tracktion::engine::PluginCreationInfo info) : track
     smoothedScratchPos.reset(sampleRate, 0.15); // 150ms smoothing
     smoothedScratchPos.setCurrentAndTargetValue(0.0);
     
-    // Initialize additional smoothing for scratch acceleration
+    // Initialize additional smoothing for scratch acceleration and depth
     smoothedAcceleration.reset(sampleRate, 0.08); // 80ms smoothing
     smoothedAcceleration.setCurrentAndTargetValue(0.0);
+    
+    smoothedDepth.reset(sampleRate, 0.1); // 100ms smoothing
+    smoothedDepth.setCurrentAndTargetValue(0.5);
 }
 
 ScratchPlugin::~ScratchPlugin()
@@ -35,6 +44,7 @@ ScratchPlugin::~ScratchPlugin()
     notifyListenersOfDeletion();
     
     scratchParam->detachFromCurrentValue();
+    depthParam->detachFromCurrentValue();
     mixParam->detachFromCurrentValue();
 }
 
@@ -94,16 +104,22 @@ float ScratchPlugin::getSampleAtPosition(float* buf, int bufferLength, float pos
 }
 
 // Add new helper function for non-linear scratch response
-float ScratchPlugin::processNonLinearScratch(float input) const
+float ScratchPlugin::processNonLinearScratch(float input, float depth) const
 {
     // Apply exponential curve for more natural scratch response
     float sign = input < 0 ? -1.0f : 1.0f;
     float absInput = std::abs(input);
     
     // Enhanced non-linear curve with dead zone and exponential response
-    if (absInput < 0.1f) return 0.0f; // Dead zone for stability
+    // Dead zone size varies with depth
+    float deadZone = 0.1f * (1.0f - depth * 0.8f); // Smaller dead zone with higher depth
+    if (absInput < deadZone) return 0.0f;
     
-    float processed = sign * (std::pow(absInput, 1.5f) + absInput * 0.5f);
+    // Depth affects both the exponential curve and the linear component
+    float expComponent = std::pow(absInput, 1.0f + depth);
+    float linComponent = absInput * depth * 0.5f;
+    
+    float processed = sign * (expComponent + linComponent);
     return processed;
 }
 
@@ -125,38 +141,23 @@ void ScratchPlugin::applyToBuffer(const tracktion::engine::PluginRenderContext& 
     // Clear any channels we're not using
     tracktion::engine::clearChannels(*fc.destBuffer, 2, -1, fc.bufferStartSample, fc.bufferNumSamples);
     
-    // Get the current scratch position (-1 to 1) and apply non-linear processing
+    // Get current parameter values
     const float rawScratch = scratchParam->getCurrentValue();
-    const float processedScratch = processNonLinearScratch(rawScratch);
+    const float currentDepth = depthParam->getCurrentValue();
     
+    // Apply non-linear processing with depth
+    const float processedScratch = processNonLinearScratch(rawScratch, currentDepth);
+    
+    // Update smoothed values
     smoothedScratchPos.setTargetValue(processedScratch);
+    smoothedDepth.setTargetValue(currentDepth);
     smoothedAcceleration.setTargetValue(std::abs(processedScratch - smoothedScratchPos.getCurrentValue()));
     
-    const float currentScratch = rawScratch; // Use raw value for bypass check
-    
-    // Debug print scratch values
-    static int debugCounter = 0;
-    if (++debugCounter % 1000 == 0)
-    {
-        DBG("Scratch param value: " << rawScratch 
-            << " Smoothed value: " << smoothedScratchPos.getCurrentValue() 
-            << " Mix: " << wetGain);
-    }
-    
     // If scratch is at neutral position (very close to 0), just pass through the audio
-    if (std::abs(currentScratch) < 0.05f) // Slightly larger dead zone
+    if (std::abs(rawScratch) < 0.05f) // Slightly larger dead zone
     {
-        if (debugCounter % 1000 == 0)
-        {
-            DBG("Bypassing - scratch near zero");
-        }
         scratchBuffer.bufferPos = (scratchBuffer.bufferPos + fc.bufferNumSamples) % lengthInSamples;
         return;
-    }
-    
-    if (debugCounter % 1000 == 0)
-    {
-        DBG("Processing scratch effect");
     }
     
     // Process up to 2 channels
@@ -165,7 +166,6 @@ void ScratchPlugin::applyToBuffer(const tracktion::engine::PluginRenderContext& 
         float* const d = fc.destBuffer->getWritePointer(chan, fc.bufferStartSample);
         float* const buf = (float*)scratchBuffer.buffers[chan].getData();
         
-        // Keep track of our read position
         float readPos = offset;
         
         for (int i = 0; i < fc.bufferNumSamples; ++i)
@@ -173,35 +173,25 @@ void ScratchPlugin::applyToBuffer(const tracktion::engine::PluginRenderContext& 
             const float in = d[i];
             float* const b = buf + ((i + offset) % lengthInSamples);
             
-            // Store input in buffer
             *b = in;
             
-            // Get smoothed scratch value and calculate read position with improved mechanics
+            // Get smoothed values
             const float currentScratchValue = smoothedScratchPos.getNextValue();
             const float scratchAcceleration = smoothedAcceleration.getNextValue();
+            const float depth = smoothedDepth.getNextValue();
             
-            // Enhanced playback speed calculation
-            float scratchDelta = currentScratchValue * (1.0f + scratchAcceleration * 0.5f);
+            // Enhanced playback speed calculation using depth
+            float scratchDelta = currentScratchValue * (1.0f + scratchAcceleration * (0.3f + depth * 0.4f));
             
-            // Add slight pitch variation based on scratch speed
-            float pitchVariation = 1.0f + (scratchAcceleration * 0.1f);
+            // Depth affects pitch variation
+            float pitchVariation = 1.0f + (scratchAcceleration * depth * 0.2f);
             readPos += (1.0f - scratchDelta) * pitchVariation;
             
             // Wrap read position
             while (readPos >= lengthInSamples) readPos -= lengthInSamples;
             while (readPos < 0) readPos += lengthInSamples;
             
-            // Get interpolated sample with enhanced smoothing
             const float wet = getSampleAtPosition(buf, lengthInSamples, readPos);
-            
-            // Debug occasional sample values
-            if (debugCounter % 100 == 0 && i == 0)
-            {
-                DBG("Sample " << i << " - ReadPos: " << readPos 
-                    << " ScratchDelta: " << scratchDelta 
-                    << " In: " << in 
-                    << " Wet: " << juce::String(wet));
-            }
             
             // Mix dry and wet signals
             d[i] = wet * wetGain + in * dryGain;
@@ -215,7 +205,7 @@ void ScratchPlugin::applyToBuffer(const tracktion::engine::PluginRenderContext& 
 
 void ScratchPlugin::restorePluginStateFromValueTree(const juce::ValueTree& v)
 {
-    tracktion::engine::copyPropertiesToCachedValues(v, scratchValue, mixValue);
+    tracktion::engine::copyPropertiesToCachedValues(v, scratchValue, depthValue, mixValue);
     
     for (auto p : getAutomatableParameters())
         p->updateFromAttachedValue();

@@ -64,18 +64,20 @@ public:
     void applyToBuffer(const tracktion::engine::PluginRenderContext&) override;
     void restorePluginStateFromValueTree(const juce::ValueTree&) override;
 
-    juce::CachedValue<float> scratchValue, mixValue;
-    tracktion::engine::AutomatableParameter::Ptr scratchParam, mixParam;
+    // Parameters
+    juce::CachedValue<float> scratchValue, depthValue, mixValue;
+    tracktion::engine::AutomatableParameter::Ptr scratchParam, depthParam, mixParam;
 
 private:
     float interpolateHermite4pt3oX(float x, float y0, float y1, float y2, float y3);
     float getSampleAtPosition(float* buf, int bufferLength, float position);
-    float processNonLinearScratch(float input) const;
+    float processNonLinearScratch(float input, float depth) const;
     
     ScratchBufferBase scratchBuffer;
     double sampleRate = 44100.0;
     juce::SmoothedValue<float> smoothedScratchPos;
     juce::SmoothedValue<float> smoothedAcceleration;
+    juce::SmoothedValue<float> smoothedDepth;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ScratchPlugin)
 }; 

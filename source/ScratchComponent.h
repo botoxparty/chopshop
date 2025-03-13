@@ -8,6 +8,7 @@
 #include "Utilities.h"
 #include "RampedValue.h"
 #include "Plugins/ScratchPlugin.h"
+
 class ScratchComponent : public BaseEffectComponent
 {
 public:
@@ -21,9 +22,9 @@ public:
     std::function<double()> getCurrentTempoAdjustment;
     std::function<double()> getEffectiveTempo;
     
-    double getScratchValue() const
+    juce::Point<float> getScratchPosition() const
     {
-        return scratchSlider->getValue();
+        return scratchPad->getCurrentPosition();
     }
     
     void startSpringAnimation();
@@ -36,42 +37,92 @@ public:
     void releaseResources();
     
 private:
-    class SpringSlider : public juce::Slider
+    class ScratchPad : public juce::Component
     {
     public:
-        SpringSlider()
+        ScratchPad()
         {
-            setSliderStyle(juce::Slider::SliderStyle::LinearHorizontal);
-            setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
-            setRange(-1.0, 1.0);
-            setValue(0.0);
-            
-            // Store the spring behavior to combine with parameter binding later
-            springBehavior = [this]()
-            {
-                DBG("Spring back to center");
-                setValue(0.0, juce::sendNotification);
-            };
-            
-            // Initial setup of onDragEnd
-            onDragEnd = springBehavior;
+            setSize(200, 200);
         }
         
-        // Method to combine spring behavior with parameter binding
-        void addParameterBinding(std::function<void()> parameterBinding)
+        void paint(juce::Graphics& g) override
         {
-            onDragEnd = [this, parameterBinding]()
-            {
-                springBehavior();
-                parameterBinding();
-            };
+            auto bounds = getLocalBounds().toFloat();
+            
+            // Draw background
+            g.setColour(juce::Colours::darkgrey);
+            g.fillRoundedRectangle(bounds, 10.0f);
+            
+            // Draw grid lines
+            g.setColour(juce::Colours::grey);
+            g.drawLine(bounds.getWidth() * 0.5f, 0, bounds.getWidth() * 0.5f, bounds.getHeight(), 1.0f);
+            g.drawLine(0, bounds.getHeight() * 0.5f, bounds.getWidth(), bounds.getHeight() * 0.5f, 1.0f);
+            
+            // Draw current position
+            g.setColour(juce::Colours::white);
+            auto dotSize = 10.0f;
+            g.fillEllipse(currentPosition.x * bounds.getWidth() - dotSize * 0.5f,
+                         currentPosition.y * bounds.getHeight() - dotSize * 0.5f,
+                         dotSize, dotSize);
         }
+        
+        void mouseDown(const juce::MouseEvent& e) override
+        {
+            updatePosition(e);
+            isDragging = true;
+        }
+        
+        void mouseDrag(const juce::MouseEvent& e) override
+        {
+            updatePosition(e);
+        }
+        
+        void mouseUp(const juce::MouseEvent&) override
+        {
+            isDragging = false;
+            springBackToCenter();
+        }
+        
+        juce::Point<float> getCurrentPosition() const { return currentPosition; }
+        
+        std::function<void(float, float)> onPositionChange;
         
     private:
-        std::function<void()> springBehavior;
+        void updatePosition(const juce::MouseEvent& e)
+        {
+            auto bounds = getLocalBounds().toFloat();
+            currentPosition.x = juce::jlimit(0.0f, 1.0f, e.position.x / bounds.getWidth());
+            currentPosition.y = juce::jlimit(0.0f, 1.0f, e.position.y / bounds.getHeight());
+            
+            // Convert to -1 to 1 range for X (scratch) and 0 to 1 for Y (depth)
+            float scratchValue = (currentPosition.x - 0.5f) * 2.0f;
+            float depthValue = 1.0f - currentPosition.y; // Invert Y so up = more depth
+            
+            if (onPositionChange)
+                onPositionChange(scratchValue, depthValue);
+                
+            repaint();
+        }
+        
+        void springBackToCenter()
+        {
+            auto& animator = juce::Desktop::getInstance().getAnimator();
+            
+            animator.animateComponent(this, getBounds(),
+                                   1.0f, 200, false, 0.5, 0.5);
+            
+            currentPosition = { 0.5f, 0.5f };
+            if (onPositionChange)
+                onPositionChange(0.0f, 0.5f);
+                
+            repaint();
+        }
+        
+        juce::Point<float> currentPosition { 0.5f, 0.5f };
+        bool isDragging = false;
     };
     
-    std::unique_ptr<SpringSlider> scratchSlider;
+    std::unique_ptr<ScratchPad> scratchPad;
     
     // Audio processing components
     juce::IIRFilter resonantFilter;
