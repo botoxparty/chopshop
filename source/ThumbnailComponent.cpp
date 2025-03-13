@@ -83,78 +83,53 @@ void ThumbnailComponent::paint(juce::Graphics& g)
 
             if (thumbnail.getTotalLength() > 0.0)
             {
-                // Get crossfader parameter
-                tracktion::engine::AutomatableParameter* crossfaderParam = nullptr;
-                if (auto chopPlugin = EngineHelpers::getPluginFromMasterTrack(edit, ChopPlugin::xmlTypeName))
-                {
-                    if (auto* plugin = chopPlugin.get())
-                    {
-                        crossfaderParam = plugin->getAutomatableParameterByID("crossfader");
-                    }
-                }
+                // Draw base waveform
+                g.setGradientFill(juce::ColourGradient(
+                    juce::Colours::lime.withAlpha(0.8f),
+                    drawBounds.getTopLeft().toFloat(),
+                    juce::Colours::lime.withAlpha(0.3f),
+                    drawBounds.getBottomLeft().toFloat(),
+                    false));
 
-                // Instead of drawing channels separately, draw a combined view
+                auto sourceTimeRange = tracktion::TimeRange(
+                    tracktion::TimePosition::fromSeconds(visibleTimeStart / timeStretchRatio),
+                    tracktion::TimePosition::fromSeconds(visibleTimeEnd / timeStretchRatio));
+
                 float maxGain = juce::jmax(leftGain, rightGain);
+                thumbnail.drawChannels(g, drawBounds, sourceTimeRange, maxGain);
 
-                if (crossfaderParam != nullptr)
+                // Get chop track and overlay its clips
+                if (auto chopTrack = EngineHelpers::getChopTrack(edit))
                 {
-                    // Calculate visible time range
-                    auto visibleTimeStartSource = visibleTimeStart / timeStretchRatio;
-                    auto visibleTimeEndSource = visibleTimeEnd / timeStretchRatio;
-
-                    // Draw in small segments to capture crossfader changes
-                    const int numSegments = drawBounds.getWidth();
-                    const double timePerSegment = (visibleTimeEndSource - visibleTimeStartSource) / numSegments;
-
-                    for (int i = 0; i < numSegments; i++)
+                    for (auto clip : chopTrack->getClips())
                     {
-                        auto segmentTime = visibleTimeStartSource + (i * timePerSegment);
-                        auto segmentEndTime = segmentTime + timePerSegment;
+                        auto startTime = clip->getPosition().getStart().inSeconds();
+                        auto endTime = clip->getPosition().getEnd().inSeconds();
 
-                        // Get crossfader value at this time (in source time domain)
-                        auto crossfaderValue = crossfaderParam->getCurve().getValueAt(tracktion::TimePosition::fromSeconds(segmentTime * timeStretchRatio));
+                        // Skip clips that are completely outside the visible range
+                        if (endTime < visibleTimeStart || startTime > visibleTimeEnd)
+                            continue;
 
-                        // Create segment bounds
-                        auto segmentBounds = drawBounds.withWidth(1).withX(drawBounds.getX() + i);
+                        // Clamp clip times to visible range
+                        auto clampedStartTime = juce::jlimit(visibleTimeStart, visibleTimeEnd, startTime);
+                        auto clampedEndTime = juce::jlimit(visibleTimeStart, visibleTimeEnd, endTime);
 
-                        // Set color based on crossfader value
-                        juce::Colour waveformColor = crossfaderValue >= 0.5f ? juce::Colours::purple : juce::Colours::lime;
+                        // Calculate clip bounds in view coordinates
+                        auto startX = drawBounds.getX() + ((clampedStartTime - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart)) * drawBounds.getWidth();
+                        auto endX = drawBounds.getX() + ((clampedEndTime - visibleTimeStart) / (visibleTimeEnd - visibleTimeStart)) * drawBounds.getWidth();
 
-                        // Create gradient for this segment
-                        g.setGradientFill(juce::ColourGradient(
-                            waveformColor.withAlpha(0.8f),
-                            segmentBounds.getTopLeft().toFloat(),
-                            waveformColor.withAlpha(0.3f),
-                            segmentBounds.getBottomLeft().toFloat(),
-                            false));
+                        // Draw clip overlay
+                        auto clipBounds = juce::Rectangle<float>(
+                            startX, drawBounds.getY(),
+                            endX - startX, drawBounds.getHeight());
 
-                        // Draw this segment in source time domain
-                        thumbnail.drawChannels(g,
-                            segmentBounds,
-                            tracktion::TimeRange(tracktion::TimePosition::fromSeconds(segmentTime),
-                                tracktion::TimePosition::fromSeconds(segmentEndTime)),
-                            maxGain);
+                        g.setColour(juce::Colours::purple.withAlpha(0.3f));
+                        g.fillRect(clipBounds);
+
+                        // Draw clip border
+                        g.setColour(juce::Colours::purple.withAlpha(0.5f));
+                        g.drawRect(clipBounds, 1.0f);
                     }
-
-                    // Add a subtle outline
-                    g.setColour(juce::Colours::grey.withAlpha(0.4f));
-                    g.drawRect(drawBounds.toFloat(), 1.0f);
-                }
-                else
-                {
-                    // Fallback if no crossfader parameter - draw in source time domain
-                    g.setGradientFill(juce::ColourGradient(
-                        juce::Colours::lime.withAlpha(0.8f),
-                        drawBounds.getTopLeft().toFloat(),
-                        juce::Colours::lime.withAlpha(0.3f),
-                        drawBounds.getBottomLeft().toFloat(),
-                        false));
-
-                    auto sourceTimeRange = tracktion::TimeRange(
-                        tracktion::TimePosition::fromSeconds(visibleTimeStart / timeStretchRatio),
-                        tracktion::TimePosition::fromSeconds(visibleTimeEnd / timeStretchRatio));
-
-                    thumbnail.drawChannels(g, drawBounds, sourceTimeRange, maxGain);
                 }
             }
         }

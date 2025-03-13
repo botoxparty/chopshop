@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BaseEffectComponent.h"
+#include "ChopTrackLane.h"
 
 // Add this near the top of your file, outside the class definition
 namespace CommandIDs
@@ -17,12 +18,9 @@ public:
     explicit ChopComponent(tracktion::engine::Edit&);
     void resized() override;
     
-    std::function<void(float)> onCrossfaderValueChanged;
     std::function<double()> getTempoCallback;
 
-    double getChopDurationInMs(double currentTempo) const;
-    float getCrossfaderValue() const { return static_cast<float>(plugin->getAutomatableParameterByID("crossfader")->getCurrentValue()); }
-    void setCrossfaderValue(float value) { plugin->getAutomatableParameterByID("crossfader")->setParameter(value, juce::sendNotification); }
+    double getChopDurationInBeats() const;
     ~ChopComponent() override;
     
     // ApplicationCommandTarget implementation
@@ -34,8 +32,6 @@ public:
 
     // Required method from ApplicationCommandManagerListener
     void applicationCommandInvoked([[maybe_unused]] const juce::ApplicationCommandTarget::InvocationInfo& info) override {}
-    
-    // Required method from ApplicationCommandManagerListener
     void applicationCommandListChanged() override {}
 
     // Timer callback
@@ -45,23 +41,16 @@ public:
     void handleChopButtonReleased();
 
 private:
-    void mouseDown(const juce::MouseEvent& event) override;
-    void mouseUp(const juce::MouseEvent& event) override;
-
-
-    juce::TextButton chopButton{"Chop"};
-    juce::ComboBox chopDurationComboBox;
     juce::Label durationLabel;
-
-    // Change from std::unique_ptr to a raw pointer
+    juce::ComboBox chopDurationComboBox;
+    juce::TextButton chopButton;
     juce::ApplicationCommandManager* commandManager = nullptr;
-    
-    // Add this instance variable to track space key state for this instance
-    bool wasSpaceDown = false;
+    tracktion::engine::AudioTrack::Ptr chopTrack;
 
-    // Timing variables for chop effect
     double chopStartTime = 0.0;
     double chopReleaseDelay = 0.0;
+
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ChopComponent)
 }; 

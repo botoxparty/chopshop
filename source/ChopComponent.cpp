@@ -1,15 +1,16 @@
 #include "ChopComponent.h"
 #include "Plugins/ChopPlugin.h"
+#include "Utilities.h"
 
 ChopComponent::ChopComponent (tracktion::engine::Edit& editIn)
     : BaseEffectComponent (editIn)
 {
-    plugin = EngineHelpers::getPluginFromMasterTrack (edit, ChopPlugin::xmlTypeName);
+    chopTrack = EngineHelpers::getChopTrack(edit);
 
-    if (!plugin)
+    if (!chopTrack)
     {
         titleLabel.setText ("Error loading Chop", juce::dontSendNotification);
-        DBG ("Error: No chop plugin found");
+        DBG ("Error: No chop track found");
         return;
     }
 
@@ -31,9 +32,9 @@ ChopComponent::ChopComponent (tracktion::engine::Edit& editIn)
     chopButton.setColour (juce::TextButton::textColourOnId, juce::Colours::white);
     chopButton.setColour (juce::TextButton::buttonColourId, juce::Colours::darkred);
     chopButton.setButtonText("CHOP");
-    chopButton.addMouseListener (this, false);
+    chopButton.onClick = [this]() { handleChopButtonPressed(); };
 
-    // Add components to the content component instead of the base
+    // Add components to the content component
     contentComponent.addAndMakeVisible (durationLabel);
     contentComponent.addAndMakeVisible (chopDurationComboBox);
     contentComponent.addAndMakeVisible (chopButton);
@@ -99,78 +100,59 @@ void ChopComponent::resized()
     chopButton.setBounds(bounds);
 }
 
-double ChopComponent::getChopDurationInMs (double currentTempo) const
+double ChopComponent::getChopDurationInBeats() const
 {
-    double beatDuration = (60.0 / currentTempo) * 1000.0; // One beat duration in ms
-
     juce::String description = chopDurationComboBox.getText();
     if (description == "1/4 Beat")
-        return beatDuration * 0.25;
+        return 0.25;
     else if (description == "1/2 Beat")
-        return beatDuration * 0.5;
+        return 0.5;
     else if (description == "1 Beat")
-        return beatDuration;
+        return 1.0;
     else if (description == "2 Beats")
-        return beatDuration * 2.0;
+        return 2.0;
     else if (description == "4 Beats")
-        return beatDuration * 4.0;
+        return 4.0;
 
-    return beatDuration; // Default to 1 beat
-}
-
-void ChopComponent::mouseDown (const juce::MouseEvent& event)
-{
-    if (event.eventComponent == &chopButton)
-    {
-        DBG ("Mouse down on chop button");
-        handleChopButtonPressed();
-    }
-}
-
-void ChopComponent::mouseUp (const juce::MouseEvent& event)
-{
-    if (event.eventComponent == &chopButton)
-    {
-        DBG ("Mouse up on chop button");
-        handleChopButtonReleased();
-    }
+    return 1.0; // Default to 1 beat
 }
 
 void ChopComponent::handleChopButtonPressed()
 {
-    chopStartTime = juce::Time::getMillisecondCounterHiRes();
-        float currentPosition = getCrossfaderValue();
-    if (plugin != nullptr)
-        setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+    if (!chopTrack)
+        return;
+
+    auto& transport = edit.getTransport();
+    double currentPositionSeconds = transport.getPosition().inSeconds();
+    
+    // Convert duration from beats to time
+    auto durationInBeats = getChopDurationInBeats();
+    auto startBeat = edit.tempoSequence.toBeats(tracktion::TimePosition::fromSeconds(currentPositionSeconds));
+    auto endBeat = tracktion::BeatPosition::fromBeats(startBeat.inBeats() + durationInBeats);
+    auto endTime = edit.tempoSequence.toTime(endBeat).inSeconds();
+
+    // Create a new clip at the current position
+    auto timeRange = tracktion::TimeRange::between(
+        tracktion::TimePosition::fromSeconds(currentPositionSeconds),
+        tracktion::TimePosition::fromSeconds(endTime)
+    );
+
+    auto newClip = chopTrack->insertNewClip(tracktion::engine::TrackItem::Type::arranger, timeRange, nullptr);
+    if (newClip != nullptr)
+    {
+        newClip->setName("Chop " + juce::String(chopTrack->getClips().size()));
+        DBG("Created new chop clip from " + juce::String(currentPositionSeconds) + " to " + juce::String(endTime));
+    }
 }
 
 void ChopComponent::handleChopButtonReleased()
 {
-    if (!getTempoCallback)
-        return;
-
-    double elapsedTime = juce::Time::getMillisecondCounterHiRes() - chopStartTime;
-    double minimumTime = getChopDurationInMs(getTempoCallback());
-
-    if (elapsedTime >= minimumTime)
-    {
-        float currentPosition = getCrossfaderValue();
-        if (plugin != nullptr)
-            setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
-    }
-    else
-    {
-        chopReleaseDelay = minimumTime - elapsedTime;
-        startTimer(static_cast<int>(chopReleaseDelay));
-    }
+    // Nothing needed here as clips are created on press
 }
 
 void ChopComponent::timerCallback()
 {
     stopTimer();
-    float currentPosition = getCrossfaderValue();
-    if (plugin != nullptr)
-        setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
     chopReleaseDelay = 0;
 }
 

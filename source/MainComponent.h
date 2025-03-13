@@ -151,8 +151,8 @@ public:
         if (chopReleaseDelay > 0)
         {
             stopTimer();
-            float currentPosition = chopComponent->getCrossfaderValue();
-            chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
+            // float currentPosition = chopComponent->getCrossfaderValue();
+            // chopComponent->setCrossfaderValue(currentPosition <= 0.5f ? 1.0f : 0.0f);
             chopReleaseDelay = 0;
         }
 
