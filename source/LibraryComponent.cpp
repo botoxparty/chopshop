@@ -346,6 +346,16 @@ void LibraryComponent::addToLibrary (const juce::File& file)
         return;
     }
 
+    // Get the insert point at the end of all tracks
+    auto insertPoint = TrackInsertPoint::getEndOfTracks(*edit);
+
+    // Insert a new track
+    if (auto newTrack = edit->insertNewAudioTrack(insertPoint, nullptr))
+    {
+        // Configure the track for MIDI
+        newTrack->setName("Chop Track");
+        newTrack->getOutput().setOutputToDefaultDevice(true);
+    }
     // add chop plugin to master plugin list
     // Should use PluginCache::createNewPlugin to create the ones you add here
 

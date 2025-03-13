@@ -24,7 +24,7 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e, ZoomState& zs
     pluginAutomationViewport.setScrollBarsShown(true, false);
 
     // Create and add crossfader automation lane with zoom state
-    crossfaderAutomationLane = std::make_unique<CrossfaderAutomationLane>(edit, zoomState);
+    chopTrackLane = std::make_unique<ChopTrackLane>(edit, zoomState);
     
     // Find the crossfader parameter
     tracktion::engine::AutomatableParameter* crossfaderParam = nullptr;
@@ -36,18 +36,18 @@ TransportComponent::TransportComponent(tracktion::engine::Edit& e, ZoomState& zs
         }
     }
     
-    if (crossfaderParam != nullptr)
-    {
-        crossfaderAutomationLane->setParameter(crossfaderParam);
-    }
+    // if (crossfaderParam != nullptr)
+    // {
+    //     crossfaderAutomationLane->setParameter(crossfaderParam);
+    // }
     
     // Set up curve change callback
-    crossfaderAutomationLane->setCurveChangeCallback([this]() {
-        DBG("Curve changed");
-        thumbnailComponent->repaint();
-    });
+    // chopTrackLane->setCurveChangeCallback([this]() {
+    //     DBG("Curve changed");
+    //     thumbnailComponent->repaint();
+    // });
     
-    addAndMakeVisible(*crossfaderAutomationLane);
+    addAndMakeVisible(*chopTrackLane);
 
     // Set up snap callback
     transportBar.setSnapCallback([this](bool snapEnabled) {
@@ -152,9 +152,9 @@ void TransportComponent::layoutItemsWithCurrentBounds()
         y += thumbnailHeight + 2; // Add spacing
     }
     
-    if (crossfaderAutomationLane != nullptr)
+    if (chopTrackLane != nullptr)
     {
-        crossfaderAutomationLane->setBounds(bounds.getX(), y, w, crossfaderHeight);
+        chopTrackLane->setBounds(bounds.getX(), y, w, crossfaderHeight);
         y += crossfaderHeight + 2; // Add spacing
     }
     
@@ -228,16 +228,16 @@ void TransportComponent::updateThumbnail()
 
 void TransportComponent::deleteSelectedChopRegion()
 {
-    if (crossfaderAutomationLane != nullptr)
+    if (chopTrackLane != nullptr)
     {
-        crossfaderAutomationLane->deleteSelectedRegion();
+        // chopTrackLane->deleteSelectedRegion();
     }
 }
 
 void TransportComponent::setSnapEnabled(bool shouldSnap)
 {
-    if (crossfaderAutomationLane != nullptr)
+    if (chopTrackLane != nullptr)
     {
-        crossfaderAutomationLane->setSnapToGrid(shouldSnap);
+        chopTrackLane->setSnapToGrid(shouldSnap);
     }
 }

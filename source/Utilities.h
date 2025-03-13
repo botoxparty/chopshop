@@ -292,6 +292,19 @@ namespace EngineHelpers
         auto plugin = edit.getPluginCache().createNewPlugin(xmlType, {});
         return plugin;
     }
+
+    inline te::AudioTrack::Ptr getChopTrack(te::Edit& edit)
+    {
+        for (auto track : edit.getTrackList())
+        {
+            if (auto audioTrack = dynamic_cast<te::AudioTrack*>(track))
+            {
+                if (audioTrack->getName() == "Chop Track")
+                    return audioTrack;
+            }
+        }
+        return nullptr;
+    }
 }
 
 //==============================================================================

@@ -1,10 +1,20 @@
 #include "CrossfaderAutomationLane.h"
-
+#include "Utilities.h"
 CrossfaderAutomationLane::CrossfaderAutomationLane(tracktion::engine::Edit& e, ZoomState& zs)
     : AutomationLane(e, zs)
 {
     // Register as a zoom state listener
     zoomState.addListener(this);
+
+    auto chopTrack = EngineHelpers::getChopTrack(edit);
+    if (chopTrack == nullptr)
+    {
+        DBG("No chop track found");
+        return;
+    } else {
+        DBG("Chop track found");
+    }
+    
 }
 
 CrossfaderAutomationLane::~CrossfaderAutomationLane()

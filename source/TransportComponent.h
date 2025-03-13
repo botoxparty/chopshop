@@ -17,6 +17,7 @@
 #include "TransportBar.h"
 #include "ThumbnailComponent.h"
 #include "ZoomState.h"
+#include "ChopTrackLane.h"
 
 class PluginAutomationContainer : public juce::Component,
                                 public PluginAutomationComponent::HeightListener
@@ -112,7 +113,7 @@ private:
     // Waveform thumbnail
     std::unique_ptr<ThumbnailComponent> thumbnailComponent;
     
-    std::unique_ptr<CrossfaderAutomationLane> crossfaderAutomationLane;
+    std::unique_ptr<ChopTrackLane> chopTrackLane;
     std::unique_ptr<AutomationLane> reverbWetAutomationLane;
     
     // Plugin automation components
