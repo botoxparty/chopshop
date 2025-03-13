@@ -113,7 +113,25 @@ TransportComponent::~TransportComponent()
     // Remove listeners first
     edit.getAutomationRecordManager().removeListener(this);
     
-    // Clear any child components explicitly
+    // First remove components from the container view
+    pluginAutomationContainer.removeAllChildren();
+    
+    // Remove viewport's reference to container
+    pluginAutomationViewport.setViewedComponent(nullptr, false);
+    
+    // Clear automation components in specific order
+    // These need to be cleared before the container is destroyed
+    // since the container only holds references to them
+    reverbAutomationComponent = nullptr;
+    delayAutomationComponent = nullptr;
+    phaserAutomationComponent = nullptr;
+    flangerAutomationComponent = nullptr;
+    
+    // Clear other components
+    chopTrackLane = nullptr;
+    thumbnailComponent = nullptr;
+    
+    // Finally remove all children
     removeAllChildren();
 }
 

@@ -32,6 +32,17 @@ PluginAutomationComponent::PluginAutomationComponent(tracktion::engine::Edit& e,
 
 PluginAutomationComponent::~PluginAutomationComponent()
 {
+    // Clear height listener
+    heightListener = nullptr;
+    
+    // Clear automation lanes first
+    automationLanes.clear();
+    
+    // Clear buttons
+    groupCollapseButton = nullptr;
+    
+    // Remove all children
+    removeAllChildren();
 }
 
 void PluginAutomationComponent::paint(juce::Graphics& g)

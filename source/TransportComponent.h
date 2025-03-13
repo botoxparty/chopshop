@@ -24,7 +24,13 @@ class PluginAutomationContainer : public juce::Component,
 {
 public:
     PluginAutomationContainer() = default;
-    ~PluginAutomationContainer() override = default;
+    ~PluginAutomationContainer() override
+    {
+        // First remove all components from view
+        removeAllChildren();
+        // Clear references but don't delete components
+        components.clearQuick();
+    }
 
     void heightChanged() override
     {
@@ -67,7 +73,8 @@ private:
         setSize(w, containerHeight);
     }
 
-    juce::OwnedArray<PluginAutomationComponent> components;
+    // Change to ReferenceCountedArray to avoid ownership issues
+    juce::Array<PluginAutomationComponent*> components;
 };
 
 class TransportComponent : public juce::Component,
