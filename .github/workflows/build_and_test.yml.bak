@@ -223,6 +223,16 @@ jobs:
       - name: Cache the build
         uses: mozilla-actions/sccache-action@v0.0.7
 
+      - name: Import Certificates (macOS)
+        uses: sudara/basic-macos-keychain-action@v1
+        id: keychain
+        if: ${{ matrix.name == 'macOS'}}
+        with:
+          dev-id-app-cert: ${{ secrets.DEV_ID_APP_CERT }}
+          dev-id-app-password: ${{ secrets.DEV_ID_APP_PASSWORD }}
+          dev-id-installer-cert: ${{ secrets.DEV_ID_INSTALLER_CERT }}
+          dev-id-installer-password: ${{ secrets.DEV_ID_INSTALLER_PASSWORD }}
+
       - name: Configure
         run: |
           # For macOS, ensure we're only building for arm64 to match SDL3
@@ -281,16 +291,6 @@ jobs:
           echo "STANDALONE_PATH=$ARTIFACTS_PATH/${{ env.PRODUCT_NAME }}" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=${{ env.PRODUCT_NAME }}-${{ env.VERSION }}-${{ matrix.name }}" >> $GITHUB_ENV
 
-      - name: Import Certificates (macOS)
-        uses: sudara/basic-macos-keychain-action@v1
-        id: keychain
-        if: ${{ matrix.name == 'macOS'}}
-        with:
-          dev-id-app-cert: ${{ secrets.DEV_ID_APP_CERT }}
-          dev-id-app-password: ${{ secrets.DEV_ID_APP_PASSWORD }}
-          dev-id-installer-cert: ${{ secrets.DEV_ID_INSTALLER_CERT }}
-          dev-id-installer-password: ${{ secrets.DEV_ID_INSTALLER_PASSWORD }}
-
       - name: Debug Certificates (macOS)
         if: ${{ matrix.name == 'macOS' }}
         run: |
@@ -298,33 +298,32 @@ jobs:
           security find-identity -v -p codesigning
           echo "Keychain list:"
           security list-keychains
-
-      - name: Codesign (macOS)
-        if: ${{ matrix.name == 'macOS' }}
-        timeout-minutes: 5
-        run: |
-          # Print app bundle info before signing
-          echo "App bundle details before signing:"
-          ls -la "${{ env.STANDALONE_PATH }}.app"
-          du -sh "${{ env.STANDALONE_PATH }}.app"
+      # - name: Codesign (macOS)
+      #   if: ${{ matrix.name == 'macOS' }}
+      #   timeout-minutes: 5
+      #   run: |
+      #     # Print app bundle info before signing
+      #     echo "App bundle details before signing:"
+      #     ls -la "${{ env.STANDALONE_PATH }}.app"
+      #     du -sh "${{ env.STANDALONE_PATH }}.app"
           
-          # First try signing with less options to see if it works
-          echo "Starting basic codesign..."
-          codesign --verbose --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" "${{ env.STANDALONE_PATH }}.app"
+      #     # First try signing with less options to see if it works
+      #     echo "Starting basic codesign..."
+      #     codesign --verbose --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" "${{ env.STANDALONE_PATH }}.app"
           
-          # If that succeeds, try the full signing command
-          if [ $? -eq 0 ]; then
-            echo "Basic signing succeeded, now trying full signing..."
-            codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}.app" --deep --strict --options=runtime --timestamp
-          else
-            echo "Basic signing failed, skipping full signing"
-            # Continue workflow even if signing fails
-            exit 0
-          fi
+      #     # If that succeeds, try the full signing command
+      #     if [ $? -eq 0 ]; then
+      #       echo "Basic signing succeeded, now trying full signing..."
+      #       codesign --force -s "${{ secrets.DEVELOPER_ID_APPLICATION}}" -v "${{ env.STANDALONE_PATH }}.app" --deep --strict --options=runtime --timestamp
+      #     else
+      #       echo "Basic signing failed, skipping full signing"
+      #       # Continue workflow even if signing fails
+      #       exit 0
+      #     fi
           
-          # Verify the signature
-          echo "Verifying signature..."
-          codesign -vvv --deep --strict "${{ env.STANDALONE_PATH }}.app"
+      #     # Verify the signature
+      #     echo "Verifying signature..."
+      #     codesign -vvv --deep --strict "${{ env.STANDALONE_PATH }}.app"
 
       - name: Add Custom Icons (macOS)
         if: ${{ matrix.name == 'macOS' }}
@@ -651,8 +650,8 @@ jobs:
           # download-artifact puts these files in their own dirs...
           # Using globs sidesteps having to pass the version around
           files: |
-            */*.exe
-            */*.zip
+            */*-Windows.exe
+            */*-Linux.zip
             */*.dmg
           body_path: release_notes.md
         env:
